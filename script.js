@@ -1042,54 +1042,26 @@ function populateTeamFilters() {
 
 function updateLeaderboard(techStats) {
     const tbody = document.getElementById('leaderboard-body');
-    const sortSelect = document.getElementById('leaderboard-sort-select');
-    const metricHeader = document.getElementById('leaderboard-metric-header');
-    if (!tbody || !metricHeader) return;
+    if (!tbody) return;
     
-    const sortBy = sortSelect ? sortSelect.value : 'fixTasks'; // Default sort
     tbody.innerHTML = '';
-
-    const getTeamName = (techId) => {
-        for (const team in teamSettings) {
-            if (teamSettings[team].some(id => id.toUpperCase() === techId.toUpperCase())) {
-                return team;
-            }
-        }
-        return 'N/A';
-    };
 
     const techArray = Object.values(techStats).map(tech => {
          const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
          return {
             id: tech.id,
-            team: getTeamName(tech.id),
-            fixTasks: tech.fixTasks,
             totalPoints: tech.points,
             fixQuality: denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0,
         };
     });
 
-    if (sortBy === 'totalPoints') {
-        techArray.sort((a, b) => b.totalPoints - a.totalPoints);
-        metricHeader.textContent = 'Points';
-    } else if (sortBy === 'fixQuality') {
-        techArray.sort((a, b) => b.fixQuality - a.fixQuality);
-        metricHeader.textContent = 'Quality %';
-    } else { // Default to fixTasks
-        techArray.sort((a, b) => b.fixTasks - a.fixTasks);
-        metricHeader.textContent = 'Tasks';
-    }
+    techArray.sort((a, b) => b.fixQuality - a.fixQuality);
     
-    if (techArray.length === 0) return tbody.innerHTML = `<tr><td class="p-2 text-brand-400" colspan="3"><i>No data...</i></td></tr>`;
+    if (techArray.length === 0) return tbody.innerHTML = `<tr><td class="p-2 text-brand-400" colspan="4"><i>No data...</i></td></tr>`;
 
     techArray.forEach((stat, index) => {
         const row = document.createElement('tr');
-        let value;
-        if (sortBy === 'fixTasks') value = stat.fixTasks;
-        else if (sortBy === 'totalPoints') value = stat.totalPoints.toFixed(2);
-        else if (sortBy === 'fixQuality') value = `${stat.fixQuality.toFixed(2)}%`;
-        
-        row.innerHTML = `<td class="p-2">${index + 1}</td><td class="p-2">${stat.id}</td><td class="p-2">${value}</td>`;
+        row.innerHTML = `<td class="p-2">${index + 1}</td><td class="p-2">${stat.id}</td><td class="p-2">${stat.fixQuality.toFixed(2)}%</td><td class="p-2">${stat.totalPoints.toFixed(2)}</td>`;
         tbody.appendChild(row);
     });
 }
@@ -1252,43 +1224,51 @@ function resetUIForNewCalculation() {
 
 async function handleDroppedFiles(files) {
     resetUIForNewCalculation();
-    let dbfFile, shpFile;
-    for (const file of files) {
-        if (file.name.endsWith('.dbf')) dbfFile = file;
-        if (file.name.endsWith('.shp')) shpFile = file;
+    const shpFiles = Array.from(files).filter(file => file.name.endsWith('.shp'));
+    const dbfFiles = Array.from(files).filter(file => file.name.endsWith('.dbf'));
+
+    if (shpFiles.length === 0 || dbfFiles.length === 0) {
+        return alert("Please drop at least one .shp and one .dbf file.");
     }
 
-    if (dbfFile && shpFile) {
-        try {
-            const dbfBuffer = await dbfFile.arrayBuffer();
-            const shpBuffer = await shpFile.arrayBuffer();
-            const geojson = await shapefile.read(shpBuffer, dbfBuffer);
-            
-            if (geojson && geojson.features && geojson.features.length > 0) {
-                const properties = geojson.features.map(f => f.properties);
-                const headers = Object.keys(properties[0]);
-                let tsv = headers.join('\t') + '\n';
-                properties.forEach(row => {
-                    tsv += headers.map(h => row[h] === undefined || row[h] === null ? '' : row[h]).join('\t') + '\n';
-                });
-                document.getElementById('techData').value = tsv;
-                showNotification(`${files.length} files processed. Data loaded into text area.`);
-            } else {
-               alert("Could not extract features from the shapefile.");
+    try {
+        let allFeatures = [];
+        for (const shpFile of shpFiles) {
+            const name = shpFile.name.split('.').slice(0, -1).join('.');
+            const dbfFile = dbfFiles.find(f => f.name.startsWith(name));
+            if (dbfFile) {
+                const shpBuffer = await shpFile.arrayBuffer();
+                const dbfBuffer = await dbfFile.arrayBuffer();
+                const geojson = await shapefile.read(shpBuffer, dbfBuffer);
+                if (geojson && geojson.features) {
+                    allFeatures.push(...geojson.features);
+                }
             }
-        } catch (error) {
-            console.error("Error reading shapefile:", error);
-            alert("Error processing shapefiles. Check the console for details.");
         }
-    } else {
-        alert("Please drop both a .shp and a .dbf file together.");
+        
+        if (allFeatures.length > 0) {
+            const properties = allFeatures.map(f => f.properties);
+            const headers = Object.keys(properties[0]);
+            let tsv = headers.join('\t') + '\n';
+            properties.forEach(row => {
+                tsv += headers.map(h => row[h] === undefined || row[h] === null ? '' : row[h]).join('\t') + '\n';
+            });
+            document.getElementById('techData').value = tsv;
+            showNotification(`${shpFiles.length} shapefile(s) processed. Data loaded.`);
+        } else {
+           alert("Could not extract features from the provided shapefiles.");
+        }
+    } catch (error) {
+        console.error("Error reading shapefile:", error);
+        alert("Error processing shapefiles. Check the console for details.");
     }
 }
 
 async function handleMergeDrop(files) {
     const fileList = document.getElementById('merge-file-list');
-    const loadBtn = document.getElementById('merge-load-btn');
-    if (!fileList || !loadBtn) return;
+    const saveBtn = document.getElementById('merge-save-btn');
+    const mergeOptions = document.getElementById('merge-options');
+    if (!fileList || !saveBtn) return;
 
     const shpFiles = new Map();
     const dbfFiles = new Map();
@@ -1326,7 +1306,8 @@ async function handleMergeDrop(files) {
     }
 
     if (mergedFeatures.length > 0) {
-        loadBtn.disabled = false;
+        saveBtn.disabled = false;
+        mergeOptions.classList.remove('hidden');
         fileList.innerHTML += `<p class="font-bold mt-2">Total Features Merged: ${mergedFeatures.length}</p>`;
     } else {
         fileList.innerHTML += `<p class="font-bold mt-2 text-red-400">No data was merged. Please check your files.</p>`;
@@ -1556,6 +1537,35 @@ function setupEventListeners() {
     // --- Manage Teams Modal ---
     addSafeListener('add-team-btn', 'click', () => addTeamCard());
     addSafeListener('save-teams-btn', 'click', saveTeamSettings);
+
+    // --- Merge Modal ---
+    addSafeListener('merge-save-btn', 'click', async () => {
+        const projectName = document.getElementById('merge-project-name').value.trim();
+        if (!projectName) {
+            return alert("Please enter a project name.");
+        }
+        const properties = mergedFeatures.map(f => f.properties);
+        const headers = Object.keys(properties[0]);
+        let tsv = headers.join('\t') + '\n';
+        properties.forEach(row => {
+            tsv += headers.map(h => row[h] === undefined || row[h] === null ? '' : row[h]).join('\t') + '\n';
+        });
+
+        const projectId = projectName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_' + Date.now();
+        const isIR = document.getElementById('merge-is-ir-checkbox').checked;
+        const gsdVal = document.getElementById('merge-gsd-select').value;
+        const projectData = { id: projectId, name: projectName, rawData: tsv, isIRProject: isIR, gsdValue: gsdVal };
+
+        try {
+            await saveProjectToIndexedDB(projectData);
+            await fetchProjectListSummary();
+            document.getElementById('project-select').value = projectData.id;
+            await loadProjectIntoForm(projectData.id);
+            closeModal('merge-fixpoints-modal');
+        } catch (error) {
+            // Error is logged in save function
+        }
+    });
 
     // --- Drag and Drop ---
     const dropZone = document.getElementById('drop-zone');
