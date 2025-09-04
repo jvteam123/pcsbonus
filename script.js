@@ -461,10 +461,10 @@ function populateAdvanceSettingsEditor() {
         row.className = "bg-gray-800/50";
         row.innerHTML = `
             <td class="p-2 font-semibold">Category ${i}</td>
-            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="3in" value="${calculationSettings.categoryValues[i]['3in']}"></td>
-            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="4in" value="${calculationSettings.categoryValues[i]['4in']}"></td>
-            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="6in" value="${calculationSettings.categoryValues[i]['6in']}"></td>
-            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="9in" value="${calculationSettings.categoryValues[i]['9in']}"></td>
+            <td class="p-2"><input type="number" step="0.01" class="input-field w-full p-1" data-gsd="3in" value="${calculationSettings.categoryValues[i]['3in']}"></td>
+            <td class="p-2"><input type="number" step="0.01" class="input-field w-full p-1" data-gsd="4in" value="${calculationSettings.categoryValues[i]['4in']}"></td>
+            <td class="p-2"><input type="number" step="0.01" class="input-field w-full p-1" data-gsd="6in" value="${calculationSettings.categoryValues[i]['6in']}"></td>
+            <td class="p-2"><input type="number" step="0.01" class="input-field w-full p-1" data-gsd="9in" value="${calculationSettings.categoryValues[i]['9in']}"></td>
         `;
         catTbody.appendChild(row);
     }
@@ -527,12 +527,31 @@ async function loadTeamSettings() {
     populateAdminTeamManagement();
 }
 
-async function saveTeamSettings(settings) {
+async function saveTeamSettings() {
+    const newSettings = {};
+    const teamDivs = document.querySelectorAll('#team-list-container .team-card');
+    let isValid = true;
+    teamDivs.forEach(div => {
+        const teamName = div.querySelector('.team-name-input').value.trim();
+        if (teamName) {
+            const techTags = div.querySelectorAll('.tech-tag');
+            const techIds = Array.from(techTags).map(tag => tag.dataset.techId);
+            newSettings[teamName] = techIds;
+        } else {
+            isValid = false;
+        }
+    });
+
+    if (!isValid) {
+        return alert("Team names cannot be empty.");
+    }
+    
     try {
-        await putToDB('teams', { id: 'teams', settings: settings });
+        await putToDB('teams', { id: 'teams', settings: newSettings });
         showNotification("Team settings saved successfully.");
-        teamSettings = settings;
+        teamSettings = newSettings;
         populateTeamFilters();
+        closeModal('manage-teams-modal');
     } catch (error) {
         console.error("Error saving team settings: ", error);
         alert("Failed to save team settings.");
@@ -945,40 +964,62 @@ function populateProjectSelect() {
     document.getElementById('refresh-projects-btn').disabled = false;
 }
 
-function populateAdminProjectReorder() {
-    const list = document.getElementById('reorder-list');
-    if (!list) return;
-    list.innerHTML = '';
-    projectListCache.forEach(project => {
-        const item = document.createElement('div');
-        item.className = 'project-list-item bg-gray-700 hover:bg-gray-600 transition-colors duration-200';
-        item.textContent = project.name;
-        item.setAttribute('data-id', project.id);
-        list.appendChild(item);
-    });
-    if (reorderSortable) reorderSortable.destroy();
-    reorderSortable = Sortable.create(list, { animation: 150, ghostClass: 'sortable-ghost' });
-}
-
 function populateAdminTeamManagement() {
     const container = document.getElementById('team-list-container');
     if (!container) return;
     container.innerHTML = '';
-    for (const team in teamSettings) {
-        const teamDiv = document.createElement('div');
-        teamDiv.className = 'card p-4 rounded-lg space-y-2';
-        teamDiv.innerHTML = `
-            <div class="flex justify-between items-center">
-                <h4 class="font-bold text-gray-100">${team}</h4>
-                <button class="delete-team-btn text-red-400 hover:text-red-500 transition-colors" data-team="${team}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
-                </button>
-            </div>
-            <label class="block text-xs text-gray-400">Comma-separated Tech IDs:</label>
-            <textarea class="team-ids-input w-full p-2 border rounded-lg text-sm bg-gray-700 text-gray-200" rows="3" data-team="${team}">${teamSettings[team].join(', ')}</textarea>
-        `;
-        container.appendChild(teamDiv);
-    }
+    Object.entries(teamSettings).forEach(([teamName, techIds]) => {
+        addTeamCard(teamName, techIds);
+    });
+}
+
+function addTeamCard(teamName = '', techIds = []) {
+    const container = document.getElementById('team-list-container');
+    const teamCard = document.createElement('div');
+    teamCard.className = 'team-card p-4 rounded-lg bg-brand-900/50 border border-brand-700';
+    teamCard.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+            <input type="text" class="team-name-input input-field text-lg font-bold w-full" value="${teamName}" placeholder="Enter Team Name">
+            <button class="delete-team-btn control-btn-icon-danger ml-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+            </button>
+        </div>
+        <div class="team-tech-list mb-2 min-h-[40px]"></div>
+        <div class="flex gap-2">
+            <input type="text" class="add-tech-input input-field w-full" placeholder="Add Tech ID">
+            <button class="add-tech-btn btn-secondary">Add</button>
+        </div>
+    `;
+    container.appendChild(teamCard);
+
+    const techList = teamCard.querySelector('.team-tech-list');
+    techIds.forEach(id => addTechTag(techList, id));
+
+    teamCard.querySelector('.delete-team-btn').addEventListener('click', () => teamCard.remove());
+    teamCard.querySelector('.add-tech-btn').addEventListener('click', (e) => {
+        const input = e.target.previousElementSibling;
+        const techId = input.value.trim().toUpperCase();
+        if (techId && TECH_ID_REGEX.test(techId)) {
+            addTechTag(techList, techId);
+            input.value = '';
+        } else {
+            alert('Invalid Tech ID format. It should be 4 numbers followed by 2 letters.');
+        }
+    });
+}
+
+function addTechTag(list, techId) {
+    const tag = document.createElement('div');
+    tag.className = 'tech-tag';
+    tag.dataset.techId = techId;
+    tag.innerHTML = `
+        <span>${techId}</span>
+        <button class="remove-tech-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+        </button>
+    `;
+    list.appendChild(tag);
+    tag.querySelector('.remove-tech-btn').addEventListener('click', () => tag.remove());
 }
 
 function populateTeamFilters() {
@@ -1364,7 +1405,6 @@ function setupEventListeners() {
     
     // --- Project Panel ---
     addSafeListener('refresh-projects-btn', 'click', fetchProjectListSummary);
-    addSafeListener('reorder-projects-btn', 'click', () => openModal('reorder-projects-modal'));
     addSafeListener('project-select', 'change', (e) => {
         if (!isSaving) loadProjectIntoForm(e.target.value);
     });
@@ -1513,12 +1553,22 @@ function setupEventListeners() {
     addSafeListener('team-filter-container', 'change', applyFilters);
     addSafeListener('refresh-teams-btn', 'click', loadTeamSettings);
 
+    // --- Manage Teams Modal ---
+    addSafeListener('add-team-btn', 'click', () => addTeamCard());
+    addSafeListener('save-teams-btn', 'click', saveTeamSettings);
+
     // --- Drag and Drop ---
     const dropZone = document.getElementById('drop-zone');
     if (dropZone) {
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('bg-brand-700'); });
         dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('bg-brand-700'); });
         dropZone.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('bg-brand-700'); handleDroppedFiles(e.dataTransfer.files); });
+    }
+    const mergeDropZone = document.getElementById('merge-drop-zone');
+    if (mergeDropZone) {
+        mergeDropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); mergeDropZone.classList.add('bg-brand-700'); });
+        mergeDropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); mergeDropZone.classList.remove('bg-brand-700'); });
+        mergeDropZone.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); mergeDropZone.classList.remove('bg-brand-700'); handleMergeDrop(e.dataTransfer.files); });
     }
 }
 
