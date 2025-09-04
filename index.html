@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCS Advanced Bonus Calculator - Command Center</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://unpkg.com/shapefile@0.6.6/dist/shapefile.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // Custom Tailwind theme for a professional, high-contrast UI
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-900': '#1C1C2E', // Dark background
+                        'brand-800': '#2A2A42', // Panel background
+                        'brand-700': '#3D3D5C', // Borders and dividers
+                        'brand-600': '#525279', // Input backgrounds
+                        'brand-400': '#A6A6CC', // Muted text
+                        'brand-300': '#D9D9F0', // Body text
+                        'accent': {
+                            'DEFAULT': '#00A8FF', // A vibrant blue accent
+                            'hover': '#008EE6'
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-900 text-brand-300 font-sans antialiased">
+
+    <!-- Update Notification -->
+    <div id="update-notification" class="hidden fixed top-5 right-5 bg-accent text-white py-2 px-4 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-y-2 opacity-0">
+        Notification message.
+    </div>
+
+    <div class="w-full max-w-screen-2xl mx-auto p-4 md:p-6">
+        <!-- Minimalist Header -->
+        <header class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-white">PCS Bonus Calculator</h1>
+                <p class="mt-1 text-sm text-brand-400">Command Center Interface</p>
+            </div>
+            <div class="relative" id="main-menu-container">
+                <button id="main-menu-btn" class="menu-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                    </svg>
+                    <span>Menu</span>
+                </button>
+                <div id="main-menu-dropdown" class="absolute right-0 mt-2 w-56 bg-brand-800 border border-brand-700 rounded-md shadow-lg z-20 hidden">
+                    <a href="#" id="merge-fixpoints-btn" class="dropdown-item">Merge Partials FP</a>
+                    <a href="#" id="manage-teams-btn" class="dropdown-item">Manage Teams</a>
+                    <a href="#" id="edit-bonus-tiers-btn" class="dropdown-item">Edit Bonus Tiers</a>
+                    <a href="#" id="calculation-settings-btn" class="dropdown-item">Points Settings</a>
+                    <a href="#" id="counting-settings-btn" class="dropdown-item">Advance Settings</a>
+                    <div class="border-t border-brand-700 my-1"></div>
+                    <a href="#" id="how-it-works-btn" class="dropdown-item">How It Works</a>
+                    <a href="#" id="bug-report-btn" class="dropdown-item">Report a Bug</a>
+                    <div class="border-t border-brand-700 my-1"></div>
+                    <a href="#" id="clear-data-btn" class="dropdown-item text-red-400 hover:bg-red-500/20">Clear All Data</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Panel 1: Data & Projects -->
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Data & Projects</h2>
+                </div>
+                <div class="p-4 space-y-4">
+                    <!-- Project Loader -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-sm font-medium text-brand-400">Load Saved Project</label>
+                            <div class="flex gap-2">
+                                <button id="reorder-projects-btn" class="control-btn-secondary">Reorder</button>
+                                <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select id="project-select" class="input-field w-full">
+                                <option value="">Select a project...</option>
+                            </select>
+                            <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Data Input -->
+                    <div class="border-t border-brand-700 pt-4 space-y-3">
+                         <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4">
+                            <div class="flex items-center">
+                                <input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
+                                <label for="is-ir-project-checkbox" class="ml-2 block text-sm font-medium text-yellow-300 whitespace-nowrap">IR Project</label>
+                            </div>
+                            <div class="flex items-center w-full">
+                                <label for="gsd-value-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label>
+                                <select id="gsd-value-select" class="input-field w-full text-sm py-1">
+                                    <option value="3in">3in</option>
+                                    <option value="4in">4in</option>
+                                    <option value="6in">6in</option>
+                                    <option value="9in">9in</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors">
+                            <label for="techData" class="block text-sm font-medium text-brand-400 mb-2">Paste raw data, or drag & drop files</label>
+                            <textarea id="techData" rows="10" class="input-field w-full font-mono text-sm" placeholder="Paste data here..."></textarea>
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <input type="text" id="project-name" class="input-field w-full" placeholder="Enter Project Name to Save">
+                            <div class="flex gap-2">
+                                <button id="cancel-edit-btn" class="btn-secondary whitespace-nowrap hidden">Cancel</button>
+                                <button id="save-project-btn" class="btn-primary whitespace-nowrap">Save Project</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panel 2: Calculation & Controls -->
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Controls & Calculation</h2>
+                </div>
+                 <div class="p-4 space-y-4">
+                    <div>
+                        <label for="bonusMultiplierDirect" class="block text-sm font-medium text-brand-400 mb-1">Bonus Multiplier (PHP)</label>
+                        <input type="number" id="bonusMultiplierDirect" class="input-field w-full" placeholder="e.g., 1.25 for a 25% bonus">
+                    </div>
+                    <div class="border-t border-brand-700 pt-4 space-y-3">
+                        <button id="calculatePastedDataBtn" class="btn-secondary w-full">Calculate Pasted Data</button>
+                        <button id="calculateCurrentBtn" class="btn-secondary w-full">Calculate Selected Project</button>
+                        <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
+                             <div class="flex items-center mb-2">
+                                <input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
+                                <label for="customize-calc-all-cb" class="ml-2 block text-sm font-medium text-brand-300">Select multiple projects to calculate</label>
+                            </div>
+                           <button id="calculate-all-btn" class="btn-primary w-full">Calculate All / Selected</button>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- Panel 3: Results & Analytics -->
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Results & Analytics</h2>
+                </div>
+                 <div id="results-section" class="p-4 space-y-6">
+                    <!-- Placeholder shown before calculation -->
+                    <div id="results-placeholder" class="text-center py-16 flex flex-col justify-center items-center h-full">
+                        <svg class="mx-auto h-12 w-12 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        <h3 class="mt-2 text-sm font-medium text-white">No results to show</h3>
+                        <p class="mt-1 text-sm text-brand-400">Run a calculation to see the results here.</p>
+                    </div>
+                    <!-- Actual results, hidden initially -->
+                    <div id="results-content" class="hidden space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white mb-2">Leaderboard</h3>
+                                <div class="table-container text-sm max-h-48 border border-brand-700 rounded-md">
+                                    <table class="min-w-full">
+                                        <thead class="sticky top-0 bg-brand-800"><tr><th class="p-2 text-left">Rank</th><th class="p-2 text-left">Tech</th><th id="leaderboard-metric-header" class="p-2 text-left">Tasks</th></tr></thead>
+                                        <tbody id="leaderboard-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-white mb-2">Workload</h3>
+                                <div id="workload-chart-container" class="space-y-2 overflow-y-auto max-h-52 pr-2"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 id="results-title" class="text-lg font-semibold text-white mb-2">Bonus Payouts</h3>
+                             <div class="mb-4 flex flex-col md:flex-row gap-4">
+                               <input type="text" id="search-tech-id" class="input-field w-full md:w-1/2" placeholder="Search Results...">
+                               <div id="team-filter-container" class="flex flex-wrap gap-x-4 gap-y-2 items-center">
+                                     <span class="text-sm font-medium text-brand-300">Filter:</span>
+                                     <button id="refresh-teams-btn" title="Refresh Team List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+                                </div>
+                            </div>
+                            <div class="table-container border border-brand-700 rounded-lg max-h-96">
+                               <table class="min-w-full divide-y divide-brand-700">
+                                   <thead id="results-thead" class="bg-brand-800 sticky top-0"></thead>
+                                   <tbody id="tech-results-body" class="divide-y divide-brand-700"></tbody>
+                               </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- All Modals will be styled with the new theme -->
+    <!-- (Modal HTML is omitted for brevity but is handled by script.js) -->
+
+    <script src="script.js"></script>
+    <script>
+        // Inline script for the main menu dropdown
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('main-menu-container');
+            const button = document.getElementById('main-menu-btn');
+            const dropdown = document.getElementById('main-menu-dropdown');
+            if(!button || !dropdown) return;
+
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!container.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
