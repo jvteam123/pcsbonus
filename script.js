@@ -756,6 +756,7 @@ function calculateQualityModifier(qualityRate) {
 
 // --- UI MANIPULATION AND STATE MANAGEMENT ---
 async function loadProjectIntoForm(projectId) {
+    const editBtn = document.getElementById('edit-data-btn');
     if (projectId) {
         const projectData = await fetchFullProjectData(projectId);
         if (projectData) {
@@ -767,7 +768,7 @@ async function loadProjectIntoForm(projectId) {
             document.getElementById('is-ir-project-checkbox').disabled = true;
             document.getElementById('gsd-value-select').value = projectData.gsdValue;
             document.getElementById('gsd-value-select').disabled = true;
-            document.getElementById('edit-data-btn').classList.remove('hidden');
+            if(editBtn) editBtn.classList.remove('hidden');
             document.getElementById('save-project-btn').disabled = true;
             document.getElementById('cancel-edit-btn').classList.add('hidden');
         }
@@ -780,15 +781,17 @@ async function loadProjectIntoForm(projectId) {
         document.getElementById('is-ir-project-checkbox').disabled = false;
         document.getElementById('gsd-value-select').value = '3in';
         document.getElementById('gsd-value-select').disabled = false;
-        document.getElementById('edit-data-btn').classList.add('hidden');
+        if(editBtn) editBtn.classList.add('hidden');
         document.getElementById('save-project-btn').disabled = false;
         document.getElementById('cancel-edit-btn').classList.add('hidden');
     }
 }
 
 function showResultsPanel() {
-    document.getElementById('results-placeholder').classList.add('hidden');
-    document.getElementById('results-content').classList.remove('hidden');
+    const placeholder = document.getElementById('results-placeholder');
+    const content = document.getElementById('results-content');
+    if (placeholder) placeholder.classList.add('hidden');
+    if (content) content.classList.remove('hidden');
 }
 
 function displayResults(techStats) {
@@ -855,6 +858,7 @@ function populateProjectSelect() {
 
 function populateAdminProjectReorder() {
     const list = document.getElementById('reorder-list');
+    if (!list) return;
     list.innerHTML = '';
     projectListCache.forEach(project => {
         const item = document.createElement('div');
@@ -869,6 +873,7 @@ function populateAdminProjectReorder() {
 
 function populateAdminTeamManagement() {
     const container = document.getElementById('team-list-container');
+    if (!container) return;
     container.innerHTML = '';
     for (const team in teamSettings) {
         const teamDiv = document.createElement('div');
@@ -889,6 +894,7 @@ function populateAdminTeamManagement() {
 
 function populateTeamFilters() {
     const container = document.getElementById('team-filter-container');
+    if (!container) return;
     const existingRefreshButton = document.getElementById('refresh-teams-btn');
     container.innerHTML = `<span class="text-sm font-medium text-brand-300">Filter:</span>`;
     if(existingRefreshButton) container.appendChild(existingRefreshButton);
@@ -908,6 +914,8 @@ function updateLeaderboard(techStats) {
     const tbody = document.getElementById('leaderboard-body');
     const sortSelect = document.getElementById('leaderboard-sort-select');
     const metricHeader = document.getElementById('leaderboard-metric-header');
+    if (!tbody || !sortSelect || !metricHeader) return;
+    
     const sortBy = sortSelect.value;
     tbody.innerHTML = '';
 
@@ -958,6 +966,7 @@ function updateLeaderboard(techStats) {
 
 function updateWorkloadChart(techStats) {
     const container = document.getElementById('workload-chart-container');
+    if (!container) return;
     container.innerHTML = '';
     
     const totalTasks = Object.values(techStats).reduce((sum, stat) => sum + stat.fixTasks, 0);
@@ -978,7 +987,10 @@ function updateWorkloadChart(techStats) {
 
 
 function applyFilters() {
-    const searchValue = document.getElementById('search-tech-id').value.toUpperCase();
+    const searchInput = document.getElementById('search-tech-id');
+    if (!searchInput) return;
+    
+    const searchValue = searchInput.value.toUpperCase();
     const selectedTeams = Array.from(document.querySelectorAll('#team-filter-container input:checked')).map(cb => cb.dataset.team);
 
     const getTeamName = (techId) => {
@@ -1010,6 +1022,7 @@ function applyFilters() {
 
 function showNotification(message) {
     const notification = document.getElementById('update-notification');
+    if (!notification) return;
     notification.textContent = message;
     notification.classList.remove('hidden', 'opacity-0', 'translate-y-2');
     setTimeout(() => {
@@ -1018,14 +1031,15 @@ function showNotification(message) {
     }, 3000);
 }
 
-function showModal(key) {
-    const info = calculationInfo[key];
-    if (info) {
-        document.getElementById('modal-title').textContent = info.title;
-        document.getElementById('modal-body').innerHTML = info.body;
-        document.getElementById('view-data-btn').classList.add('hidden');
-        document.getElementById('info-modal').classList.remove('hidden');
-    }
+// --- MODAL FUNCTIONS ---
+function openModal(modalId) {
+    // A generic modal opener function could be created here if needed.
+    // For now, specific functions are clearer.
+    alert(`Opening modal: ${modalId}. Modal UI and logic needs to be added.`);
+}
+
+function closeModal(modalId) {
+    // A generic modal closer.
 }
 
 function generateTechBreakdownHTML(tech) {
@@ -1038,7 +1052,6 @@ function generateTechBreakdownHTML(tech) {
 
     const multiplierDisplay = lastCalculationUsedMultiplier ? `${lastUsedBonusMultiplier.toFixed(2)} (Multiplier)` : '1 (No Multiplier)';
     
-    // Simplified version for brevity, can be expanded
     return `<div class="space-y-4 text-sm">
         <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
             <h4 class="font-semibold text-base text-white mb-2">Core Stats</h4>
@@ -1069,32 +1082,27 @@ function openTechSummaryModal(techId) {
     const tech = currentTechStats[techId];
     if (!tech) return;
 
-    // This part requires modals to be created/added to the HTML or created dynamically
-    // For now, we can use a simple alert or log to show it's working.
+    // This is still a placeholder. To make this work, a modal structure needs to be in index.html
     alert(`Showing details for ${techId}. Modal UI needs to be added to index.html to display full breakdown.`);
-
-    // Example of how it would work if a modal with id 'info-modal' existed:
-    /*
-    const modal = document.getElementById('info-modal');
-    document.getElementById('modal-title').innerHTML = `Detailed Breakdown for Tech ID: <span class="text-accent">${techId}</span>`;
-    document.getElementById('modal-body').innerHTML = generateTechBreakdownHTML(tech);
-    modal.classList.remove('hidden');
-    */
 }
-
-// ... other modal functions (closeModal, etc.) would be needed here ...
 
 
 function resetUIForNewCalculation() {
-    document.getElementById('results-placeholder').classList.remove('hidden');
-    document.getElementById('results-content').classList.add('hidden');
+    const placeholder = document.getElementById('results-placeholder');
+    const content = document.getElementById('results-content');
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (content) content.classList.add('hidden');
     
-    document.getElementById('tech-results-body').innerHTML = '';
-    document.getElementById('results-title').textContent = 'Bonus Payouts';
-    document.getElementById('leaderboard-body').innerHTML = '';
-    document.getElementById('workload-chart-container').innerHTML = '';
+    const techResultsBody = document.getElementById('tech-results-body');
+    const resultsTitle = document.getElementById('results-title');
+    const leaderboardBody = document.getElementById('leaderboard-body');
+    const workloadChart = document.getElementById('workload-chart-container');
+
+    if (techResultsBody) techResultsBody.innerHTML = '';
+    if (resultsTitle) resultsTitle.textContent = 'Bonus Payouts';
+    if (leaderboardBody) leaderboardBody.innerHTML = '';
+    if (workloadChart) workloadChart.innerHTML = '';
     
-    // Clear form but keep loaded project selection
     if (!document.getElementById('project-select').value) {
         document.getElementById('project-name').value = '';
         document.getElementById('techData').value = '';
@@ -1141,6 +1149,8 @@ async function handleDroppedFiles(files) {
 async function handleMergeDrop(files) {
     const fileList = document.getElementById('merge-file-list');
     const loadBtn = document.getElementById('merge-load-btn');
+    if (!fileList || !loadBtn) return;
+
     const shpFiles = new Map();
     const dbfFiles = new Map();
 
@@ -1211,17 +1221,23 @@ function clearAllData() {
 }
 
 function setupEventListeners() {
-    // Note: The main menu dropdown is handled by the inline script in index.html
+    // Helper function to safely add event listeners
+    const addSafeListener = (id, event, handler) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener(event, handler);
+        } else {
+            console.warn(`Element with ID '${id}' not found.`);
+        }
+    };
 
-    document.getElementById('how-it-works-btn').addEventListener('click', () => alert("Modal for 'How It Works' needs to be implemented."));
-    document.getElementById('bug-report-btn').addEventListener('click', () => {
+    // Main menu dropdown is handled by the inline script in index.html
+    addSafeListener('how-it-works-btn', 'click', () => alert("Modal for 'How It Works' needs to be implemented."));
+    addSafeListener('bug-report-btn', 'click', () => {
         window.open("https://teams.microsoft.com/l/chat/48:notes/conversations?context=%7B%22contextType%22%3A%22chat%22%7D", "_blank");
     });
-    document.getElementById('clear-data-btn').addEventListener('click', clearAllData);
+    addSafeListener('clear-data-btn', 'click', clearAllData);
     
-    // Example event listener for a modal. The other modals need to be added to index.html for this to work.
-    // document.getElementById('merge-fixpoints-btn').addEventListener('click', () => document.getElementById('merge-modal').classList.remove('hidden'));
-
     document.body.addEventListener('click', (e) => {
         const icon = e.target.closest('.info-icon:not(.tech-summary-icon)');
         if (icon && icon.dataset.key) {
@@ -1234,13 +1250,16 @@ function setupEventListeners() {
         }
     });
 
-    document.getElementById('refresh-projects-btn').addEventListener('click', fetchProjectListSummary);
-    document.getElementById('project-select').addEventListener('change', (e) => {
+    addSafeListener('refresh-projects-btn', 'click', fetchProjectListSummary);
+    addSafeListener('project-select', 'change', (e) => {
         if (!isSaving) loadProjectIntoForm(e.target.value);
     });
-    document.getElementById('delete-project-btn').addEventListener('click', () => { const projectId = document.getElementById('project-select').value; if(projectId) deleteProjectFromIndexedDB(projectId); });
+    addSafeListener('delete-project-btn', 'click', () => { 
+        const projectId = document.getElementById('project-select').value;
+        if(projectId) deleteProjectFromIndexedDB(projectId); 
+    });
     
-    document.getElementById('edit-data-btn').addEventListener('click', () => {
+    addSafeListener('edit-data-btn', 'click', () => {
         document.getElementById('techData').readOnly = false;
         document.getElementById('project-name').readOnly = false;
         document.getElementById('is-ir-project-checkbox').disabled = false;
@@ -1250,12 +1269,12 @@ function setupEventListeners() {
         document.getElementById('cancel-edit-btn').classList.remove('hidden');
     });
     
-    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+    addSafeListener('cancel-edit-btn', 'click', () => {
         const projectId = document.getElementById('project-select').value;
         if (projectId) loadProjectIntoForm(projectId);
     });
 
-    document.getElementById('calculateCurrentBtn').addEventListener('click', async () => {
+    addSafeListener('calculateCurrentBtn', 'click', async () => {
         const projectId = document.getElementById('project-select').value;
         if (!projectId) return alert("Please select a project.");
         
@@ -1272,7 +1291,7 @@ function setupEventListeners() {
         }
     });
 
-    document.getElementById('calculatePastedDataBtn').addEventListener('click', () => {
+    addSafeListener('calculatePastedDataBtn', 'click', () => {
         const techData = document.getElementById('techData').value.trim();
         const isIR = document.getElementById('is-ir-project-checkbox').checked;
         const gsdVal = document.getElementById('gsd-value-select').value;
@@ -1289,7 +1308,7 @@ function setupEventListeners() {
         } else alert("Please paste data into the text box first.");
     });
     
-    document.getElementById('save-project-btn').addEventListener('click', async () => {
+    addSafeListener('save-project-btn', 'click', async () => {
         if (isSaving) return;
         isSaving = true;
         const saveButton = document.getElementById('save-project-btn');
@@ -1328,15 +1347,16 @@ function setupEventListeners() {
         }
     });
 
-    document.getElementById('calculate-all-btn').addEventListener('click', async () => {
-        const selectedProjectIds = Array.from(document.querySelectorAll('#project-select option:checked')).map(opt => opt.value).filter(Boolean);
+    addSafeListener('calculate-all-btn', 'click', async () => {
+        const selectEl = document.getElementById('project-select');
+        const selectedProjectIds = Array.from(selectEl.options).filter(opt => opt.selected).map(opt => opt.value).filter(Boolean);
         const isCustomized = document.getElementById('customize-calc-all-cb').checked;
 
         let projectsToCalcIds = isCustomized ? selectedProjectIds : projectListCache.map(p => p.id);
         if (isCustomized && selectedProjectIds.length === 0) return alert("Please select projects from the list to calculate.");
         if (projectsToCalcIds.length === 0) return alert("No projects to calculate.");
 
-        showNotification('Calculating projects...');
+        showNotification(`Calculating ${projectsToCalcIds.length} project(s)...`);
 
         const combinedTechStats = {};
 
@@ -1366,20 +1386,24 @@ function setupEventListeners() {
         document.getElementById('results-title').textContent = `Bonus Payouts for: ${isCustomized ? 'Selected Projects' : 'All Projects'}`;
     });
     
-    document.getElementById('search-tech-id').addEventListener('input', applyFilters);
-    document.getElementById('team-filter-container').addEventListener('change', applyFilters);
+    addSafeListener('search-tech-id', 'input', applyFilters);
+    addSafeListener('team-filter-container', 'change', applyFilters);
     
-    document.getElementById('customize-calc-all-cb').addEventListener('change', (e) => {
+    addSafeListener('customize-calc-all-cb', 'change', (e) => {
         const selectEl = document.getElementById('project-select');
-        selectEl.multiple = e.target.checked;
-        selectEl.size = e.target.checked ? 6 : 1;
+        if (selectEl) {
+            selectEl.multiple = e.target.checked;
+            selectEl.size = e.target.checked ? 6 : 1;
+        }
     });
-    document.getElementById('leaderboard-sort-select').addEventListener('change', applyFilters);
+    addSafeListener('leaderboard-sort-select', 'change', applyFilters);
 
     const dropZone = document.getElementById('drop-zone');
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over'); });
-    dropZone.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over'); handleDroppedFiles(e.dataTransfer.files); });
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over'); });
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over'); handleDroppedFiles(e.dataTransfer.files); });
+    }
 }
 
 
@@ -1401,3 +1425,4 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
+
