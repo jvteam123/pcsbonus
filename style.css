@@ -289,3 +289,30 @@ body {
 .tab-content.active {
     display: block;
 }
+
+/* Manage Teams Modal */
+.team-tech-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: #2A2A42;
+    border-radius: 0.375rem;
+}
+.tech-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #525279;
+    color: #D9D9F0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+.remove-tech-btn {
+    color: #A6A6CC;
+    transition: color 0.2s;
+}
+.remove-tech-btn:hover {
+    color: #ffffff;
+}
