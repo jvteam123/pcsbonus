@@ -368,6 +368,7 @@ function populateAdvanceSettingsEditor() {
             <button id="add-tier-btn" class="btn-secondary mt-4">Add Tier</button>
         </div>
         <div id="tab-points" class="tab-content">
+            <!-- Points Settings Content -->
             <div class="space-y-4">
                 <div>
                     <label for="setting-ir-modifier" class="block text-sm font-medium text-brand-400">IR Modifier</label>
@@ -412,6 +413,7 @@ function populateAdvanceSettingsEditor() {
             </div>
         </div>
         <div id="tab-counting" class="tab-content">
+            <!-- Counting Logic Content -->
             <div class="space-y-4">
                 <div>
                     <h4 class="font-semibold text-white">Task Columns</h4>
@@ -694,6 +696,10 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
             let techPoints = 0;
             let techCategories = 0;
             catSources.forEach(source => {
+                 if (source.isRQA && source.sourceType === 'afp') {
+                    techStats[techId].afpTasks++;
+                }
+
                 const labelValue = source.label ? values[headerMap[source.label]]?.trim().toUpperCase() : null;
                 if (source.condition && !source.condition(labelValue)) return;
                 const catValue = parseInt(values[headerMap[source.cat]]);
@@ -705,9 +711,6 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
                     }
                     if(source.isRQA) {
                         techStats[techId].approvedByRQA.push({ round: source.round, category: catValue, project: currentProjectName });
-                        if (source.sourceType === 'afp') {
-                            techStats[techId].afpTasks++;
-                        }
                     }
                 }
             });
@@ -1741,3 +1744,4 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
+
