@@ -1042,26 +1042,44 @@ function populateTeamFilters() {
 
 function updateLeaderboard(techStats) {
     const tbody = document.getElementById('leaderboard-body');
-    if (!tbody) return;
+    const sortSelect = document.getElementById('leaderboard-sort-select');
+    const metricHeader = document.getElementById('leaderboard-metric-header');
+    if (!tbody || !sortSelect || !metricHeader) return;
     
+    const sortBy = sortSelect.value;
     tbody.innerHTML = '';
 
     const techArray = Object.values(techStats).map(tech => {
          const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
          return {
             id: tech.id,
+            fixTasks: tech.fixTasks,
             totalPoints: tech.points,
             fixQuality: denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0,
         };
     });
-
-    techArray.sort((a, b) => b.fixQuality - a.fixQuality);
     
-    if (techArray.length === 0) return tbody.innerHTML = `<tr><td class="p-2 text-brand-400" colspan="4"><i>No data...</i></td></tr>`;
+    if (sortBy === 'totalPoints') {
+        techArray.sort((a, b) => b.totalPoints - a.totalPoints);
+        metricHeader.textContent = 'Points';
+    } else if (sortBy === 'fixTasks') {
+        techArray.sort((a, b) => b.fixTasks - a.fixTasks);
+        metricHeader.textContent = 'Tasks';
+    } else { // Default to fixQuality
+        techArray.sort((a, b) => b.fixQuality - a.fixQuality);
+        metricHeader.textContent = 'Quality %';
+    }
+    
+    if (techArray.length === 0) return tbody.innerHTML = `<tr><td class="p-2 text-brand-400" colspan="3"><i>No data...</i></td></tr>`;
 
     techArray.forEach((stat, index) => {
         const row = document.createElement('tr');
-        row.innerHTML = `<td class="p-2">${index + 1}</td><td class="p-2">${stat.id}</td><td class="p-2">${stat.fixQuality.toFixed(2)}%</td><td class="p-2">${stat.totalPoints.toFixed(2)}</td>`;
+        let value;
+        if (sortBy === 'fixTasks') value = stat.fixTasks;
+        else if (sortBy === 'totalPoints') value = stat.totalPoints.toFixed(2);
+        else if (sortBy === 'fixQuality') value = `${stat.fixQuality.toFixed(2)}%`;
+        
+        row.innerHTML = `<td class="p-2">${index + 1}</td><td class="p-2">${stat.id}</td><td class="p-2">${value}</td>`;
         tbody.appendChild(row);
     });
 }
@@ -1224,24 +1242,30 @@ function resetUIForNewCalculation() {
 
 async function handleDroppedFiles(files) {
     resetUIForNewCalculation();
-    const shpFiles = Array.from(files).filter(file => file.name.endsWith('.shp'));
-    const dbfFiles = Array.from(files).filter(file => file.name.endsWith('.dbf'));
+    const fileGroups = {};
 
-    if (shpFiles.length === 0 || dbfFiles.length === 0) {
-        return alert("Please drop at least one .shp and one .dbf file.");
+    for (const file of files) {
+        const baseName = file.name.split('.')[0];
+        if (!fileGroups[baseName]) {
+            fileGroups[baseName] = {};
+        }
+        const extension = file.name.split('.').pop().toLowerCase();
+        if (extension === 'shp') fileGroups[baseName].shp = file;
+        if (extension === 'dbf') fileGroups[baseName].dbf = file;
     }
 
     try {
         let allFeatures = [];
-        for (const shpFile of shpFiles) {
-            const name = shpFile.name.split('.').slice(0, -1).join('.');
-            const dbfFile = dbfFiles.find(f => f.name.startsWith(name));
-            if (dbfFile) {
-                const shpBuffer = await shpFile.arrayBuffer();
-                const dbfBuffer = await dbfFile.arrayBuffer();
+        let processedCount = 0;
+        for (const baseName in fileGroups) {
+            const group = fileGroups[baseName];
+            if (group.shp && group.dbf) {
+                const shpBuffer = await group.shp.arrayBuffer();
+                const dbfBuffer = await group.dbf.arrayBuffer();
                 const geojson = await shapefile.read(shpBuffer, dbfBuffer);
                 if (geojson && geojson.features) {
                     allFeatures.push(...geojson.features);
+                    processedCount++;
                 }
             }
         }
@@ -1254,13 +1278,13 @@ async function handleDroppedFiles(files) {
                 tsv += headers.map(h => row[h] === undefined || row[h] === null ? '' : row[h]).join('\t') + '\n';
             });
             document.getElementById('techData').value = tsv;
-            showNotification(`${shpFiles.length} shapefile(s) processed. Data loaded.`);
+            showNotification(`${processedCount} shapefile set(s) processed. Data loaded.`);
         } else {
-           alert("Could not extract features from the provided shapefiles.");
+           alert("No valid .shp and .dbf pairs were found in the dropped files.");
         }
     } catch (error) {
         console.error("Error reading shapefile:", error);
-        alert("Error processing shapefiles. Check the console for details.");
+        alert("An error occurred while processing shapefiles. Check the console for details.");
     }
 }
 
@@ -1533,6 +1557,7 @@ function setupEventListeners() {
     addSafeListener('search-tech-id', 'input', applyFilters);
     addSafeListener('team-filter-container', 'change', applyFilters);
     addSafeListener('refresh-teams-btn', 'click', loadTeamSettings);
+    addSafeListener('leaderboard-sort-select', 'change', applyFilters);
 
     // --- Manage Teams Modal ---
     addSafeListener('add-team-btn', 'click', () => addTeamCard());
