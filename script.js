@@ -241,7 +241,7 @@ function createNewTechStat() {
         categoryCounts[i] = { primary: 0, i3qa: 0, afp: 0, rv: 0 };
     }
     return {
-        id: '', points: 0, fixTasks: 0, refixTasks: 0, warnings: [],
+        id: '', points: 0, fixTasks: 0, afpTasks: 0, refixTasks: 0, warnings: [],
         refixDetails: [], missedCategories: [], approvedByRQA: [],
         approvedByRQACategoryCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 },
         categoryCounts: categoryCounts,
@@ -424,7 +424,7 @@ function populateAdvanceSettingsEditor() {
                     </div>
                 </div>
                 <div>
-                    <h4 class="font-bold text-white">Trigger Conditions</h4>
+                    <h4 class="font-semibold text-white">Trigger Conditions</h4>
                     <p class="text-xs text-brand-400 mb-2">Define labels and columns that trigger refixes, misses, warnings, etc.</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><label>Refix Labels</label><input type="text" id="setting-refix-labels" class="input-field w-full mt-1"></div>
@@ -705,6 +705,9 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
                     }
                     if(source.isRQA) {
                         techStats[techId].approvedByRQA.push({ round: source.round, category: catValue, project: currentProjectName });
+                        if (source.sourceType === 'afp') {
+                            techStats[techId].afpTasks++;
+                        }
                     }
                 }
             });
@@ -1096,27 +1099,6 @@ function updateLeaderboard(techStats) {
     });
 }
 
-function updateWorkloadChart(techStats) {
-    const container = document.getElementById('workload-chart-container');
-    if (!container) return;
-    container.innerHTML = '';
-    
-    const totalTasks = Object.values(techStats).reduce((sum, stat) => sum + stat.fixTasks, 0);
-    if (totalTasks === 0) return container.innerHTML = `<p class="text-brand-400 italic text-sm text-center py-4">No tasks found.</p>`;
-    
-    Object.values(techStats).sort((a, b) => b.fixTasks - a.fixTasks).forEach(stat => {
-        const percentage = (stat.fixTasks / totalTasks) * 100;
-        const barWrapper = document.createElement('div');
-        barWrapper.className = 'workload-bar-wrapper';
-        barWrapper.innerHTML = `
-            <div class="workload-label" title="${stat.id}">${stat.id}</div>
-            <div class="workload-bar">
-                <div class="workload-bar-inner" style="width: ${percentage.toFixed(2)}%;">${stat.fixTasks > 0 ? stat.fixTasks : ''}</div>
-            </div>`;
-        container.appendChild(barWrapper);
-    });
-}
-
 function updateTLSummary(techStats) {
     const tlCard = document.getElementById('tl-summary-card');
     if (Object.keys(techStats).length === 0) {
@@ -1144,10 +1126,16 @@ function updateTLSummary(techStats) {
         const quality = teamQualities[team];
         const qualityBar = document.createElement('div');
         qualityBar.className = 'workload-bar-wrapper';
+        let colorClass = 'quality-bar-red';
+        if (quality >= 98) {
+            colorClass = 'quality-bar-green';
+        } else if (quality >= 95) {
+            colorClass = 'quality-bar-yellow';
+        }
         qualityBar.innerHTML = `
             <div class="workload-label" title="${team}">${team}</div>
             <div class="workload-bar">
-                <div class="workload-bar-inner" style="width: ${quality.toFixed(2)}%;">${quality.toFixed(2)}%</div>
+                <div class="workload-bar-inner ${colorClass}" style="width: ${quality.toFixed(2)}%;">${quality.toFixed(2)}%</div>
             </div>`;
         teamQualityContainer.appendChild(qualityBar);
     }
@@ -1158,10 +1146,12 @@ function updateTLSummary(techStats) {
     for (const techId in fix4CategoryCounts) {
         const techDiv = document.createElement('div');
         let listItems = '';
-        for (const category in fix4CategoryCounts[techId]) {
-            const count = fix4CategoryCounts[techId][category];
+        const sortedCategories = Object.entries(fix4CategoryCounts[techId]).sort(([catA], [catB]) => parseInt(catA) - parseInt(catB));
+        
+        for (const [category, count] of sortedCategories) {
             listItems += `<li class="text-brand-400">Category ${category}: <span class="font-semibold text-brand-300">${count}</span></li>`;
         }
+
         techDiv.innerHTML = `
             <h4 class="font-bold text-white">${techId}</h4>
             <ul class="list-disc list-inside ml-2">
@@ -1204,7 +1194,6 @@ function applyFilters() {
     
     displayResults(filteredStats);
     updateLeaderboard(filteredStats);
-    updateWorkloadChart(filteredStats);
     updateTLSummary(filteredStats);
 }
 
@@ -1250,14 +1239,22 @@ function generateTechBreakdownHTML(tech) {
             <h4 class="font-semibold text-base text-white mb-2">Core Stats</h4>
             <div class="grid grid-cols-2 gap-4">
                 <div><span class="text-brand-400">Primary Fix Tasks:</span> <span class="font-bold text-green-400">${tech.fixTasks}</span></div>
+                <div><span class="text-brand-400">AFP Tasks (AA):</span> <span class="font-bold text-blue-400">${tech.afpTasks}</span></div>
                 <div><span class="text-brand-400">Refix Tasks:</span> <span class="font-bold text-red-400">${tech.refixTasks}</span></div>
                 <div><span class="text-brand-400">Warnings:</span> <span class="font-bold text-yellow-400">${tech.warnings.length}</span></div>
                 <div><span class="text-brand-400">Misses:</span> <span class="font-bold text-orange-400">${tech.missedCategories.length}</span></div>
             </div>
         </div>
         <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
-            <h4 class="font-semibold text-base text-white mb-2">Points Calculation</h4>
-            <div class="flex justify-between"><span class="text-brand-400">Total Points:</span><span class="font-mono font-bold">${tech.points.toFixed(3)}</span></div>
+            <h4 class="font-semibold text-base text-white mb-2">Points Breakdown</h4>
+            <div class="space-y-1 font-mono">
+                <div class="flex justify-between"><span class="text-brand-400">Fix Tasks:</span><span>${tech.pointsBreakdown.fix.toFixed(3)}</span></div>
+                <div class="flex justify-between"><span class="text-brand-400">QC Tasks:</span><span>${tech.pointsBreakdown.qc.toFixed(3)}</span></div>
+                <div class="flex justify-between"><span class="text-brand-400">i3qa Tasks:</span><span>${tech.pointsBreakdown.i3qa.toFixed(3)}</span></div>
+                <div class="flex justify-between"><span class="text-brand-400">RV Tasks:</span><span>${tech.pointsBreakdown.rv.toFixed(3)}</span></div>
+                ${tech.pointsBreakdown.qcTransfer > 0 ? `<div class="flex justify-between"><span class="text-brand-400">QC Transfers:</span><span>+${tech.pointsBreakdown.qcTransfer.toFixed(3)}</span></div>` : ''}
+                <div class="flex justify-between border-t border-brand-600 mt-1 pt-1"><span class="text-white font-bold">Total Points:</span><span class="text-white font-bold">${tech.points.toFixed(3)}</span></div>
+            </div>
         </div>
         <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
             <h4 class="font-semibold text-base text-white mb-2">Quality Calculation</h4>
@@ -1287,8 +1284,10 @@ function openTechSummaryModal(techId) {
 function resetUIForNewCalculation() {
     const placeholder = document.getElementById('results-placeholder');
     const content = document.getElementById('results-content');
+    const tlCard = document.getElementById('tl-summary-card');
     if (placeholder) placeholder.classList.remove('hidden');
     if (content) content.classList.add('hidden');
+    if(tlCard) tlCard.classList.add('hidden');
     
     const techResultsGrid = document.getElementById('tech-results-grid');
     const resultsTitle = document.getElementById('results-title');
@@ -1298,7 +1297,6 @@ function resetUIForNewCalculation() {
     if (techResultsGrid) techResultsGrid.innerHTML = '';
     if (resultsTitle) resultsTitle.textContent = 'Bonus Payouts';
     if (leaderboardBody) leaderboardBody.innerHTML = '';
-    if (workloadChart) workloadChart.innerHTML = '';
     
     if (!document.getElementById('project-select').value) {
         document.getElementById('project-name').value = '';
@@ -1434,12 +1432,21 @@ function clearAllData() {
 
 function showLoading(button) {
     button.disabled = true;
-    button.innerHTML = '<span class="loader"></span>';
+    const textSpan = button.querySelector('span');
+    if (textSpan) textSpan.classList.add('hidden');
+    
+    const loader = document.createElement('span');
+    loader.className = 'loader';
+    button.prepend(loader);
 }
 
-function hideLoading(button, originalText) {
+function hideLoading(button) {
     button.disabled = false;
-    button.innerHTML = originalText;
+    const loader = button.querySelector('.loader');
+    if (loader) loader.remove();
+    
+    const textSpan = button.querySelector('span');
+    if (textSpan) textSpan.classList.remove('hidden');
 }
 
 function setupEventListeners() {
@@ -1513,7 +1520,6 @@ function setupEventListeners() {
 
     addSafeListener('save-project-btn', 'click', async (e) => {
         const button = e.target;
-        const originalText = button.innerHTML;
         showLoading(button);
         if (isSaving) return;
         isSaving = true;
@@ -1524,7 +1530,7 @@ function setupEventListeners() {
         if (!projectName || !techData) {
             alert("Please provide both a project name and project data.");
             isSaving = false;
-            hideLoading(button, originalText);
+            hideLoading(button);
             return;
         }
 
@@ -1545,7 +1551,7 @@ function setupEventListeners() {
         } catch (error) {
             // Error is logged in save function
         } finally {
-            hideLoading(button, originalText);
+            hideLoading(button);
             isSaving = false;
         }
     });
@@ -1553,7 +1559,6 @@ function setupEventListeners() {
     // --- Calculation Panel ---
     addSafeListener('calculate-btn', 'click', async (e) => {
         const button = e.target;
-        const originalText = button.innerHTML;
         showLoading(button);
 
         const projectId = document.getElementById('project-select').value;
@@ -1561,7 +1566,7 @@ function setupEventListeners() {
             const techData = document.getElementById('techData').value.trim();
             if(!techData) {
                 alert("Please select a project or paste data to calculate.");
-                hideLoading(button, originalText);
+                hideLoading(button);
                 return;
             }
             
@@ -1588,12 +1593,11 @@ function setupEventListeners() {
                 }
             }
         }
-        hideLoading(button, originalText);
+        hideLoading(button);
     });
 
     addSafeListener('calculate-all-btn', 'click', async (e) => {
         const button = e.target;
-        const originalText = button.innerHTML;
         showLoading(button);
 
         const selectEl = document.getElementById('project-select');
@@ -1603,12 +1607,12 @@ function setupEventListeners() {
         let projectsToCalcIds = isCustomized ? selectedProjectIds : projectListCache.map(p => p.id);
         if (isCustomized && selectedProjectIds.length === 0) {
             alert("Please select projects from the list to calculate.");
-            hideLoading(button, originalText);
+            hideLoading(button);
             return;
         }
         if (projectsToCalcIds.length === 0) {
             alert("No projects to calculate.");
-            hideLoading(button, originalText);
+            hideLoading(button);
             return;
         }
 
@@ -1638,7 +1642,7 @@ function setupEventListeners() {
         currentTechStats = combinedTechStats;
         applyFilters();
         document.getElementById('results-title').textContent = `Bonus Payouts for: ${isCustomized ? 'Selected Projects' : 'All Projects'}`;
-        hideLoading(button, originalText);
+        hideLoading(button);
     });
     
     addSafeListener('customize-calc-all-cb', 'change', (e) => {
@@ -1662,13 +1666,12 @@ function setupEventListeners() {
     // --- Merge Modal ---
     addSafeListener('merge-save-btn', 'click', async (e) => {
         const button = e.target;
-        const originalText = button.innerHTML;
         showLoading(button);
 
         const projectName = document.getElementById('merge-project-name').value.trim();
         if (!projectName) {
             alert("Please enter a project name.");
-            hideLoading(button, originalText);
+            hideLoading(button);
             return;
         }
         const properties = mergedFeatures.map(f => f.properties);
@@ -1692,7 +1695,7 @@ function setupEventListeners() {
         } catch (error) {
             // Error is logged in save function
         } finally {
-            hideLoading(button, originalText);
+            hideLoading(button);
         }
     });
 
