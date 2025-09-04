@@ -15,6 +15,7 @@ let isSaving = false; // Flag to prevent recursive event firing
 let mergedFeatures = []; // To store features from dropped files in the merge modal
 let currentDataHeaders = []; // To store headers of the currently parsed data
 let currentDataLines = []; // To store lines of the currently parsed data
+let fix4Counts = {}; // To store the fix4 breakdown
 
 const DB_NAME = 'BonusCalculatorDB';
 const TECH_ID_REGEX = /^\d{4}[a-zA-Z]{2}$/;
@@ -635,6 +636,7 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
     const headerMap = {};
     currentDataHeaders.forEach((h, i) => { headerMap[h.toLowerCase()] = i; });
     
+    fix4Counts = {};
     const summaryStats = { totalRows: 0, comboTasks: 0, totalIncorrect: 0, totalMiss: 0 };
     const allIdCols = currentDataHeaders.filter(h => h.toLowerCase().endsWith('_id'));
     
@@ -675,6 +677,10 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
         const fix2_id = values[headerMap['fix2_id']]?.trim();
         const fix3_id = values[headerMap['fix3_id']]?.trim();
         const fix4_id = values[headerMap['fix4_id']]?.trim();
+
+        if (fix4_id && TECH_ID_REGEX.test(fix4_id)) {
+            fix4Counts[fix4_id] = (fix4Counts[fix4_id] || 0) + 1;
+        }
 
         // --- Fix Task Point Calculation ---
         const processFixTech = (techId, catSources) => {
@@ -1105,6 +1111,52 @@ function updateWorkloadChart(techStats) {
     });
 }
 
+function updateTLSummary(techStats) {
+    const tlCard = document.getElementById('tl-summary-card');
+    if (Object.keys(techStats).length === 0) {
+        tlCard.classList.add('hidden');
+        return;
+    }
+    tlCard.classList.remove('hidden');
+
+    // Quality Per Team
+    const teamQualityContainer = document.getElementById('team-quality-container');
+    teamQualityContainer.innerHTML = '';
+    const teamQualities = {};
+    for (const team in teamSettings) {
+        const teamTechs = teamSettings[team];
+        const teamTechStats = teamTechs.map(id => techStats[id]).filter(Boolean);
+        if (teamTechStats.length > 0) {
+            const totalQuality = teamTechStats.reduce((sum, stat) => {
+                const denominator = stat.fixTasks + stat.refixTasks + stat.warnings.length;
+                return sum + (denominator > 0 ? (stat.fixTasks / denominator) * 100 : 0);
+            }, 0);
+            teamQualities[team] = totalQuality / teamTechStats.length;
+        }
+    }
+    for (const team in teamQualities) {
+        const quality = teamQualities[team];
+        const qualityBar = document.createElement('div');
+        qualityBar.className = 'workload-bar-wrapper';
+        qualityBar.innerHTML = `
+            <div class="workload-label" title="${team}">${team}</div>
+            <div class="workload-bar">
+                <div class="workload-bar-inner" style="width: ${quality.toFixed(2)}%;">${quality.toFixed(2)}%</div>
+            </div>`;
+        teamQualityContainer.appendChild(qualityBar);
+    }
+    
+    // Fix4 Breakdown
+    const fix4Body = document.getElementById('fix4-breakdown-body');
+    fix4Body.innerHTML = '';
+    const sortedFix4 = Object.entries(fix4Counts).sort(([,a],[,b]) => b-a);
+    sortedFix4.forEach(([techId, count]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td class="p-2">${techId}</td><td class="p-2">${count}</td>`;
+        fix4Body.appendChild(row);
+    });
+}
+
 
 function applyFilters() {
     const searchInput = document.getElementById('search-tech-id');
@@ -1138,6 +1190,7 @@ function applyFilters() {
     displayResults(filteredStats);
     updateLeaderboard(filteredStats);
     updateWorkloadChart(filteredStats);
+    updateTLSummary(filteredStats);
 }
 
 function showNotification(message) {
@@ -1364,6 +1417,16 @@ function clearAllData() {
     };
 }
 
+function showLoading(button) {
+    button.disabled = true;
+    button.innerHTML = '<span class="loader"></span>';
+}
+
+function hideLoading(button, originalText) {
+    button.disabled = false;
+    button.innerHTML = originalText;
+}
+
 function setupEventListeners() {
     // Helper function to safely add event listeners
     const addSafeListener = (id, event, handler) => {
@@ -1433,22 +1496,23 @@ function setupEventListeners() {
         if (projectId) loadProjectIntoForm(projectId);
     });
 
-    addSafeListener('save-project-btn', 'click', async () => {
+    addSafeListener('save-project-btn', 'click', async (e) => {
+        const button = e.target;
+        const originalText = button.innerHTML;
+        showLoading(button);
         if (isSaving) return;
         isSaving = true;
-        const saveButton = document.getElementById('save-project-btn');
-        const originalButtonText = saveButton.textContent;
+        
         const projectName = document.getElementById('project-name').value.trim();
         const techData = document.getElementById('techData').value.trim();
 
         if (!projectName || !techData) {
             alert("Please provide both a project name and project data.");
             isSaving = false;
+            hideLoading(button, originalText);
             return;
         }
 
-        saveButton.disabled = true;
-        saveButton.textContent = 'Saving...';
         const existingId = document.getElementById('project-select').value;
         const isEditing = !!existingId && !document.getElementById('techData').readOnly;
         const projectId = isEditing ? existingId : projectName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_' + Date.now();
@@ -1466,24 +1530,30 @@ function setupEventListeners() {
         } catch (error) {
             // Error is logged in save function
         } finally {
-            saveButton.disabled = false;
-            saveButton.textContent = originalButtonText;
+            hideLoading(button, originalText);
             isSaving = false;
         }
     });
 
     // --- Calculation Panel ---
-    addSafeListener('calculate-btn', 'click', async () => {
+    addSafeListener('calculate-btn', 'click', async (e) => {
+        const button = e.target;
+        const originalText = button.innerHTML;
+        showLoading(button);
+
         const projectId = document.getElementById('project-select').value;
         if (!projectId) {
             const techData = document.getElementById('techData').value.trim();
-            if(!techData) return alert("Please select a project or paste data to calculate.");
+            if(!techData) {
+                alert("Please select a project or paste data to calculate.");
+                hideLoading(button, originalText);
+                return;
+            }
             
             const isIR = document.getElementById('is-ir-project-checkbox').checked;
             const gsdVal = document.getElementById('gsd-value-select').value;
             lastUsedGsdValue = gsdVal;
             
-            showNotification('Calculating pasted data...');
             const parsed = parseRawData(techData, isIR, 'Pasted Data', gsdVal);
             if (parsed) {
                 currentTechStats = parsed.techStats;
@@ -1492,7 +1562,6 @@ function setupEventListeners() {
             }
 
         } else {
-            showNotification('Calculating selected project...');
             const projectData = await fetchFullProjectData(projectId);
             if (projectData) {
                 lastUsedGsdValue = projectData.gsdValue;
@@ -1504,18 +1573,29 @@ function setupEventListeners() {
                 }
             }
         }
+        hideLoading(button, originalText);
     });
 
-    addSafeListener('calculate-all-btn', 'click', async () => {
+    addSafeListener('calculate-all-btn', 'click', async (e) => {
+        const button = e.target;
+        const originalText = button.innerHTML;
+        showLoading(button);
+
         const selectEl = document.getElementById('project-select');
         const selectedProjectIds = Array.from(selectEl.options).filter(opt => opt.selected).map(opt => opt.value).filter(Boolean);
         const isCustomized = document.getElementById('customize-calc-all-cb').checked;
 
         let projectsToCalcIds = isCustomized ? selectedProjectIds : projectListCache.map(p => p.id);
-        if (isCustomized && selectedProjectIds.length === 0) return alert("Please select projects from the list to calculate.");
-        if (projectsToCalcIds.length === 0) return alert("No projects to calculate.");
-
-        showNotification(`Calculating ${projectsToCalcIds.length} project(s)...`);
+        if (isCustomized && selectedProjectIds.length === 0) {
+            alert("Please select projects from the list to calculate.");
+            hideLoading(button, originalText);
+            return;
+        }
+        if (projectsToCalcIds.length === 0) {
+            alert("No projects to calculate.");
+            hideLoading(button, originalText);
+            return;
+        }
 
         const combinedTechStats = {};
 
@@ -1543,6 +1623,7 @@ function setupEventListeners() {
         currentTechStats = combinedTechStats;
         applyFilters();
         document.getElementById('results-title').textContent = `Bonus Payouts for: ${isCustomized ? 'Selected Projects' : 'All Projects'}`;
+        hideLoading(button, originalText);
     });
     
     addSafeListener('customize-calc-all-cb', 'change', (e) => {
@@ -1557,17 +1638,23 @@ function setupEventListeners() {
     addSafeListener('search-tech-id', 'input', applyFilters);
     addSafeListener('team-filter-container', 'change', applyFilters);
     addSafeListener('refresh-teams-btn', 'click', loadTeamSettings);
-    addSafeListener('leaderboard-sort-select', 'change', applyFilters);
+    addSafeListener('leaderboard-sort-select', 'change', () => updateLeaderboard(currentTechStats));
 
     // --- Manage Teams Modal ---
     addSafeListener('add-team-btn', 'click', () => addTeamCard());
     addSafeListener('save-teams-btn', 'click', saveTeamSettings);
 
     // --- Merge Modal ---
-    addSafeListener('merge-save-btn', 'click', async () => {
+    addSafeListener('merge-save-btn', 'click', async (e) => {
+        const button = e.target;
+        const originalText = button.innerHTML;
+        showLoading(button);
+
         const projectName = document.getElementById('merge-project-name').value.trim();
         if (!projectName) {
-            return alert("Please enter a project name.");
+            alert("Please enter a project name.");
+            hideLoading(button, originalText);
+            return;
         }
         const properties = mergedFeatures.map(f => f.properties);
         const headers = Object.keys(properties[0]);
@@ -1589,6 +1676,8 @@ function setupEventListeners() {
             closeModal('merge-fixpoints-modal');
         } catch (error) {
             // Error is logged in save function
+        } finally {
+            hideLoading(button, originalText);
         }
     });
 
