@@ -368,7 +368,6 @@ function populateAdvanceSettingsEditor() {
             <button id="add-tier-btn" class="btn-secondary mt-4">Add Tier</button>
         </div>
         <div id="tab-points" class="tab-content">
-            <!-- Points Settings Content -->
             <div class="space-y-4">
                 <div>
                     <label for="setting-ir-modifier" class="block text-sm font-medium text-brand-400">IR Modifier</label>
@@ -413,7 +412,6 @@ function populateAdvanceSettingsEditor() {
             </div>
         </div>
         <div id="tab-counting" class="tab-content">
-            <!-- Counting Logic Content -->
             <div class="space-y-4">
                 <div>
                     <h4 class="font-semibold text-white">Task Columns</h4>
@@ -728,7 +726,7 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
             if (!!values[headerMap['category']]?.trim()) {
                 fix1Sources.push({ cat: 'category', sourceType: 'primary' });
             }
-            fix1Sources.push({ cat: 'i3qa_cat', label: 'i3qa_label', condition: val => val && countingSettings.triggers.miss.labels.some(l => val.includes(l.toUpperCase())), sourceType: 'i3qa' }); // Remove || val.includes('C')
+            fix1Sources.push({ cat: 'i3qa_cat', label: 'i3qa_label', condition: val => val && countingSettings.triggers.miss.labels.some(l => val.includes(l.toUpperCase())), sourceType: 'i3qa' });
         }  
         processFixTech(fix1_id, fix1Sources);
 
@@ -793,9 +791,6 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
             qcColIndices.forEach(qcColIndex => {
                 const qcTechId = values[qcColIndex]?.trim();
                 if (qcTechId && techStats[qcTechId]) {
-                    // This logic assumes points were already added and now need to be subtracted.
-                    // The addPointsForTask runs before this, so we subtract from the QC tech
-                    // and then add to the i3QA tech.
                     techStats[qcTechId].points -= calculationSettings.points.qc;
                     techStats[qcTechId].pointsBreakdown.qc -= calculationSettings.points.qc;
                     pointsToTransfer += calculationSettings.points.qc;
@@ -1645,9 +1640,9 @@ function setupEventListeners() {
                     combinedTechStats[techId].id = techId;
                     combinedTechStats[techId].points += stat.points;
                     combinedTechStats[techId].fixTasks += stat.fixTasks;
+                    combinedTechStats[techId].afpTasks += stat.afpTasks;
                     combinedTechStats[techId].refixTasks += stat.refixTasks;
                     combinedTechStats[techId].warnings.push(...stat.warnings);
-                    // Combine other stats as needed
                 }
             }
         }
