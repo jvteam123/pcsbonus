@@ -277,7 +277,7 @@ async function saveBonusTiers() {
         await putToDB('bonusTiers', { id: 'customTiers', tiers: newTiers });
         bonusTiers = newTiers; 
         showNotification("Bonus tiers saved successfully.");
-        closeBonusTierModal();
+        closeModal('edit-bonus-tiers-modal');
     } catch (error) {
         console.error("Error saving bonus tiers: ", error);
         alert("Failed to save bonus tiers.");
@@ -339,7 +339,7 @@ async function saveCalculationSettings() {
         await putToDB('calculationSettings', { id: 'customSettings', settings: newSettings });
         calculationSettings = newSettings;
         showNotification("Calculation settings saved successfully.");
-        closeCalcSettingsModal();
+        closeModal('calculation-settings-modal');
     } catch (error) {
         console.error("Error saving calculation settings:", error);
         alert("Failed to save calculation settings.");
@@ -405,7 +405,7 @@ async function saveCountingSettings() {
         await putToDB('countingSettings', { id: 'customCounting', settings: newSettings });
         countingSettings = newSettings;
         showNotification("Counting logic saved successfully.");
-        closeCountingSettingsModal();
+        closeModal('counting-settings-modal');
     } catch (error) {
         console.error("Error saving counting settings:", error);
         alert("Failed to save counting settings.");
@@ -800,20 +800,10 @@ function displayResults(techStats) {
     lastUsedBonusMultiplier = bonusMultiplier;
     lastCalculationUsedMultiplier = !!bonusMultiplier && bonusMultiplier !== 1;
 
-    const tbody = document.getElementById('tech-results-body');
-    const thead = document.getElementById('results-thead');
-    tbody.innerHTML = '';
+    const resultsGrid = document.getElementById('tech-results-grid');
+    resultsGrid.innerHTML = '';
 
     const infoIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.064.293.006.399.287.47l.45.083.082.38-2.29.287-.082-.38.45-.083a.89.89 0 0 1 .352-.176c.24-.11.24-.216.06-.563l-.738-3.468c-.18-.84.48-1.133 1.17-1.133H8l.084.38zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>`;
-    thead.innerHTML = `
-        <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Tech ID</th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Total Points <span class="info-icon" data-key="totalPoints">${infoIconSvg}</span></th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Fix Quality % <span class="info-icon" data-key="fixQuality">${infoIconSvg}</span></th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">% Bonus Earned <span class="info-icon" data-key="bonusEarned">${infoIconSvg}</span></th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Final Payout (PHP) <span class="info-icon" data-key="totalBonus">${infoIconSvg}</span></th>
-        </tr>
-    `;
 
     const sortedTechs = Object.values(techStats).sort((a,b) => b.points - a.points);
 
@@ -823,21 +813,35 @@ function displayResults(techStats) {
         const qualityModifier = calculateQualityModifier(fixQuality);
         const finalPayout = tech.points * bonusMultiplier * qualityModifier;
 
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td class="whitespace-nowrap text-sm font-medium text-white">
-                ${tech.id}
-                <span class="info-icon tech-summary-icon" data-tech-id="${tech.id}">
-                   ${infoIconSvg}
-                </span>
-            </td>
-            <td class="whitespace-nowrap text-sm">${tech.points.toFixed(3)}</td>
-            <td class="whitespace-nowrap text-sm">${fixQuality.toFixed(2)}%</td>
-            <td class="whitespace-nowrap text-sm">${(qualityModifier * 100).toFixed(0)}%</td>
-            <td class="whitespace-nowrap text-sm font-semibold text-accent">${finalPayout.toFixed(2)}</td>
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.innerHTML = `
+            <div class="result-card-header">
+                <h3 class="result-card-title">${tech.id}</h3>
+                <span class="info-icon tech-summary-icon" data-tech-id="${tech.id}">${infoIconSvg}</span>
+            </div>
+            <div class="result-card-body">
+                <div class="result-card-row">
+                    <span class="result-card-label">Total Points</span>
+                    <span class="result-card-value">${tech.points.toFixed(3)}</span>
+                </div>
+                <div class="result-card-row">
+                    <span class="result-card-label">Fix Quality</span>
+                    <span class="result-card-value">${fixQuality.toFixed(2)}%</span>
+                </div>
+                <div class="result-card-row">
+                    <span class="result-card-label">Bonus Earned</span>
+                    <span class="result-card-value">${(qualityModifier * 100).toFixed(0)}%</span>
+                </div>
+            </div>
+            <div class="result-card-row">
+                <span class="result-card-label">Final Payout (PHP)</span>
+                <span class="result-card-payout">${finalPayout.toFixed(2)}</span>
+            </div>
         `;
-        tbody.appendChild(row);
+        resultsGrid.appendChild(card);
     });
+    document.getElementById('bonus-payout-section').classList.remove('hidden');
 }
 
 function populateProjectSelect() {
@@ -1032,14 +1036,12 @@ function showNotification(message) {
 }
 
 // --- MODAL FUNCTIONS ---
-// NOTE: These functions assume you have corresponding modal HTML elements in your index.html
-// For example: <div id="tech-summary-modal" class="modal hidden">...</div>
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('hidden');
     } else {
-        alert(`Modal with ID "${modalId}" not found in HTML.`);
+        console.error(`Modal with ID "${modalId}" not found in HTML.`);
     }
 }
 
@@ -1089,19 +1091,12 @@ function openTechSummaryModal(techId) {
     const tech = currentTechStats[techId];
     if (!tech) return;
 
-    // This is still a placeholder. To make this work, a modal structure needs to be in index.html
-    // For example: Find a modal container, set its title and body, then show it.
     const modalTitle = `Summary for ${techId}`;
     const modalBody = generateTechBreakdownHTML(tech);
     
-    // Example of how you would populate and show a modal:
-    // const titleElement = document.getElementById('tech-summary-modal-title');
-    // const bodyElement = document.getElementById('tech-summary-modal-body');
-    // if (titleElement) titleElement.textContent = modalTitle;
-    // if (bodyElement) bodyElement.innerHTML = modalBody;
-    // openModal('tech-summary-modal');
-    
-    alert(`Showing details for ${techId}. Modal UI needs to be added to index.html to display the full breakdown.`);
+    document.getElementById('tech-summary-modal-title').textContent = modalTitle;
+    document.getElementById('tech-summary-modal-body').innerHTML = modalBody;
+    openModal('tech-summary-modal');
 }
 
 
@@ -1111,12 +1106,12 @@ function resetUIForNewCalculation() {
     if (placeholder) placeholder.classList.remove('hidden');
     if (content) content.classList.add('hidden');
     
-    const techResultsBody = document.getElementById('tech-results-body');
+    const techResultsGrid = document.getElementById('tech-results-grid');
     const resultsTitle = document.getElementById('results-title');
     const leaderboardBody = document.getElementById('leaderboard-body');
     const workloadChart = document.getElementById('workload-chart-container');
 
-    if (techResultsBody) techResultsBody.innerHTML = '';
+    if (techResultsGrid) techResultsGrid.innerHTML = '';
     if (resultsTitle) resultsTitle.textContent = 'Bonus Payouts';
     if (leaderboardBody) leaderboardBody.innerHTML = '';
     if (workloadChart) workloadChart.innerHTML = '';
@@ -1255,7 +1250,10 @@ function setupEventListeners() {
     addSafeListener('edit-bonus-tiers-btn', 'click', () => openModal('edit-bonus-tiers-modal'));
     addSafeListener('calculation-settings-btn', 'click', () => openModal('calculation-settings-modal'));
     addSafeListener('counting-settings-btn', 'click', () => openModal('counting-settings-modal'));
-    addSafeListener('how-it-works-btn', 'click', () => openModal('how-it-works-modal'));
+    addSafeListener('how-it-works-btn', 'click', () => {
+        document.getElementById('how-it-works-body').innerHTML = calculationInfo.howItWorks.body;
+        openModal('how-it-works-modal');
+    });
     addSafeListener('bug-report-btn', 'click', () => {
         window.open("https://teams.microsoft.com/l/chat/48:notes/conversations?context=%7B%22contextType%22%3A%22chat%22%7D", "_blank");
     });
@@ -1266,7 +1264,10 @@ function setupEventListeners() {
         const icon = e.target.closest('.info-icon:not(.tech-summary-icon)');
         if (icon && icon.dataset.key) {
             e.stopPropagation();
-            alert(`Showing info for ${icon.dataset.key}. Modal UI needs to be implemented.`);
+            const info = calculationInfo[icon.dataset.key];
+            if(info) {
+                alert(`${info.title}\n\n${info.body.replace(/<[^>]*>/g, '')}`);
+            }
         }
         const techIcon = e.target.closest('.tech-summary-icon');
         if (techIcon && techIcon.dataset.techId) {
@@ -1340,30 +1341,16 @@ function setupEventListeners() {
     });
 
     // --- Calculation Panel ---
-    addSafeListener('calculateCurrentBtn', 'click', async () => {
+    addSafeListener('calculate-btn', 'click', async () => {
         const projectId = document.getElementById('project-select').value;
-        if (!projectId) return alert("Please select a project.");
-        
-        showNotification('Calculating selected project...');
-        const projectData = await fetchFullProjectData(projectId);
-        if (projectData) {
-            lastUsedGsdValue = projectData.gsdValue;
-            const parsed = parseRawData(projectData.rawData, projectData.isIRProject, projectData.name, projectData.gsdValue);
-            if (parsed) {
-                currentTechStats = parsed.techStats;
-                applyFilters();
-                document.getElementById('results-title').textContent = `Bonus Payouts for: ${projectData.name}`;
-            }
-        }
-    });
-
-    addSafeListener('calculatePastedDataBtn', 'click', () => {
-        const techData = document.getElementById('techData').value.trim();
-        const isIR = document.getElementById('is-ir-project-checkbox').checked;
-        const gsdVal = document.getElementById('gsd-value-select').value;
-        lastUsedGsdValue = gsdVal;
-        
-        if (techData) {
+        if (!projectId) {
+            const techData = document.getElementById('techData').value.trim();
+            if(!techData) return alert("Please select a project or paste data to calculate.");
+            
+            const isIR = document.getElementById('is-ir-project-checkbox').checked;
+            const gsdVal = document.getElementById('gsd-value-select').value;
+            lastUsedGsdValue = gsdVal;
+            
             showNotification('Calculating pasted data...');
             const parsed = parseRawData(techData, isIR, 'Pasted Data', gsdVal);
             if (parsed) {
@@ -1371,7 +1358,20 @@ function setupEventListeners() {
                 applyFilters();
                 document.getElementById('results-title').textContent = `Bonus Payouts for: Pasted Data`;
             }
-        } else alert("Please paste data into the text box first.");
+
+        } else {
+            showNotification('Calculating selected project...');
+            const projectData = await fetchFullProjectData(projectId);
+            if (projectData) {
+                lastUsedGsdValue = projectData.gsdValue;
+                const parsed = parseRawData(projectData.rawData, projectData.isIRProject, projectData.name, projectData.gsdValue);
+                if (parsed) {
+                    currentTechStats = parsed.techStats;
+                    applyFilters();
+                    document.getElementById('results-title').textContent = `Bonus Payouts for: ${projectData.name}`;
+                }
+            }
+        }
     });
 
     addSafeListener('calculate-all-btn', 'click', async () => {
