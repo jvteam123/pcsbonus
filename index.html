@@ -134,9 +134,25 @@
                                 <div id="workload-chart-container" class="space-y-2 overflow-y-auto max-h-52 pr-2 custom-scrollbar"></div>
                             </div>
                             <div>
-                                <h3 class="text-lg font-semibold text-white mb-2">Leaderboard</h3>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="text-lg font-semibold text-white">Leaderboard</h3>
+                                    <select id="leaderboard-sort-select" class="input-field text-xs py-1">
+                                        <option value="fixQuality">Rank by Fix Quality %</option>
+                                        <option value="totalPoints">Rank by Total Points</option>
+                                        <option value="fixTasks">Rank by Total Tasks</option>
+                                    </select>
+                                </div>
                                 <div class="table-container text-sm max-h-48 border border-brand-700 rounded-md custom-scrollbar">
-                                    <table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr><th class="p-2 text-left">Rank</th><th class="p-2 text-left">Tech</th><th id="leaderboard-quality-header" class="p-2 text-left">Quality</th><th id="leaderboard-points-header" class="p-2 text-left">Points</th></tr></thead><tbody id="leaderboard-body"></tbody></table>
+                                    <table class="min-w-full">
+                                        <thead class="sticky top-0 bg-brand-800">
+                                            <tr>
+                                                <th class="p-2 text-left">Rank</th>
+                                                <th class="p-2 text-left">Tech</th>
+                                                <th id="leaderboard-metric-header" class="p-2 text-left">Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="leaderboard-body"></tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
