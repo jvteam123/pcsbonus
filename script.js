@@ -914,9 +914,9 @@ function updateLeaderboard(techStats) {
     const tbody = document.getElementById('leaderboard-body');
     const sortSelect = document.getElementById('leaderboard-sort-select');
     const metricHeader = document.getElementById('leaderboard-metric-header');
-    if (!tbody || !sortSelect || !metricHeader) return;
+    if (!tbody || !metricHeader) return;
     
-    const sortBy = sortSelect.value;
+    const sortBy = sortSelect ? sortSelect.value : 'fixTasks'; // Default sort
     tbody.innerHTML = '';
 
     const getTeamName = (techId) => {
@@ -945,7 +945,7 @@ function updateLeaderboard(techStats) {
     } else if (sortBy === 'fixQuality') {
         techArray.sort((a, b) => b.fixQuality - a.fixQuality);
         metricHeader.textContent = 'Quality %';
-    } else { // Default to totalTasks
+    } else { // Default to fixTasks
         techArray.sort((a, b) => b.fixTasks - a.fixTasks);
         metricHeader.textContent = 'Tasks';
     }
@@ -955,7 +955,7 @@ function updateLeaderboard(techStats) {
     techArray.forEach((stat, index) => {
         const row = document.createElement('tr');
         let value;
-        if (sortBy === 'totalTasks') value = stat.fixTasks;
+        if (sortBy === 'fixTasks') value = stat.fixTasks;
         else if (sortBy === 'totalPoints') value = stat.totalPoints.toFixed(2);
         else if (sortBy === 'fixQuality') value = `${stat.fixQuality.toFixed(2)}%`;
         
@@ -1032,18 +1032,25 @@ function showNotification(message) {
 }
 
 // --- MODAL FUNCTIONS ---
+// NOTE: These functions assume you have corresponding modal HTML elements in your index.html
+// For example: <div id="tech-summary-modal" class="modal hidden">...</div>
 function openModal(modalId) {
-    // A generic modal opener function could be created here if needed.
-    // For now, specific functions are clearer.
-    alert(`Opening modal: ${modalId}. Modal UI and logic needs to be added.`);
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('hidden');
+    } else {
+        alert(`Modal with ID "${modalId}" not found in HTML.`);
+    }
 }
 
 function closeModal(modalId) {
-    // A generic modal closer.
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+    }
 }
 
 function generateTechBreakdownHTML(tech) {
-    // This function can be styled later to match the new theme if needed
     const warningsCount = tech.warnings.length;
     const denominator = tech.fixTasks + tech.refixTasks + warningsCount;
     const fixQuality = denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0;
@@ -1083,7 +1090,18 @@ function openTechSummaryModal(techId) {
     if (!tech) return;
 
     // This is still a placeholder. To make this work, a modal structure needs to be in index.html
-    alert(`Showing details for ${techId}. Modal UI needs to be added to index.html to display full breakdown.`);
+    // For example: Find a modal container, set its title and body, then show it.
+    const modalTitle = `Summary for ${techId}`;
+    const modalBody = generateTechBreakdownHTML(tech);
+    
+    // Example of how you would populate and show a modal:
+    // const titleElement = document.getElementById('tech-summary-modal-title');
+    // const bodyElement = document.getElementById('tech-summary-modal-body');
+    // if (titleElement) titleElement.textContent = modalTitle;
+    // if (bodyElement) bodyElement.innerHTML = modalBody;
+    // openModal('tech-summary-modal');
+    
+    alert(`Showing details for ${techId}. Modal UI needs to be added to index.html to display the full breakdown.`);
 }
 
 
@@ -1231,13 +1249,19 @@ function setupEventListeners() {
         }
     };
 
-    // Main menu dropdown is handled by the inline script in index.html
-    addSafeListener('how-it-works-btn', 'click', () => alert("Modal for 'How It Works' needs to be implemented."));
+    // --- Main Menu Dropdown Items ---
+    addSafeListener('merge-fixpoints-btn', 'click', () => openModal('merge-fixpoints-modal'));
+    addSafeListener('manage-teams-btn', 'click', () => openModal('manage-teams-modal'));
+    addSafeListener('edit-bonus-tiers-btn', 'click', () => openModal('edit-bonus-tiers-modal'));
+    addSafeListener('calculation-settings-btn', 'click', () => openModal('calculation-settings-modal'));
+    addSafeListener('counting-settings-btn', 'click', () => openModal('counting-settings-modal'));
+    addSafeListener('how-it-works-btn', 'click', () => openModal('how-it-works-modal'));
     addSafeListener('bug-report-btn', 'click', () => {
         window.open("https://teams.microsoft.com/l/chat/48:notes/conversations?context=%7B%22contextType%22%3A%22chat%22%7D", "_blank");
     });
     addSafeListener('clear-data-btn', 'click', clearAllData);
     
+    // --- Info Icons ---
     document.body.addEventListener('click', (e) => {
         const icon = e.target.closest('.info-icon:not(.tech-summary-icon)');
         if (icon && icon.dataset.key) {
@@ -1249,8 +1273,10 @@ function setupEventListeners() {
             openTechSummaryModal(techIcon.dataset.techId);
         }
     });
-
+    
+    // --- Project Panel ---
     addSafeListener('refresh-projects-btn', 'click', fetchProjectListSummary);
+    addSafeListener('reorder-projects-btn', 'click', () => openModal('reorder-projects-modal'));
     addSafeListener('project-select', 'change', (e) => {
         if (!isSaving) loadProjectIntoForm(e.target.value);
     });
@@ -1274,6 +1300,46 @@ function setupEventListeners() {
         if (projectId) loadProjectIntoForm(projectId);
     });
 
+    addSafeListener('save-project-btn', 'click', async () => {
+        if (isSaving) return;
+        isSaving = true;
+        const saveButton = document.getElementById('save-project-btn');
+        const originalButtonText = saveButton.textContent;
+        const projectName = document.getElementById('project-name').value.trim();
+        const techData = document.getElementById('techData').value.trim();
+
+        if (!projectName || !techData) {
+            alert("Please provide both a project name and project data.");
+            isSaving = false;
+            return;
+        }
+
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+        const existingId = document.getElementById('project-select').value;
+        const isEditing = !!existingId && !document.getElementById('techData').readOnly;
+        const projectId = isEditing ? existingId : projectName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_' + Date.now();
+        const isIR = document.getElementById('is-ir-project-checkbox').checked;
+        const gsdVal = document.getElementById('gsd-value-select').value;
+        const projectData = { id: projectId, name: projectName, rawData: techData, isIRProject: isIR, gsdValue: gsdVal };
+        
+        if (isEditing) delete fullProjectDataCache[projectId];
+
+        try {
+            await saveProjectToIndexedDB(projectData);
+            await fetchProjectListSummary();
+            document.getElementById('project-select').value = projectData.id;
+            await loadProjectIntoForm(projectData.id);
+        } catch (error) {
+            // Error is logged in save function
+        } finally {
+            saveButton.disabled = false;
+            saveButton.textContent = originalButtonText;
+            isSaving = false;
+        }
+    });
+
+    // --- Calculation Panel ---
     addSafeListener('calculateCurrentBtn', 'click', async () => {
         const projectId = document.getElementById('project-select').value;
         if (!projectId) return alert("Please select a project.");
@@ -1307,45 +1373,6 @@ function setupEventListeners() {
             }
         } else alert("Please paste data into the text box first.");
     });
-    
-    addSafeListener('save-project-btn', 'click', async () => {
-        if (isSaving) return;
-        isSaving = true;
-        const saveButton = document.getElementById('save-project-btn');
-        const originalButtonText = saveButton.textContent;
-        const projectName = document.getElementById('project-name').value.trim();
-        const techData = document.getElementById('techData').value.trim();
-
-        if (!projectName || !techData) {
-            alert("Please provide both a project name and project data.");
-            isSaving = false;
-            return;
-        }
-
-        saveButton.disabled = true;
-        saveButton.textContent = 'Saving...';
-        const existingId = document.getElementById('project-select').value;
-        const isEditing = !!existingId && !document.getElementById('techData').readOnly;
-        const projectId = isEditing ? existingId : projectName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_' + Date.now();
-        const isIR = document.getElementById('is-ir-project-checkbox').checked;
-        const gsdVal = document.getElementById('gsd-value-select').value;
-        const projectData = { id: projectId, name: projectName, rawData: techData, isIRProject: isIR, gsdValue: gsdVal };
-        
-        if (isEditing) delete fullProjectDataCache[projectId];
-
-        try {
-            await saveProjectToIndexedDB(projectData);
-            await fetchProjectListSummary();
-            document.getElementById('project-select').value = projectData.id;
-            await loadProjectIntoForm(projectData.id);
-        } catch (error) {
-            // Error logged in save function
-        } finally {
-            saveButton.disabled = false;
-            saveButton.textContent = originalButtonText;
-            isSaving = false;
-        }
-    });
 
     addSafeListener('calculate-all-btn', 'click', async () => {
         const selectEl = document.getElementById('project-select');
@@ -1376,7 +1403,7 @@ function setupEventListeners() {
                     combinedTechStats[techId].fixTasks += stat.fixTasks;
                     combinedTechStats[techId].refixTasks += stat.refixTasks;
                     combinedTechStats[techId].warnings.push(...stat.warnings);
-                    // ... combine other stats as needed ...
+                    // Combine other stats as needed
                 }
             }
         }
@@ -1386,9 +1413,6 @@ function setupEventListeners() {
         document.getElementById('results-title').textContent = `Bonus Payouts for: ${isCustomized ? 'Selected Projects' : 'All Projects'}`;
     });
     
-    addSafeListener('search-tech-id', 'input', applyFilters);
-    addSafeListener('team-filter-container', 'change', applyFilters);
-    
     addSafeListener('customize-calc-all-cb', 'change', (e) => {
         const selectEl = document.getElementById('project-select');
         if (selectEl) {
@@ -1396,13 +1420,20 @@ function setupEventListeners() {
             selectEl.size = e.target.checked ? 6 : 1;
         }
     });
-    addSafeListener('leaderboard-sort-select', 'change', applyFilters);
 
+    // --- Results Panel ---
+    addSafeListener('search-tech-id', 'input', applyFilters);
+    addSafeListener('team-filter-container', 'change', applyFilters);
+    addSafeListener('refresh-teams-btn', 'click', loadTeamSettings);
+    // Note: The leaderboard sort select was not found in the provided HTML.
+    // addSafeListener('leaderboard-sort-select', 'change', applyFilters);
+
+    // --- Drag and Drop ---
     const dropZone = document.getElementById('drop-zone');
     if (dropZone) {
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag-over'); });
-        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over'); });
-        dropZone.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over'); handleDroppedFiles(e.dataTransfer.files); });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('bg-brand-700'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('bg-brand-700'); });
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('bg-brand-700'); handleDroppedFiles(e.dataTransfer.files); });
     }
 }
 
@@ -1425,4 +1456,3 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
-
