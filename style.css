@@ -217,3 +217,45 @@ body {
     font-size: 0.625rem;
     line-height: 0.75rem;
 }
+
+/* Result Card Styles */
+.result-card {
+    background-color: #3D3D5C;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border: 1px solid #525279;
+}
+.result-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.result-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+.result-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.result-card-row {
+    display: flex;
+    justify-content: space-between;
+}
+.result-card-label {
+    color: #A6A6CC;
+}
+.result-card-value {
+    font-weight: 500;
+    color: #D9D9F0;
+}
+.result-card-payout {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #00A8FF;
+}
