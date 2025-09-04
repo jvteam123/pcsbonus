@@ -36,13 +36,11 @@
 </head>
 <body class="bg-brand-900 text-brand-300 font-sans antialiased">
 
-    <!-- Update Notification -->
     <div id="update-notification" class="hidden fixed top-5 right-5 bg-accent text-white py-2 px-4 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-y-2 opacity-0">
         Notification message.
     </div>
 
     <div class="w-full max-w-screen-2xl mx-auto p-4 md:p-6">
-        <!-- Minimalist Header -->
         <header class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-white">PCS Bonus Calculator</h1>
@@ -70,16 +68,13 @@
             </div>
         </header>
 
-        <!-- Main Content Grid -->
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- Panel 1: Data & Projects -->
             <div class="dashboard-panel">
                 <div class="panel-header">
                     <h2 class="panel-title">Data & Projects</h2>
                 </div>
                 <div class="p-4 space-y-4">
-                    <!-- Project Loader -->
                     <div>
                         <div class="flex justify-between items-center mb-2">
                             <label class="block text-sm font-medium text-brand-400">Load Saved Project</label>
@@ -94,12 +89,14 @@
                             <select id="project-select" class="input-field w-full">
                                 <option value="">Select a project...</option>
                             </select>
+                             <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+                            </button>
                             <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
                             </button>
                         </div>
                     </div>
-                    <!-- Data Input -->
                     <div class="border-t border-brand-700 pt-4 space-y-3">
                          <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4">
                             <div class="flex items-center">
@@ -131,7 +128,6 @@
                 </div>
             </div>
             
-            <!-- Panel 2: Calculation & Controls -->
             <div class="dashboard-panel">
                 <div class="panel-header">
                     <h2 class="panel-title">Controls & Calculation</h2>
@@ -155,19 +151,16 @@
                  </div>
             </div>
 
-            <!-- Panel 3: Results & Analytics -->
             <div class="dashboard-panel">
                 <div class="panel-header">
                     <h2 class="panel-title">Results & Analytics</h2>
                 </div>
                  <div id="results-section" class="p-4 space-y-6">
-                    <!-- Placeholder shown before calculation -->
                     <div id="results-placeholder" class="text-center py-16 flex flex-col justify-center items-center h-full">
                         <svg class="mx-auto h-12 w-12 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                         <h3 class="mt-2 text-sm font-medium text-white">No results to show</h3>
                         <p class="mt-1 text-sm text-brand-400">Run a calculation to see the results here.</p>
                     </div>
-                    <!-- Actual results, hidden initially -->
                     <div id="results-content" class="hidden space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
@@ -207,8 +200,28 @@
         </main>
     </div>
 
-    <!-- All Modals will be styled with the new theme -->
-    <!-- (Modal HTML is omitted for brevity but is handled by script.js) -->
+    <div id="generic-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                <h3 id="generic-modal-title" class="text-lg font-semibold text-white">Modal Title</h3>
+                <button id="generic-modal-close-btn" class="text-brand-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="generic-modal-body" class="p-6 overflow-y-auto">
+                <p>Modal content goes here...</p>
+            </div>
+            <div id="generic-modal-footer" class="p-4 border-t border-brand-700 text-right space-x-2">
+                 <button id="generic-modal-cancel-btn" class="btn-secondary">Cancel</button>
+                 <button id="generic-modal-save-btn" class="btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+         </div>
 
     <script src="script.js"></script>
     <script>
@@ -233,4 +246,3 @@
     </script>
 </body>
 </html>
-
