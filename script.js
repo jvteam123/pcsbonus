@@ -8,7 +8,7 @@ let lastCalculationUsedMultiplier = false;
 let teamSettings = {};
 let bonusTiers = []; // To hold the bonus tier settings
 let calculationSettings = {}; // To hold all calculation logic values
-let countingSettings = {}; // NEW: To hold all task counting rules
+let countingSettings = {}; // To hold all task counting rules
 let reorderSortable = null;
 let lastUsedGsdValue = '3in';
 let isSaving = false; // Flag to prevent recursive event firing
@@ -17,6 +17,7 @@ let currentDataHeaders = []; // To store headers of the currently parsed data
 let currentDataLines = []; // To store lines of the currently parsed data
 
 const DB_NAME = 'BonusCalculatorDB';
+const TECH_ID_REGEX = /^\d{4}[a-zA-Z]{2}$/;
 
 const defaultTeams = {
     "Team 123": ["7244AA", "7240HH", "7247JA", "4232JD", "4475JT", "4472JS", "4426KV", "7236LE", "7039NO", "7231NR", "7249SS", "7314VP"],
@@ -120,7 +121,7 @@ const calculationInfo = {
                             <li><strong class="text-gray-300">Pasted Data:</strong> If you don't want to save the data, simply paste it, set the options, and click <strong class="text-purple-400">Calculate Pasted Data</strong>.</li>
                             <li><strong class="text-gray-300">Multiple Projects:</strong> Check the "Select specific projects" box, hold Ctrl/Cmd and click to select multiple projects from the list, then click <strong class="text-green-400">Calculate All Projects</strong>. To calculate every saved project, simply leave the box unchecked and click the same button.</li>
                             <li><strong class="text-gray-300">Bonus Multiplier:</strong> Enter a value in the "Bonus Multiplier (PHP)" field to apply a multiplier to the final payout for all technicians. For example, 1.1 means a 10% bonus.</li>
-                             <li><strong class="text-gray-300">Customize Everything:</strong> Use the <strong class="text-purple-400">Edit Bonus Tiers</strong>, <strong class="text-red-400">Point Settings</strong>, and <strong class="text-orange-400">Counting Settings</strong> buttons to customize the entire calculation logic.</li>
+                             <li><strong class="text-gray-300">Customize Everything:</strong> Use the <strong class="text-purple-400">Advance Settings</strong> button to customize the entire calculation logic.</li>
                         </ul>
                     </div>
                      <div>
@@ -141,10 +142,10 @@ const calculationInfo = {
                     <p>The calculation is a four-step process based on the official documentation. All numerical values and counting logic can be customized in the settings.</p>
                      <div>
                         <h4 class="font-bold text-gray-200">Step 1: Point Calculation</h4>
-                        <p class="text-gray-400">The tool first calculates the <strong class="text-gray-300">Total Points</strong> for each technician by summing up points from different task types, as defined in the <strong class="text-orange-400">Counting Settings</strong>:</p>
+                        <p class="text-gray-400">The tool first calculates the <strong class="text-gray-300">Total Points</strong> for each technician by summing up points from different task types, as defined in the <strong class="text-orange-400">Advance Settings</strong>:</p>
                         <ul class="list-disc list-inside mt-1 space-y-1 text-gray-400">
-                            <li><strong class="text-gray-300">Fix Tasks:</strong> Points are based on the category and the selected GSD value. All point values are defined in the <strong class="text-red-400">Point Settings</strong>. If the project is marked as "IR", the total points for a fix task row are multiplied by the customizable IR Modifier.</li>
-                            <li><strong class="text-gray-300">QC, i3qa, RV Tasks:</strong> Each task is awarded a specific point value, which can be edited in the <strong class="text-red-400">Point Settings</strong>.</li>
+                            <li><strong class="text-gray-300">Fix Tasks:</strong> Points are based on the category and the selected GSD value. All point values are defined in the <strong class="text-red-400">Advance Settings</strong>. If the project is marked as "IR", the total points for a fix task row are multiplied by the customizable IR Modifier.</li>
+                            <li><strong class="text-gray-300">QC, i3qa, RV Tasks:</strong> Each task is awarded a specific point value, which can be edited in the <strong class="text-red-400">Advance Settings</strong>.</li>
                             <li><strong class="text-yellow-300">Point Transfers:</strong> If a QC task is flagged with a 'Missing' or 'Incomplete' tag during i3QA, the points for that QC task are subtracted from the QC tech and awarded to the i3QA tech.</li>
                         </ul>
                     </div>
@@ -152,11 +153,11 @@ const calculationInfo = {
                         <h4 class="font-bold text-gray-200">Step 2: Fix Quality Percentage</h4>
                         <p class="text-gray-400">A technician's quality is crucial. It's calculated with the formula:</p>
                         <div class="code-block my-2 text-gray-300">Fix Quality % = (Fix Tasks / (Fix Tasks + Refix Tasks + Warnings)) * 100</div>
-                        <p class="text-gray-400">What counts as a "Refix" or "Warning" is defined in the <strong class="text-orange-400">Counting Settings</strong>.</p>
+                        <p class="text-gray-400">What counts as a "Refix" or "Warning" is defined in the <strong class="text-orange-400">Advance Settings</strong>.</p>
                     </div>
                      <div>
                         <h4 class="font-bold text-gray-200">Step 3: Bonus Earned Percentage</h4>
-                        <p class="text-gray-400">The <strong class="text-gray-300">Fix Quality %</strong> is used to find the <strong class="text-gray-300">% of Bonus Earned</strong> from a predefined tiered table. This table is fully customizable via the <strong class="text-purple-400">Edit Bonus Tiers</strong> button.</p>
+                        <p class="text-gray-400">The <strong class="text-gray-300">Fix Quality %</strong> is used to find the <strong class="text-gray-300">% of Bonus Earned</strong> from a predefined tiered table. This table is fully customizable via the <strong class="text-purple-400">Advance Settings</strong> button.</p>
                     </div>
                      <div>
                         <h4 class="font-bold text-gray-200">Step 4: Final Payout</h4>
@@ -168,9 +169,9 @@ const calculationInfo = {
         </div>`
     },
     bonusMultiplier: { title: 'Bonus Multiplier (PHP)', body: `<p>An optional multiplier for the final payout. Enter a number (e.g., 1.25 for a 25% bonus) to adjust the final calculated bonus for all technicians.</p>` },
-    totalPoints: { title: 'Total Points Calculation', body: `<p>Points are calculated for each individual task based on its type (Fix, QC, i3qa, RV) and category, then summed for each technician. All point values are customizable in the 'Point Settings' modal.</p>`},
-    fixQuality: { title: 'Fix Quality % Calculation', body: `<p>This measures a technician's accuracy. It's calculated using the formula: <code>[# of Fix Tasks] / ([# of Fix Tasks] + [# of Refix Tasks] + [# of Warnings])</code>. What constitutes a refix or warning is defined in the 'Counting Settings' modal.</p>`},
-    bonusEarned: { title: '% of Bonus Earned Calculation', body: `<p>This percentage is determined by looking up the <strong>Fix Quality %</strong> in a tiered table. This table is customizable via the "Edit Bonus Tiers" button.</p>`},
+    totalPoints: { title: 'Total Points Calculation', body: `<p>Points are calculated for each individual task based on its type (Fix, QC, i3qa, RV) and category, then summed for each technician. All point values are customizable in the 'Advance Settings' modal.</p>`},
+    fixQuality: { title: 'Fix Quality % Calculation', body: `<p>This measures a technician's accuracy. It's calculated using the formula: <code>[# of Fix Tasks] / ([# of Fix Tasks] + [# of Refix Tasks] + [# of Warnings])</code>. What constitutes a refix or warning is defined in the 'Advance Settings' modal.</p>`},
+    bonusEarned: { title: '% of Bonus Earned Calculation', body: `<p>This percentage is determined by looking up the <strong>Fix Quality %</strong> in a tiered table. This table is customizable via the "Advance Settings" button.</p>`},
     totalBonus: { title: 'Final Payout (PHP) Calculation', body: `<p>The final amount a technician receives. It's calculated with the formula: <code>Total Points * Bonus Multiplier * % of Bonus Earned</code></p>`}
 };
 
@@ -258,51 +259,6 @@ async function loadBonusTiers() {
     }
 }
 
-async function saveBonusTiers() {
-    const editor = document.getElementById('bonus-tier-editor-container');
-    const rows = editor.querySelectorAll('.tier-row');
-    const newTiers = [];
-    let isValid = true;
-    rows.forEach(row => {
-        const quality = parseFloat(row.querySelector('.tier-quality-input').value);
-        const bonus = parseFloat(row.querySelector('.tier-bonus-input').value);
-        if (isNaN(quality) || isNaN(bonus)) isValid = false;
-        else newTiers.push({ quality, bonus: bonus / 100 });
-    });
-
-    if (!isValid) return alert("Please ensure all fields are valid numbers.");
-
-    newTiers.sort((a, b) => b.quality - a.quality);
-    try {
-        await putToDB('bonusTiers', { id: 'customTiers', tiers: newTiers });
-        bonusTiers = newTiers; 
-        showNotification("Bonus tiers saved successfully.");
-        closeModal('edit-bonus-tiers-modal');
-    } catch (error) {
-        console.error("Error saving bonus tiers: ", error);
-        alert("Failed to save bonus tiers.");
-    }
-}
-
-function populateBonusTierEditor() {
-    const container = document.getElementById('bonus-tier-editor-container');
-    container.innerHTML = `<div class="grid grid-cols-3 gap-4 font-semibold text-gray-400 pb-2 border-b border-gray-600"><span>Min. Quality %</span><span>Bonus Earned %</span><span>Action</span></div>`;
-    bonusTiers.forEach(tier => addBonusTierRow(tier.quality, tier.bonus * 100));
-}
-
-function addBonusTierRow(quality = '', bonus = '') {
-    const container = document.getElementById('bonus-tier-editor-container');
-    const row = document.createElement('div');
-    row.className = 'tier-row grid grid-cols-3 gap-4 items-center';
-    row.innerHTML = `
-        <input type="number" step="0.5" class="tier-quality-input w-full p-2" value="${quality}">
-        <input type="number" step="1" class="tier-bonus-input w-full p-2" value="${bonus}">
-        <button class="delete-tier-btn bg-red-600/80 text-white font-bold py-2 px-3 rounded-lg hover:bg-red-700 text-sm">Delete</button>
-    `;
-    container.appendChild(row);
-    row.querySelector('.delete-tier-btn').addEventListener('click', (e) => e.target.closest('.tier-row').remove());
-}
-
 async function loadCalculationSettings() {
     try {
         const savedSettings = await getFromDB('calculationSettings', 'customSettings');
@@ -310,63 +266,6 @@ async function loadCalculationSettings() {
     } catch (error) {
         console.error("Error loading calculation settings:", error);
         calculationSettings = JSON.parse(JSON.stringify(defaultCalculationSettings));
-    }
-}
-
-async function saveCalculationSettings() {
-    const newSettings = {
-        irModifierValue: parseFloat(document.getElementById('setting-ir-modifier').value),
-        points: {
-            qc: parseFloat(document.getElementById('setting-qc-points').value),
-            i3qa: parseFloat(document.getElementById('setting-i3qa-points').value),
-            rv1: parseFloat(document.getElementById('setting-rv1-points').value),
-            rv1_combo: parseFloat(document.getElementById('setting-rv1-combo-points').value),
-            rv2: parseFloat(document.getElementById('setting-rv2-points').value)
-        },
-        categoryValues: {}
-    };
-    const tbody = document.getElementById('category-points-tbody');
-    for (let i = 1; i <= 9; i++) {
-        const row = tbody.querySelector(`tr[data-category="${i}"]`);
-        newSettings.categoryValues[i] = {
-            "3in": parseFloat(row.querySelector('input[data-gsd="3in"]').value),
-            "4in": parseFloat(row.querySelector('input[data-gsd="4in"]').value),
-            "6in": parseFloat(row.querySelector('input[data-gsd="6in"]').value),
-            "9in": parseFloat(row.querySelector('input[data-gsd="9in"]').value),
-        };
-    }
-    try {
-        await putToDB('calculationSettings', { id: 'customSettings', settings: newSettings });
-        calculationSettings = newSettings;
-        showNotification("Calculation settings saved successfully.");
-        closeModal('calculation-settings-modal');
-    } catch (error) {
-        console.error("Error saving calculation settings:", error);
-        alert("Failed to save calculation settings.");
-    }
-}
-
-function populateCalcSettingsEditor() {
-    document.getElementById('setting-ir-modifier').value = calculationSettings.irModifierValue;
-    document.getElementById('setting-qc-points').value = calculationSettings.points.qc;
-    document.getElementById('setting-i3qa-points').value = calculationSettings.points.i3qa;
-    document.getElementById('setting-rv1-points').value = calculationSettings.points.rv1;
-    document.getElementById('setting-rv1-combo-points').value = calculationSettings.points.rv1_combo;
-    document.getElementById('setting-rv2-points').value = calculationSettings.points.rv2;
-    const tbody = document.getElementById('category-points-tbody');
-    tbody.innerHTML = '';
-    for (let i = 1; i <= 9; i++) {
-        const row = document.createElement('tr');
-        row.dataset.category = i;
-        row.className = "bg-gray-800/50";
-        row.innerHTML = `
-            <td class="p-2 font-semibold">Category ${i}</td>
-            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="3in" value="${calculationSettings.categoryValues[i]['3in']}"></td>
-            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="4in" value="${calculationSettings.categoryValues[i]['4in']}"></td>
-            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="6in" value="${calculationSettings.categoryValues[i]['6in']}"></td>
-            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="9in" value="${calculationSettings.categoryValues[i]['9in']}"></td>
-        `;
-        tbody.appendChild(row);
     }
 }
 
@@ -383,11 +282,47 @@ async function loadCountingSettings() {
     }
 }
 
+async function saveAdvanceSettings() {
+    // Save Bonus Tiers
+    const editor = document.getElementById('bonus-tier-editor-container');
+    const rows = editor.querySelectorAll('.tier-row');
+    const newTiers = [];
+    let isTiersValid = true;
+    rows.forEach(row => {
+        const quality = parseFloat(row.querySelector('.tier-quality-input').value);
+        const bonus = parseFloat(row.querySelector('.tier-bonus-input').value);
+        if (isNaN(quality) || isNaN(bonus)) isTiersValid = false;
+        else newTiers.push({ quality, bonus: bonus / 100 });
+    });
+    if (!isTiersValid) return alert("Please ensure all bonus tier fields are valid numbers.");
+    newTiers.sort((a, b) => b.quality - a.quality);
 
-async function saveCountingSettings() {
+    // Save Calculation Settings
+    const newCalcSettings = {
+        irModifierValue: parseFloat(document.getElementById('setting-ir-modifier').value),
+        points: {
+            qc: parseFloat(document.getElementById('setting-qc-points').value),
+            i3qa: parseFloat(document.getElementById('setting-i3qa-points').value),
+            rv1: parseFloat(document.getElementById('setting-rv1-points').value),
+            rv1_combo: parseFloat(document.getElementById('setting-rv1-combo-points').value),
+            rv2: parseFloat(document.getElementById('setting-rv2-points').value)
+        },
+        categoryValues: {}
+    };
+    const tbody = document.getElementById('category-points-tbody');
+    for (let i = 1; i <= 9; i++) {
+        const row = tbody.querySelector(`tr[data-category="${i}"]`);
+        newCalcSettings.categoryValues[i] = {
+            "3in": parseFloat(row.querySelector('input[data-gsd="3in"]').value),
+            "4in": parseFloat(row.querySelector('input[data-gsd="4in"]').value),
+            "6in": parseFloat(row.querySelector('input[data-gsd="6in"]').value),
+            "9in": parseFloat(row.querySelector('input[data-gsd="9in"]').value),
+        };
+    }
+
+    // Save Counting Settings
     const getValues = (id) => document.getElementById(id).value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-
-    const newSettings = {
+    const newCountingSettings = {
         taskColumns: {
             qc: getValues('setting-qc-cols'),
             i3qa: getValues('setting-i3qa-cols'),
@@ -401,18 +336,140 @@ async function saveCountingSettings() {
             qcPenalty: { labels: getValues('setting-qc-penalty-labels'), columns: getValues('setting-qc-penalty-cols') }
         }
     };
+    
     try {
-        await putToDB('countingSettings', { id: 'customCounting', settings: newSettings });
-        countingSettings = newSettings;
-        showNotification("Counting logic saved successfully.");
-        closeModal('counting-settings-modal');
+        await Promise.all([
+            putToDB('bonusTiers', { id: 'customTiers', tiers: newTiers }),
+            putToDB('calculationSettings', { id: 'customSettings', settings: newCalcSettings }),
+            putToDB('countingSettings', { id: 'customCounting', settings: newCountingSettings })
+        ]);
+        bonusTiers = newTiers;
+        calculationSettings = newCalcSettings;
+        countingSettings = newCountingSettings;
+        showNotification("Advance settings saved successfully.");
+        closeModal('advance-settings-modal');
     } catch (error) {
-        console.error("Error saving counting settings:", error);
-        alert("Failed to save counting settings.");
+        console.error("Error saving advance settings:", error);
+        alert("Failed to save advance settings.");
     }
 }
 
-function populateCountingSettingsEditor() {
+function populateAdvanceSettingsEditor() {
+    const container = document.getElementById('advance-settings-body');
+    container.innerHTML = `
+        <div class="flex items-center gap-2 border-b border-brand-700 mb-4">
+            <button class="tab-button active" data-tab="bonus-tiers">Bonus Tiers</button>
+            <button class="tab-button" data-tab="points">Points</button>
+            <button class="tab-button" data-tab="counting">Counting Logic</button>
+        </div>
+        <div id="tab-bonus-tiers" class="tab-content active">
+            <div id="bonus-tier-editor-container" class="space-y-2"></div>
+            <button id="add-tier-btn" class="btn-secondary mt-4">Add Tier</button>
+        </div>
+        <div id="tab-points" class="tab-content">
+            <div class="space-y-4">
+                <div>
+                    <label for="setting-ir-modifier" class="block text-sm font-medium text-brand-400">IR Modifier</label>
+                    <input type="number" step="0.1" id="setting-ir-modifier" class="input-field w-full mt-1">
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <label for="setting-qc-points" class="block text-sm font-medium text-brand-400">QC Points</label>
+                        <input type="number" step="0.01" id="setting-qc-points" class="input-field w-full mt-1">
+                    </div>
+                    <div>
+                        <label for="setting-i3qa-points" class="block text-sm font-medium text-brand-400">i3QA Points</label>
+                        <input type="number" step="0.01" id="setting-i3qa-points" class="input-field w-full mt-1">
+                    </div>
+                    <div>
+                        <label for="setting-rv1-points" class="block text-sm font-medium text-brand-400">RV1 Points</label>
+                        <input type="number" step="0.01" id="setting-rv1-points" class="input-field w-full mt-1">
+                    </div>
+                    <div>
+                        <label for="setting-rv1-combo-points" class="block text-sm font-medium text-brand-400">RV1 Combo Points</label>
+                        <input type="number" step="0.01" id="setting-rv1-combo-points" class="input-field w-full mt-1">
+                    </div>
+                    <div>
+                        <label for="setting-rv2-points" class="block text-sm font-medium text-brand-400">RV2 Points</label>
+                        <input type="number" step="0.01" id="setting-rv2-points" class="input-field w-full mt-1">
+                    </div>
+                </div>
+                <div class="table-container text-sm border border-brand-700 rounded-md">
+                    <table class="min-w-full">
+                        <thead class="bg-brand-800">
+                            <tr>
+                                <th class="p-2 text-left">Category</th>
+                                <th class="p-2 text-left">3in</th>
+                                <th class="p-2 text-left">4in</th>
+                                <th class="p-2 text-left">6in</th>
+                                <th class="p-2 text-left">9in</th>
+                            </tr>
+                        </thead>
+                        <tbody id="category-points-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="tab-counting" class="tab-content">
+            <div class="space-y-4">
+                <div>
+                    <h4 class="font-semibold text-white">Task Columns</h4>
+                    <p class="text-xs text-brand-400 mb-2">Comma-separated column names that count for each task type.</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label for="setting-qc-cols">QC</label><input type="text" id="setting-qc-cols" class="input-field w-full mt-1"></div>
+                        <div><label for="setting-i3qa-cols">i3QA</label><input type="text" id="setting-i3qa-cols" class="input-field w-full mt-1"></div>
+                        <div><label for="setting-rv1-cols">RV1</label><input type="text" id="setting-rv1-cols" class="input-field w-full mt-1"></div>
+                        <div><label for="setting-rv2-cols">RV2</label><input type="text" id="setting-rv2-cols" class="input-field w-full mt-1"></div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-white">Trigger Conditions</h4>
+                    <p class="text-xs text-brand-400 mb-2">Define labels and columns that trigger refixes, misses, warnings, etc.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label>Refix Labels</label><input type="text" id="setting-refix-labels" class="input-field w-full mt-1"></div>
+                        <div><label>Refix Columns</label><input type="text" id="setting-refix-cols" class="input-field w-full mt-1"></div>
+                        <div><label>Miss Labels</label><input type="text" id="setting-miss-labels" class="input-field w-full mt-1"></div>
+                        <div><label>Miss Columns</label><input type="text" id="setting-miss-cols" class="input-field w-full mt-1"></div>
+                        <div><label>Warning Labels</label><input type="text" id="setting-warning-labels" class="input-field w-full mt-1"></div>
+                        <div><label>Warning Columns</label><input type="text" id="setting-warning-cols" class="input-field w-full mt-1"></div>
+                        <div><label>QC Penalty Labels</label><input type="text" id="setting-qc-penalty-labels" class="input-field w-full mt-1"></div>
+                        <div><label>QC Penalty Columns</label><input type="text" id="setting-qc-penalty-cols" class="input-field w-full mt-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Populate Bonus Tiers
+    const tierContainer = document.getElementById('bonus-tier-editor-container');
+    tierContainer.innerHTML = `<div class="grid grid-cols-3 gap-4 font-semibold text-gray-400 pb-2 border-b border-gray-600"><span>Min. Quality %</span><span>Bonus Earned %</span><span>Action</span></div>`;
+    bonusTiers.forEach(tier => addBonusTierRow(tier.quality, tier.bonus * 100));
+    document.getElementById('add-tier-btn').addEventListener('click', () => addBonusTierRow());
+
+    // Populate Calculation Settings
+    document.getElementById('setting-ir-modifier').value = calculationSettings.irModifierValue;
+    document.getElementById('setting-qc-points').value = calculationSettings.points.qc;
+    document.getElementById('setting-i3qa-points').value = calculationSettings.points.i3qa;
+    document.getElementById('setting-rv1-points').value = calculationSettings.points.rv1;
+    document.getElementById('setting-rv1-combo-points').value = calculationSettings.points.rv1_combo;
+    document.getElementById('setting-rv2-points').value = calculationSettings.points.rv2;
+    const catTbody = document.getElementById('category-points-tbody');
+    catTbody.innerHTML = '';
+    for (let i = 1; i <= 9; i++) {
+        const row = document.createElement('tr');
+        row.dataset.category = i;
+        row.className = "bg-gray-800/50";
+        row.innerHTML = `
+            <td class="p-2 font-semibold">Category ${i}</td>
+            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="3in" value="${calculationSettings.categoryValues[i]['3in']}"></td>
+            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="4in" value="${calculationSettings.categoryValues[i]['4in']}"></td>
+            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="6in" value="${calculationSettings.categoryValues[i]['6in']}"></td>
+            <td class="p-2"><input type="number" step="0.01" class="w-full p-1" data-gsd="9in" value="${calculationSettings.categoryValues[i]['9in']}"></td>
+        `;
+        catTbody.appendChild(row);
+    }
+
+    // Populate Counting Settings
     const setValues = (id, arr) => { 
         const el = document.getElementById(id);
         if (el && arr) {
@@ -431,8 +488,32 @@ function populateCountingSettingsEditor() {
     setValues('setting-warning-cols', countingSettings.triggers.warning.columns);
     setValues('setting-qc-penalty-labels', countingSettings.triggers.qcPenalty.labels);
     setValues('setting-qc-penalty-cols', countingSettings.triggers.qcPenalty.columns);
+
+    // Tab functionality
+    const tabs = container.querySelectorAll('.tab-button');
+    const contents = container.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+        });
+    });
 }
 
+function addBonusTierRow(quality = '', bonus = '') {
+    const container = document.getElementById('bonus-tier-editor-container');
+    const row = document.createElement('div');
+    row.className = 'tier-row grid grid-cols-3 gap-4 items-center';
+    row.innerHTML = `
+        <input type="number" step="0.5" class="tier-quality-input w-full p-2 input-field" value="${quality}">
+        <input type="number" step="1" class="tier-bonus-input w-full p-2 input-field" value="${bonus}">
+        <button class="delete-tier-btn bg-red-600/80 text-white font-bold py-2 px-3 rounded-lg hover:bg-red-700 text-sm">Delete</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.delete-tier-btn').addEventListener('click', (e) => e.target.closest('.tier-row').remove());
+}
 
 async function loadTeamSettings() {
     try {
@@ -544,7 +625,9 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
         const values = line.split('\t');
         allIdCols.forEach(col => {
             const techId = values[headerMap[col.toLowerCase()]]?.trim();
-            if (techId) allTechsInDataSet.add(techId);
+            if (techId && TECH_ID_REGEX.test(techId)) {
+                allTechsInDataSet.add(techId);
+            }
         });
     });
     allTechsInDataSet.forEach(techId => {
@@ -805,7 +888,9 @@ function displayResults(techStats) {
 
     const infoIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.064.293.006.399.287.47l.45.083.082.38-2.29.287-.082-.38.45-.083a.89.89 0 0 1 .352-.176c.24-.11.24-.216.06-.563l-.738-3.468c-.18-.84.48-1.133 1.17-1.133H8l.084.38zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>`;
 
-    const sortedTechs = Object.values(techStats).sort((a,b) => b.points - a.points);
+    const sortedTechs = Object.values(techStats)
+        .sort((a,b) => b.points - a.points)
+        .slice(0, 15);
 
     sortedTechs.forEach(tech => {
         const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
@@ -1247,9 +1332,11 @@ function setupEventListeners() {
     // --- Main Menu Dropdown Items ---
     addSafeListener('merge-fixpoints-btn', 'click', () => openModal('merge-fixpoints-modal'));
     addSafeListener('manage-teams-btn', 'click', () => openModal('manage-teams-modal'));
-    addSafeListener('edit-bonus-tiers-btn', 'click', () => openModal('edit-bonus-tiers-modal'));
-    addSafeListener('calculation-settings-btn', 'click', () => openModal('calculation-settings-modal'));
-    addSafeListener('counting-settings-btn', 'click', () => openModal('counting-settings-modal'));
+    addSafeListener('advance-settings-btn', 'click', () => {
+        populateAdvanceSettingsEditor();
+        openModal('advance-settings-modal');
+    });
+    addSafeListener('save-advance-settings-btn', 'click', saveAdvanceSettings);
     addSafeListener('how-it-works-btn', 'click', () => {
         document.getElementById('how-it-works-body').innerHTML = calculationInfo.howItWorks.body;
         openModal('how-it-works-modal');
@@ -1425,8 +1512,6 @@ function setupEventListeners() {
     addSafeListener('search-tech-id', 'input', applyFilters);
     addSafeListener('team-filter-container', 'change', applyFilters);
     addSafeListener('refresh-teams-btn', 'click', loadTeamSettings);
-    // Note: The leaderboard sort select was not found in the provided HTML.
-    // addSafeListener('leaderboard-sort-select', 'change', applyFilters);
 
     // --- Drag and Drop ---
     const dropZone = document.getElementById('drop-zone');
