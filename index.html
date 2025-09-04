@@ -149,28 +149,118 @@
                         <button id="refresh-teams-btn" title="Refresh Team List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
                     </div>
                 </div>
-                <div class="table-container border border-brand-700 rounded-lg max-h-96">
-                    <table class="min-w-full divide-y divide-brand-700">
-                        <thead id="results-thead" class="bg-brand-800 sticky top-0"></thead>
-                        <tbody id="tech-results-body" class="divide-y divide-brand-700"></tbody>
-                    </table>
-                </div>
+                <div id="tech-results-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    </div>
             </div>
         </section>
     </div>
 
-    <div id="generic-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+    <div id="merge-fixpoints-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
         <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 id="generic-modal-title" class="text-lg font-semibold text-white">Modal Title</h3>
-                <button id="generic-modal-close-btn" class="text-brand-400 hover:text-white">
+                <h3 class="text-lg font-semibold text-white">Merge Partials FP</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
                 </button>
             </div>
-            <div id="generic-modal-body" class="p-6 overflow-y-auto"></div>
-            <div id="generic-modal-footer" class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button id="generic-modal-cancel-btn" class="btn-secondary">Close</button>
-                 <button id="generic-modal-save-btn" class="btn-primary">Save Changes</button>
+            <div class="p-6 overflow-y-auto">
+                </div>
+            <div class="p-4 border-t border-brand-700 text-right space-x-2">
+                 <button class="modal-close-btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="manage-teams-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                <h3 class="text-lg font-semibold text-white">Manage Teams</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                </div>
+            <div class="p-4 border-t border-brand-700 text-right space-x-2">
+                 <button class="modal-close-btn btn-secondary">Close</button>
+                 <button id="save-teams-btn" class="btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <div id="edit-bonus-tiers-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                <h3 class="text-lg font-semibold text-white">Edit Bonus Tiers</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                </button>
+            </div>
+            <div id="bonus-tier-editor-container" class="p-6 overflow-y-auto">
+                </div>
+            <div class="p-4 border-t border-brand-700 text-right space-x-2">
+                 <button class="modal-close-btn btn-secondary">Close</button>
+                 <button id="save-bonus-tiers-btn" class="btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <div id="calculation-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                <h3 class="text-lg font-semibold text-white">Points Settings</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                </div>
+            <div class="p-4 border-t border-brand-700 text-right space-x-2">
+                 <button class="modal-close-btn btn-secondary">Close</button>
+                 <button id="save-calculation-settings-btn" class="btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <div id="counting-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                <h3 class="text-lg font-semibold text-white">Advance Settings</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                </div>
+            <div class="p-4 border-t border-brand-700 text-right space-x-2">
+                 <button class="modal-close-btn btn-secondary">Close</button>
+                 <button id="save-counting-settings-btn" class="btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <div id="how-it-works-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                <h3 class="text-lg font-semibold text-white">How It Works</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                </button>
+            </div>
+            <div id="how-it-works-body" class="p-6 overflow-y-auto">
+                </div>
+            <div class="p-4 border-t border-brand-700 text-right space-x-2">
+                 <button class="modal-close-btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                <h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Summary</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                </button>
+            </div>
+            <div id="tech-summary-modal-body" class="p-6 overflow-y-auto">
+                </div>
+            <div class="p-4 border-t border-brand-700 text-right space-x-2">
+                 <button class="modal-close-btn btn-secondary">Close</button>
             </div>
         </div>
     </div>
@@ -186,6 +276,13 @@
                 dropdown.classList.toggle('hidden');
             });
             document.addEventListener('click', () => dropdown.classList.add('hidden'));
+
+            // Modal close buttons
+            document.querySelectorAll('.modal-close-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    button.closest('.fixed').classList.add('hidden');
+                });
+            });
         });
     </script>
 </body>
