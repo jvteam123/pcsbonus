@@ -15,7 +15,7 @@ let isSaving = false; // Flag to prevent recursive event firing
 let mergedFeatures = []; // To store features from dropped files in the merge modal
 let currentDataHeaders = []; // To store headers of the currently parsed data
 let currentDataLines = []; // To store lines of the currently parsed data
-let fix4Counts = {}; // To store the fix4 breakdown
+let fix4CategoryCounts = {}; // To store the fix4 category breakdown
 
 const DB_NAME = 'BonusCalculatorDB';
 const TECH_ID_REGEX = /^\d{4}[a-zA-Z]{2}$/;
@@ -424,7 +424,7 @@ function populateAdvanceSettingsEditor() {
                     </div>
                 </div>
                 <div>
-                    <h4 class="font-semibold text-white">Trigger Conditions</h4>
+                    <h4 class="font-bold text-white">Trigger Conditions</h4>
                     <p class="text-xs text-brand-400 mb-2">Define labels and columns that trigger refixes, misses, warnings, etc.</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><label>Refix Labels</label><input type="text" id="setting-refix-labels" class="input-field w-full mt-1"></div>
@@ -636,7 +636,7 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
     const headerMap = {};
     currentDataHeaders.forEach((h, i) => { headerMap[h.toLowerCase()] = i; });
     
-    fix4Counts = {};
+    fix4CategoryCounts = {};
     const summaryStats = { totalRows: 0, comboTasks: 0, totalIncorrect: 0, totalMiss: 0 };
     const allIdCols = currentDataHeaders.filter(h => h.toLowerCase().endsWith('_id'));
     
@@ -679,7 +679,13 @@ function parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Da
         const fix4_id = values[headerMap['fix4_id']]?.trim();
 
         if (fix4_id && TECH_ID_REGEX.test(fix4_id)) {
-            fix4Counts[fix4_id] = (fix4Counts[fix4_id] || 0) + 1;
+            const category = values[headerMap['rv3_cat']]?.trim();
+            if (category) {
+                if (!fix4CategoryCounts[fix4_id]) {
+                    fix4CategoryCounts[fix4_id] = {};
+                }
+                fix4CategoryCounts[fix4_id][category] = (fix4CategoryCounts[fix4_id][category] || 0) + 1;
+            }
         }
 
         // --- Fix Task Point Calculation ---
@@ -1147,14 +1153,23 @@ function updateTLSummary(techStats) {
     }
     
     // Fix4 Breakdown
-    const fix4Body = document.getElementById('fix4-breakdown-body');
-    fix4Body.innerHTML = '';
-    const sortedFix4 = Object.entries(fix4Counts).sort(([,a],[,b]) => b-a);
-    sortedFix4.forEach(([techId, count]) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td class="p-2">${techId}</td><td class="p-2">${count}</td>`;
-        fix4Body.appendChild(row);
-    });
+    const fix4Container = document.getElementById('fix4-breakdown-container');
+    fix4Container.innerHTML = '';
+    for (const techId in fix4CategoryCounts) {
+        const techDiv = document.createElement('div');
+        let listItems = '';
+        for (const category in fix4CategoryCounts[techId]) {
+            const count = fix4CategoryCounts[techId][category];
+            listItems += `<li class="text-brand-400">Category ${category}: <span class="font-semibold text-brand-300">${count}</span></li>`;
+        }
+        techDiv.innerHTML = `
+            <h4 class="font-bold text-white">${techId}</h4>
+            <ul class="list-disc list-inside ml-2">
+                ${listItems}
+            </ul>
+        `;
+        fix4Container.appendChild(techDiv);
+    }
 }
 
 
