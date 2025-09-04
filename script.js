@@ -368,6 +368,7 @@ function populateAdvanceSettingsEditor() {
             <button id="add-tier-btn" class="btn-secondary mt-4">Add Tier</button>
         </div>
         <div id="tab-points" class="tab-content">
+            <!-- Points Settings Content -->
             <div class="space-y-4">
                 <div>
                     <label for="setting-ir-modifier" class="block text-sm font-medium text-brand-400">IR Modifier</label>
@@ -412,6 +413,7 @@ function populateAdvanceSettingsEditor() {
             </div>
         </div>
         <div id="tab-counting" class="tab-content">
+            <!-- Counting Logic Content -->
             <div class="space-y-4">
                 <div>
                     <h4 class="font-semibold text-white">Task Columns</h4>
@@ -1143,10 +1145,27 @@ function updateTLSummary(techStats) {
     // Fix4 Breakdown
     const fix4Container = document.getElementById('fix4-breakdown-container');
     fix4Container.innerHTML = '';
-    for (const techId in fix4CategoryCounts) {
+    const selectedTeams = Array.from(document.querySelectorAll('#team-filter-container input:checked')).map(cb => cb.dataset.team);
+    
+    const getTeamName = (techId) => {
+        for (const team in teamSettings) {
+            if (teamSettings[team].some(id => id.toUpperCase() === techId.toUpperCase())) {
+                return team;
+            }
+        }
+        return null;
+    };
+
+    const filteredFix4 = Object.entries(fix4CategoryCounts).filter(([techId]) => {
+        if (selectedTeams.length === 0) return true;
+        const teamName = getTeamName(techId);
+        return teamName && selectedTeams.includes(teamName);
+    });
+
+    for (const [techId, categories] of filteredFix4) {
         const techDiv = document.createElement('div');
         let listItems = '';
-        const sortedCategories = Object.entries(fix4CategoryCounts[techId]).sort(([catA], [catB]) => parseInt(catA) - parseInt(catB));
+        const sortedCategories = Object.entries(categories).sort(([catA], [catB]) => parseInt(catA) - parseInt(catB));
         
         for (const [category, count] of sortedCategories) {
             listItems += `<li class="text-brand-400">Category ${category}: <span class="font-semibold text-brand-300">${count}</span></li>`;
@@ -1432,9 +1451,6 @@ function clearAllData() {
 
 function showLoading(button) {
     button.disabled = true;
-    const textSpan = button.querySelector('span');
-    if (textSpan) textSpan.classList.add('hidden');
-    
     const loader = document.createElement('span');
     loader.className = 'loader';
     button.prepend(loader);
@@ -1444,9 +1460,6 @@ function hideLoading(button) {
     button.disabled = false;
     const loader = button.querySelector('.loader');
     if (loader) loader.remove();
-    
-    const textSpan = button.querySelector('span');
-    if (textSpan) textSpan.classList.remove('hidden');
 }
 
 function setupEventListeners() {
