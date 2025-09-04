@@ -332,17 +332,6 @@ body {
     color: #ffffff;
 }
 
-/* Fix4 Breakdown Columns */
-#fix4-breakdown-container {
-    column-count: 1;
-}
-@media (min-width: 768px) {
-    #fix4-breakdown-container {
-        column-count: 2;
-    }
-}
-
-
 /* Loading Spinner */
 .loader {
     width: 1rem;
@@ -363,3 +352,4 @@ body {
         transform: rotate(360deg);
     }
 }
+
