@@ -111,7 +111,7 @@
             </div>
             
             <div class="dashboard-panel">
-                <div class="panel-header"><h2 class="panel-title">Controls, Results & Analytics</h2></div>
+                <div class="panel-header"><h2 class="panel-title">Controls & Analytics</h2></div>
                 <div class="p-4 space-y-4">
                     <div>
                         <label for="bonusMultiplierDirect" class="block text-sm font-medium text-brand-400 mb-1">Bonus Multiplier (PHP)</label>
@@ -128,32 +128,26 @@
                        </div>
                     </div>
                     <div id="results-content" class="hidden space-y-6 border-t border-brand-700 pt-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 class="text-lg font-semibold text-white mb-2">Workload</h3>
-                                <div id="workload-chart-container" class="space-y-2 overflow-y-auto max-h-52 pr-2 custom-scrollbar"></div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-lg font-semibold text-white">Leaderboard</h3>
+                                <select id="leaderboard-sort-select" class="input-field text-xs py-1">
+                                    <option value="fixQuality">Rank by Fix Quality %</option>
+                                    <option value="totalPoints">Rank by Total Points</option>
+                                    <option value="fixTasks">Rank by Total Tasks</option>
+                                </select>
                             </div>
-                            <div>
-                                <div class="flex justify-between items-center mb-2">
-                                    <h3 class="text-lg font-semibold text-white">Leaderboard</h3>
-                                    <select id="leaderboard-sort-select" class="input-field text-xs py-1">
-                                        <option value="fixQuality">Rank by Fix Quality %</option>
-                                        <option value="totalPoints">Rank by Total Points</option>
-                                        <option value="fixTasks">Rank by Total Tasks</option>
-                                    </select>
-                                </div>
-                                <div class="table-container text-sm max-h-48 border border-brand-700 rounded-md custom-scrollbar">
-                                    <table class="min-w-full">
-                                        <thead class="sticky top-0 bg-brand-800">
-                                            <tr>
-                                                <th class="p-2 text-left">Rank</th>
-                                                <th class="p-2 text-left">Tech</th>
-                                                <th id="leaderboard-metric-header" class="p-2 text-left">Value</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="leaderboard-body"></tbody>
-                                    </table>
-                                </div>
+                            <div class="table-container text-sm max-h-96 border border-brand-700 rounded-md custom-scrollbar">
+                                <table class="min-w-full">
+                                    <thead class="sticky top-0 bg-brand-800">
+                                        <tr>
+                                            <th class="p-2 text-left">Rank</th>
+                                            <th class="p-2 text-left">Tech</th>
+                                            <th id="leaderboard-metric-header" class="p-2 text-left">Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="leaderboard-body"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -169,7 +163,7 @@
                     </div>
                     <div class="border-t border-brand-700 pt-4">
                         <h3 class="text-lg font-semibold text-white mb-2">Fix4 Breakdown</h3>
-                        <div id="fix4-breakdown-container" class="space-y-4 max-h-48 custom-scrollbar overflow-y-auto">
+                        <div id="fix4-breakdown-container" class="space-y-4 max-h-64 custom-scrollbar overflow-y-auto">
                             </div>
                     </div>
                 </div>
