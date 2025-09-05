@@ -57,9 +57,9 @@
 
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="dashboard-panel">
+            <div class="dashboard-panel flex flex-col">
                 <div class="panel-header"><h2 class="panel-title">Data & Projects</h2></div>
-                <div class="p-4 space-y-4">
+                <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar">
                     <div>
                         <div class="flex items-center gap-2">
                             <select id="project-select" class="input-field w-full"><option value="">Select a project to load</option></select>
