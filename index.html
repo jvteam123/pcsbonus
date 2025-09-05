@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PCS Advanced Bonus Calculator</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -60,74 +60,79 @@
             <div class="dashboard-panel">
                 <div class="panel-header"><h2 class="panel-title">Data & Projects</h2></div>
                 <div class="p-4 space-y-4">
-                    <div class="flex items-center gap-2">
-                        <select id="project-select" class="input-field w-full"><option value="">Select a project to load</option></select>
-                        <div id="project-loading-spinner" class="hidden">
-                            <div class="loader"></div>
-                        </div>
-                        <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
-                        </button>
-                        <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
-                        </button>
-                        <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-                        </button>
-                    </div>
-                    <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors">
-                        <textarea id="techData" rows="10" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste raw data here, or drag & drop files"></textarea>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="project-name" class="input-field" placeholder="Enter Project Name to Save">
+                    <div>
                         <div class="flex items-center gap-2">
-                            <input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
-                            <label for="is-ir-project-checkbox" class="text-sm font-medium text-yellow-300">IR Project</label>
+                            <select id="project-select" class="input-field w-full"><option value="">Select a project to load</option></select>
+                            <div id="project-loading-spinner" class="hidden">
+                                <div class="loader"></div>
+                            </div>
+                            <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                            </button>
+                            <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+                            </button>
+                            <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                            </button>
                         </div>
-                        <select id="gsd-value-select" class="input-field text-sm">
-                            <option value="3in">3in GSD</option> <option value="4in">4in GSD</option> <option value="6in">6in GSD</option> <option value="9in">9in GSD</option>
-                        </select>
-                        <div class="flex items-center gap-2">
-                            <button id="save-project-btn" class="btn-primary w-full">Save Project</button>
-                            <button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel</button>
+                        <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
+                            <textarea id="techData" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste raw data here, or drag & drop files"></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <input type="text" id="project-name" class="input-field" placeholder="Enter Project Name to Save">
+                            <div class="flex items-center gap-2">
+                                <input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
+                                <label for="is-ir-project-checkbox" class="text-sm font-medium text-yellow-300">IR Project</label>
+                            </div>
+                            <select id="gsd-value-select" class="input-field text-sm">
+                                <option value="3in">3in GSD</option> <option value="4in">4in GSD</option> <option value="6in">6in GSD</option> <option value="9in">9in GSD</option>
+                            </select>
+                            <div class="flex items-center gap-2">
+                                <button id="save-project-btn" class="btn-primary w-full">Save Project</button>
+                                <button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-brand-700 pt-4 mt-4 space-y-4">
+                        <input type="number" id="bonusMultiplierDirect" class="input-field w-full" placeholder="Bonus Multiplier (e.g., 1.25 for 25%)">
+                        <div class="space-y-3">
+                            <button id="calculate-btn" class="btn-primary w-full text-base">Calculate</button>
+                            <div class="flex items-center">
+                               <input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
+                               <label for="customize-calc-all-cb" class="ml-2 text-sm">Calculate from multiple projects</label>
+                           </div>
+                          <button id="calculate-all-btn" class="btn-secondary w-full">Calculate All / Selected</button>
                         </div>
                     </div>
                 </div>
             </div>
             
             <div class="dashboard-panel">
-                <div class="panel-header"><h2 class="panel-title">Controls & Analytics</h2></div>
+                <div class="panel-header"><h2 class="panel-title">Leaderboard</h2></div>
                 <div class="p-4 space-y-4">
-                    <input type="number" id="bonusMultiplierDirect" class="input-field w-full" placeholder="Bonus Multiplier (e.g., 1.25 for 25%)">
-                    <div class="pt-4 space-y-3">
-                        <button id="calculate-btn" class="btn-primary w-full text-base">Calculate</button>
-                        <div class="flex items-center">
-                           <input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
-                           <label for="customize-calc-all-cb" class="ml-2 text-sm">Calculate from multiple projects</label>
-                       </div>
-                      <button id="calculate-all-btn" class="btn-secondary w-full">Calculate All / Selected</button>
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-white sr-only">Leaderboard</h3>
+                        <select id="leaderboard-sort-select" class="input-field text-xs py-1 w-full">
+                            <option value="fixQuality">Sort by: Quality</option>
+                            <option value="totalPoints">Sort by: Points</option>
+                            <option value="fixTasks">Sort by: Tasks</option>
+                        </select>
                     </div>
-                    <div id="results-content" class="hidden space-y-6 border-t border-brand-700 pt-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-lg font-semibold text-white">Leaderboard</h3>
-                            <select id="leaderboard-sort-select" class="input-field text-xs py-1">
-                                <option value="fixQuality">Sort by: Quality</option>
-                                <option value="totalPoints">Sort by: Points</option>
-                                <option value="fixTasks">Sort by: Tasks</option>
-                            </select>
-                        </div>
-                        <div class="table-container text-sm max-h-96 border border-brand-700 rounded-md custom-scrollbar">
-                            <table class="min-w-full">
-                                <thead class="sticky top-0 bg-brand-800">
-                                    <tr>
-                                        <th class="p-2 text-left">Rank</th>
-                                        <th class="p-2 text-left">Tech</th>
-                                        <th id="leaderboard-metric-header" class="p-2 text-left">Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="leaderboard-body"></tbody>
-                            </table>
-                        </div>
+                    <div class="table-container text-sm h-full border border-brand-700 rounded-md custom-scrollbar">
+                        <table class="min-w-full">
+                            <thead class="sticky top-0 bg-brand-800">
+                                <tr>
+                                    <th class="p-2 text-left">Rank</th>
+                                    <th class="p-2 text-left">Tech</th>
+                                    <th id="leaderboard-metric-header" class="p-2 text-left">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body">
+                                <tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
