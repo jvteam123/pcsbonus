@@ -33,6 +33,15 @@ body {
     min-height: 0;
 }
 
+/* --- NEW: Style for fixing scrollable table panel --- */
+.panel-content-flex {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+/* --------------------------------------------------- */
+
 
 /* Header & Menu Styles */
 .menu-btn {
@@ -157,6 +166,9 @@ body {
 }
 
 /* Table Styles */
+.table-container {
+    overflow-y: auto;
+}
 .table-container table thead th {
     font-weight: 500;
     color: #ABBBC2; /* brand-400 */
@@ -176,9 +188,6 @@ body {
     font-size: 0.875rem;
     border-top: 1px solid #393C49; /* brand-700 */
 }
-
-/* Payout Table Row Coloring */
-.quality-high, .quality-mid, .quality-low { background-color: transparent; }
 
 
 .info-icon {
