@@ -27,6 +27,14 @@ body {
     color: #ffffff;
 }
 
+/* NEW --- Rule for making panel content scrollable */
+.panel-content-scrollable {
+    flex-grow: 1; /* Allows the div to fill the available space in the flex container */
+    overflow-y: auto; /* Adds a scrollbar only when content overflows vertically */
+    min-height: 0; /* Important for flexbox children to allow shrinking */
+}
+
+
 /* Header & Menu Styles */
 .menu-btn {
     display: flex;
