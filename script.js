@@ -22,23 +22,39 @@ const TECH_ID_REGEX = /^\d{4}[a-zA-Z]{2}$/;
 
 // --- NEW FUNCTION TO SET PANEL HEIGHTS ---
 function setPanelHeights() {
-    // Only run on larger screens where the layout is in columns
-    if (window.innerWidth < 1024) return;
-
     const dataPanel = document.getElementById('data-projects-panel');
     const leaderboardPanel = document.getElementById('leaderboard-panel');
     const tlSummaryPanel = document.getElementById('tl-summary-card');
 
-    if (dataPanel && leaderboardPanel && tlSummaryPanel) {
-        // Reset heights to auto to measure the natural height of the tallest panel
-        leaderboardPanel.style.height = 'auto';
-        tlSummaryPanel.style.height = 'auto';
+    // Ensure all panels exist before proceeding
+    if (!dataPanel || !leaderboardPanel || !tlSummaryPanel) return;
 
+    // On smaller screens (mobile view), remove fixed heights for natural document flow
+    if (window.innerWidth < 1024) {
+        dataPanel.style.height = '';
+        leaderboardPanel.style.height = '';
+        tlSummaryPanel.style.height = '';
+        return;
+    }
+
+    // On larger screens, synchronize the heights.
+    // Reset all panel heights to 'auto'. This removes previous fixed heights and lets the browser
+    // calculate the natural height of the dataPanel based on its content.
+    dataPanel.style.height = 'auto';
+    leaderboardPanel.style.height = 'auto';
+    tlSummaryPanel.style.height = 'auto';
+
+    // Use requestAnimationFrame to ensure the measurement happens after the browser has
+    // processed the 'auto' height styles. This prevents reading a stale, stretched height value.
+    requestAnimationFrame(() => {
         const dataPanelHeight = dataPanel.getBoundingClientRect().height;
         
+        // Set all panels to the same height as the data panel, creating a uniform row.
+        // This also "locks" the data panel's height, preventing it from being stretched by its siblings.
+        dataPanel.style.height = `${dataPanelHeight}px`;
         leaderboardPanel.style.height = `${dataPanelHeight}px`;
         tlSummaryPanel.style.height = `${dataPanelHeight}px`;
-    }
+    });
 }
 
 
