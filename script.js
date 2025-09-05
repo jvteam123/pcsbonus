@@ -368,7 +368,6 @@ function populateAdvanceSettingsEditor() {
             <button id="add-tier-btn" class="btn-secondary mt-4">Add Tier</button>
         </div>
         <div id="tab-points" class="tab-content">
-            <!-- Points Settings Content -->
             <div class="space-y-4">
                 <div>
                     <label for="setting-ir-modifier" class="block text-sm font-medium text-brand-400">IR Modifier</label>
@@ -413,7 +412,6 @@ function populateAdvanceSettingsEditor() {
             </div>
         </div>
         <div id="tab-counting" class="tab-content">
-            <!-- Counting Logic Content -->
             <div class="space-y-4">
                 <div>
                     <h4 class="font-semibold text-white">Task Columns</h4>
@@ -874,33 +872,41 @@ function calculateQualityModifier(qualityRate) {
 // --- UI MANIPULATION AND STATE MANAGEMENT ---
 async function loadProjectIntoForm(projectId) {
     const editBtn = document.getElementById('edit-data-btn');
-    if (projectId) {
-        const projectData = await fetchFullProjectData(projectId);
-        if (projectData) {
-            document.getElementById('techData').value = projectData.rawData;
-            document.getElementById('techData').readOnly = true;
-            document.getElementById('project-name').value = projectData.name;
-            document.getElementById('project-name').readOnly = true;
-            document.getElementById('is-ir-project-checkbox').checked = projectData.isIRProject;
-            document.getElementById('is-ir-project-checkbox').disabled = true;
-            document.getElementById('gsd-value-select').value = projectData.gsdValue;
-            document.getElementById('gsd-value-select').disabled = true;
-            if(editBtn) editBtn.classList.remove('hidden');
-            document.getElementById('save-project-btn').disabled = true;
+    const spinner = document.getElementById('project-loading-spinner');
+    
+    if (spinner) spinner.classList.remove('hidden');
+
+    try {
+        if (projectId) {
+            const projectData = await fetchFullProjectData(projectId);
+            if (projectData) {
+                document.getElementById('techData').value = projectData.rawData;
+                document.getElementById('techData').readOnly = true;
+                document.getElementById('project-name').value = projectData.name;
+                document.getElementById('project-name').readOnly = true;
+                document.getElementById('is-ir-project-checkbox').checked = projectData.isIRProject;
+                document.getElementById('is-ir-project-checkbox').disabled = true;
+                document.getElementById('gsd-value-select').value = projectData.gsdValue;
+                document.getElementById('gsd-value-select').disabled = true;
+                if(editBtn) editBtn.classList.remove('hidden');
+                document.getElementById('save-project-btn').disabled = true;
+                document.getElementById('cancel-edit-btn').classList.add('hidden');
+            }
+        } else {
+            document.getElementById('techData').value = '';
+            document.getElementById('techData').readOnly = false;
+            document.getElementById('project-name').value = '';
+            document.getElementById('project-name').readOnly = false;
+            document.getElementById('is-ir-project-checkbox').checked = false;
+            document.getElementById('is-ir-project-checkbox').disabled = false;
+            document.getElementById('gsd-value-select').value = '3in';
+            document.getElementById('gsd-value-select').disabled = false;
+            if(editBtn) editBtn.classList.add('hidden');
+            document.getElementById('save-project-btn').disabled = false;
             document.getElementById('cancel-edit-btn').classList.add('hidden');
         }
-    } else {
-        document.getElementById('techData').value = '';
-        document.getElementById('techData').readOnly = false;
-        document.getElementById('project-name').value = '';
-        document.getElementById('project-name').readOnly = false;
-        document.getElementById('is-ir-project-checkbox').checked = false;
-        document.getElementById('is-ir-project-checkbox').disabled = false;
-        document.getElementById('gsd-value-select').value = '3in';
-        document.getElementById('gsd-value-select').disabled = false;
-        if(editBtn) editBtn.classList.add('hidden');
-        document.getElementById('save-project-btn').disabled = false;
-        document.getElementById('cancel-edit-btn').classList.add('hidden');
+    } finally {
+        if (spinner) spinner.classList.add('hidden');
     }
 }
 
@@ -917,49 +923,45 @@ function displayResults(techStats) {
     lastUsedBonusMultiplier = bonusMultiplier;
     lastCalculationUsedMultiplier = !!bonusMultiplier && bonusMultiplier !== 1;
 
-    const resultsGrid = document.getElementById('tech-results-grid');
-    resultsGrid.innerHTML = '';
+    const resultsTbody = document.getElementById('tech-results-tbody');
+    resultsTbody.innerHTML = '';
 
     const infoIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.064.293.006.399.287.47l.45.083.082.38-2.29.287-.082-.38.45-.083a.89.89 0 0 1 .352-.176c.24-.11.24-.216.06-.563l-.738-3.468c-.18-.84.48-1.133 1.17-1.133H8l.084.38zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>`;
 
     const sortedTechs = Object.values(techStats)
-        .sort((a,b) => b.points - a.points)
-        .slice(0, 15);
+        .sort((a,b) => b.points - a.points);
 
-    sortedTechs.forEach(tech => {
-        const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
-        const fixQuality = denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0;
-        const qualityModifier = calculateQualityModifier(fixQuality);
-        const finalPayout = tech.points * bonusMultiplier * qualityModifier;
+    if (sortedTechs.length === 0) {
+        resultsTbody.innerHTML = `<tr><td colspan="6" class="text-center text-brand-400 p-4">No results to display.</td></tr>`;
+    } else {
+        sortedTechs.forEach(tech => {
+            const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
+            const fixQuality = denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0;
+            const qualityModifier = calculateQualityModifier(fixQuality);
+            const finalPayout = tech.points * bonusMultiplier * qualityModifier;
 
-        const card = document.createElement('div');
-        card.className = 'result-card';
-        card.innerHTML = `
-            <div class="result-card-header">
-                <h3 class="result-card-title">${tech.id}</h3>
-                <span class="info-icon tech-summary-icon" data-tech-id="${tech.id}">${infoIconSvg}</span>
-            </div>
-            <div class="result-card-body">
-                <div class="result-card-row">
-                    <span class="result-card-label">Total Points</span>
-                    <span class="result-card-value">${tech.points.toFixed(3)}</span>
-                </div>
-                <div class="result-card-row">
-                    <span class="result-card-label">Fix Quality</span>
-                    <span class="result-card-value">${fixQuality.toFixed(2)}%</span>
-                </div>
-                <div class="result-card-row">
-                    <span class="result-card-label">Bonus Earned</span>
-                    <span class="result-card-value">${(qualityModifier * 100).toFixed(0)}%</span>
-                </div>
-            </div>
-            <div class="result-card-row">
-                <span class="result-card-label">Final Payout (PHP)</span>
-                <span class="result-card-payout">${finalPayout.toFixed(2)}</span>
-            </div>
-        `;
-        resultsGrid.appendChild(card);
-    });
+            let qualityClass = 'quality-low';
+            if (fixQuality >= 98) qualityClass = 'quality-high';
+            else if (fixQuality >= 95) qualityClass = 'quality-mid';
+
+            const row = document.createElement('tr');
+            row.className = qualityClass;
+            row.innerHTML = `
+                <td class="font-semibold text-white">${tech.id}</td>
+                <td>${tech.points.toFixed(3)}</td>
+                <td>${fixQuality.toFixed(2)}%</td>
+                <td>${(qualityModifier * 100).toFixed(0)}%</td>
+                <td class="font-bold text-accent">${finalPayout.toFixed(2)}</td>
+                <td class="text-center">
+                    <button class="info-icon tech-summary-icon" data-tech-id="${tech.id}" title="View Details for ${tech.id}">
+                        ${infoIconSvg}
+                    </button>
+                </td>
+            `;
+            resultsTbody.appendChild(row);
+        });
+    }
+
     document.getElementById('bonus-payout-section').classList.remove('hidden');
 }
 
@@ -1041,7 +1043,7 @@ function populateTeamFilters() {
     const container = document.getElementById('team-filter-container');
     if (!container) return;
     const existingRefreshButton = document.getElementById('refresh-teams-btn');
-    container.innerHTML = `<span class="text-sm font-medium text-brand-300">Filter:</span>`;
+    container.innerHTML = `<span class="text-sm font-medium text-brand-300">Filter by Team:</span>`;
     if(existingRefreshButton) container.appendChild(existingRefreshButton);
     
     Object.keys(teamSettings).sort().forEach(team => {
@@ -1122,14 +1124,19 @@ function updateTLSummary(techStats) {
             teamQualities[team] = totalQuality / teamTechStats.length;
         }
     }
-    for (const team in teamQualities) {
-        const quality = teamQualities[team];
+
+    // Sort teams by quality descending
+    const sortedTeams = Object.entries(teamQualities).sort(([, a], [, b]) => b - a);
+
+    for (const [team, quality] of sortedTeams) {
         const qualityBar = document.createElement('div');
         qualityBar.className = 'workload-bar-wrapper';
         let colorClass = 'quality-bar-red';
         if (quality >= 98) {
             colorClass = 'quality-bar-green';
         } else if (quality >= 95) {
+            colorClass = 'quality-bar-cyan';
+        } else if (quality >= 90) {
             colorClass = 'quality-bar-yellow';
         }
         qualityBar.innerHTML = `
@@ -1160,22 +1167,35 @@ function updateTLSummary(techStats) {
         return teamName && selectedTeams.includes(teamName);
     });
 
-    for (const [techId, categories] of filteredFix4) {
-        const techDiv = document.createElement('div');
-        let listItems = '';
-        const sortedCategories = Object.entries(categories).sort(([catA], [catB]) => parseInt(catA) - parseInt(catB));
+    if (filteredFix4.length > 0) {
+        let tableHTML = `
+            <div class="table-container text-sm">
+                <table class="min-w-full">
+                    <thead class="bg-brand-900/50">
+                        <tr>
+                            <th class="p-2 text-left">Tech ID</th>
+                            <th class="p-2 text-left">Category</th>
+                            <th class="p-2 text-left">Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
         
-        for (const [category, count] of sortedCategories) {
-            listItems += `<li class="text-brand-400">Category ${category}: <span class="font-semibold text-brand-300">${count}</span></li>`;
+        for (const [techId, categories] of filteredFix4) {
+            const sortedCategories = Object.entries(categories).sort(([catA], [catB]) => parseInt(catA) - parseInt(catB));
+            for (const [category, count] of sortedCategories) {
+                tableHTML += `
+                    <tr>
+                        <td class="p-2 font-semibold text-white">${techId}</td>
+                        <td class="p-2">Category ${category}</td>
+                        <td class="p-2">${count}</td>
+                    </tr>`;
+            }
         }
 
-        techDiv.innerHTML = `
-            <h4 class="font-bold text-white">${techId}</h4>
-            <ul class="list-disc list-inside ml-2">
-                ${listItems}
-            </ul>
-        `;
-        fix4Container.appendChild(techDiv);
+        tableHTML += `</tbody></table></div>`;
+        fix4Container.innerHTML = tableHTML;
+    } else {
+        fix4Container.innerHTML = `<p class="text-brand-400 text-sm">No Fix4 data for selected filters.</p>`;
     }
 }
 
@@ -1744,4 +1764,3 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
-
