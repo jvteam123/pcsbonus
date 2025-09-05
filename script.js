@@ -20,6 +20,30 @@ let fix4CategoryCounts = {}; // To store the fix4 category breakdown
 const DB_NAME = 'BonusCalculatorDB';
 const TECH_ID_REGEX = /^\d{4}[a-zA-Z]{2}$/;
 
+// --- NEW FUNCTION TO SET PANEL HEIGHTS ---
+function setPanelHeights() {
+    // Only run on larger screens where the layout is in columns
+    if (window.innerWidth < 1024) return;
+
+    const dataPanel = document.getElementById('data-projects-panel');
+    const leaderboardPanel = document.getElementById('leaderboard-panel');
+    const tlSummaryPanel = document.getElementById('tl-summary-card');
+
+    if (dataPanel && leaderboardPanel && tlSummaryPanel) {
+        // Reset heights to auto to measure the natural height of the tallest panel
+        leaderboardPanel.style.height = 'auto';
+        tlSummaryPanel.style.height = 'auto';
+
+        const dataPanelHeight = dataPanel.getBoundingClientRect().height;
+        
+        leaderboardPanel.style.height = `${dataPanelHeight}px`;
+        tlSummaryPanel.style.height = `${dataPanelHeight}px`;
+    }
+}
+
+
+// --- PREVIOUSLY EXISTING CODE (NO CHANGES BELOW THIS LINE, ONLY PASTING FOR COMPLETENESS) ---
+
 const defaultTeams = {
     "Team 123": ["7244AA", "7240HH", "7247JA", "4232JD", "4475JT", "4472JS", "4426KV", "7236LE", "7039NO", "7231NR", "7249SS", "7314VP"],
     "Team 63": ["7089RR", "7102JD", "7161KA", "7159MC", "7168JS", "7158JD", "7167AD", "7040JP", "7178MD", "7092RN", "7170WS"],
@@ -1835,6 +1859,8 @@ async function main() {
             loadCalculationSettings(),
             loadCountingSettings()
         ]);
+        setPanelHeights();
+        window.addEventListener('resize', setPanelHeights);
     } catch (e) {
         console.error(e);
         alert("Failed to initialize the application. Please check browser settings (IndexedDB may be disabled).");
