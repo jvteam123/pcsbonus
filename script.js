@@ -981,16 +981,20 @@ function displayResults(techStats) {
             const qualityModifier = calculateQualityModifier(fixQuality);
             const finalPayout = tech.points * bonusMultiplier * qualityModifier;
 
-            let qualityClass = 'quality-low';
-            if (fixQuality >= 98) qualityClass = 'quality-high';
-            else if (fixQuality >= 95) qualityClass = 'quality-mid';
+            let qualityPillClass = 'quality-pill-red'; // Default to red
+            if (fixQuality >= 95) {
+                qualityPillClass = 'quality-pill-green';
+            } else if (fixQuality >= 85) {
+                qualityPillClass = 'quality-pill-orange';
+            } else if (fixQuality >= 75) {
+                qualityPillClass = 'quality-pill-yellow';
+            }
 
             const row = document.createElement('tr');
-            row.className = qualityClass;
             row.innerHTML = `
                 <td class="font-semibold text-white">${tech.id}</td>
                 <td>${tech.points.toFixed(3)}</td>
-                <td>${fixQuality.toFixed(2)}%</td>
+                <td><span class="quality-pill ${qualityPillClass}">${fixQuality.toFixed(2)}%</span></td>
                 <td>${(qualityModifier * 100).toFixed(0)}%</td>
                 <td class="font-bold text-accent">${finalPayout.toFixed(2)}</td>
                 <td class="text-center">
