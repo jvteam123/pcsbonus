@@ -143,14 +143,14 @@
 
             <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col">
                 <div class="panel-header"><h2 class="panel-title">TL Summary</h2></div>
-                <div class="p-4 space-y-4 panel-content-scrollable custom-scrollbar">
+                <div class="p-4 space-y-4 flex-grow min-h-0 flex flex-col">
                     <div>
                         <h3 class="text-lg font-semibold text-text-dark mb-2">Quality Per Team</h3>
                         <div id="team-quality-container" class="space-y-2"></div>
                     </div>
-                    <div class="border-t border-border-color pt-4">
+                    <div class="border-t border-border-color pt-4 mt-4 flex-grow min-h-0 flex flex-col">
                         <h3 class="text-lg font-semibold text-text-dark mb-2">Fix4 Breakdown</h3>
-                        <div id="fix4-breakdown-container" class="space-y-4"></div>
+                        <div id="fix4-breakdown-container" class="space-y-4 panel-content-scrollable custom-scrollbar"></div>
                     </div>
                 </div>
             </div>
