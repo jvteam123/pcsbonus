@@ -1454,6 +1454,13 @@ function resetUIForNewCalculation() {
     }
 }
 
+function resetMergeModal() {
+    document.getElementById('merge-file-list').innerHTML = '';
+    document.getElementById('merge-project-name').value = '';
+    document.getElementById('merge-options').classList.add('hidden');
+    document.getElementById('merge-save-btn').disabled = true;
+    mergedFeatures = []; // Clear the stored data
+}
 
 async function handleDroppedFiles(files) {
     // If a project is currently selected in the dropdown, reset it
@@ -1610,8 +1617,14 @@ function setupEventListeners() {
     };
 
     // --- Main Menu Dropdown Items ---
-    addSafeListener('merge-fixpoints-btn', 'click', () => openModal('merge-fixpoints-modal'));
-    addSafeListener('manage-teams-btn', 'click', () => openModal('manage-teams-modal'));
+    addSafeListener('merge-fixpoints-btn', 'click', () => {
+        resetMergeModal();
+        openModal('merge-fixpoints-modal');
+    });
+    addSafeListener('manage-teams-btn', 'click', () => {
+        populateAdminTeamManagement(); // Re-populate with current settings
+        openModal('manage-teams-modal');
+    });
     addSafeListener('advance-settings-btn', 'click', () => {
         populateAdvanceSettingsEditor();
         openModal('advance-settings-modal');
