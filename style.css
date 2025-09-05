@@ -208,30 +208,35 @@ body {
     background: #4F5B6A; /* brand-600 */
 }
 
-/* --- NEW: Quality Pill Styles --- */
+/* --- UPDATED: Quality Pill Styles --- */
 .quality-pill {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     padding: 0.25rem 0.75rem;
     border-radius: 9999px;
     font-size: 0.8rem;
     font-weight: 500;
-    color: #FFFFFF;
 }
 
 .quality-pill-green {
-    background-color: #50D1AA;
+    background-color: rgba(80, 209, 170, 0.15);
+    color: #50D1AA;
 }
 
 .quality-pill-orange {
-    background-color: #FFB572;
+    background-color: rgba(255, 181, 114, 0.15);
+    color: #FFB572;
 }
 
 .quality-pill-yellow {
-    background-color: #FDC57B;
+    background-color: rgba(253, 197, 123, 0.15);
+    color: #FDC57B;
 }
 
 .quality-pill-red {
-    background-color: #FF7CA3;
+    background-color: rgba(255, 124, 163, 0.15);
+    color: #FF7CA3;
 }
 /* ------------------------------- */
 
