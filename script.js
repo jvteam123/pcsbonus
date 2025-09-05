@@ -891,6 +891,7 @@ async function loadProjectIntoForm(projectId) {
                 if(editBtn) editBtn.classList.remove('hidden');
                 document.getElementById('save-project-btn').disabled = true;
                 document.getElementById('cancel-edit-btn').classList.add('hidden');
+                document.getElementById('save-project-btn').textContent = 'Save Project';
             }
         } else {
             document.getElementById('techData').value = '';
@@ -1087,7 +1088,7 @@ function updateLeaderboard(techStats) {
         metricHeader.textContent = 'Quality %';
     }
     
-    if (techArray.length === 0) return tbody.innerHTML = `<tr><td class="p-2 text-brand-400" colspan="3"><i>No data...</i></td></tr>`;
+    if (techArray.length === 0) return tbody.innerHTML = `<tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr>`;
 
     techArray.forEach((stat, index) => {
         const row = document.createElement('tr');
@@ -1267,19 +1268,89 @@ function generateTechBreakdownHTML(tech) {
     const qualityModifier = calculateQualityModifier(fixQuality);
     const finalPayout = tech.points * lastUsedBonusMultiplier * qualityModifier;
 
-    const multiplierDisplay = lastCalculationUsedMultiplier ? `${lastUsedBonusMultiplier.toFixed(2)} (Multiplier)` : '1 (No Multiplier)';
-    
-    return `<div class="space-y-4 text-sm">
-        <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
-            <h4 class="font-semibold text-base text-white mb-2">Core Stats</h4>
-            <div class="grid grid-cols-2 gap-4">
-                <div><span class="text-brand-400">Primary Fix Tasks:</span> <span class="font-bold text-green-400">${tech.fixTasks}</span></div>
-                <div><span class="text-brand-400">AFP Tasks (AA):</span> <span class="font-bold text-blue-400">${tech.afpTasks}</span></div>
-                <div><span class="text-brand-400">Refix Tasks:</span> <span class="font-bold text-red-400">${tech.refixTasks}</span></div>
-                <div><span class="text-brand-400">Warnings:</span> <span class="font-bold text-yellow-400">${tech.warnings.length}</span></div>
-                <div><span class="text-brand-400">Misses:</span> <span class="font-bold text-orange-400">${tech.missedCategories.length}</span></div>
+    // --- Start Category Breakdown Calculation ---
+    let detailedCategoryRows = '';
+    let summaryCategoryItems = '';
+    let totalCategoryTasks = 0;
+    let totalCategoryPoints = 0;
+    let hasCategoryData = false;
+
+    for (let i = 1; i <= 9; i++) {
+        const counts = tech.categoryCounts[i];
+        const primaryTasks = (counts.primary || 0) + (counts.i3qa || 0) + (counts.afp || 0);
+
+        if (primaryTasks > 0) {
+            hasCategoryData = true;
+            totalCategoryTasks += primaryTasks;
+            
+            // Build "How they were counted" string
+            const breakdownParts = [];
+            if (counts.primary > 0) breakdownParts.push(`${counts.primary} from CATEGORY`);
+            if (counts.i3qa > 0) breakdownParts.push(`${counts.i3qa} from i3QA`);
+            if (counts.afp > 0) breakdownParts.push(`${counts.afp} from AFP`);
+            const breakdownString = breakdownParts.join(', ');
+
+            detailedCategoryRows += `
+                <tr>
+                    <td class="p-2 font-semibold">Category ${i}</td>
+                    <td class="p-2 font-bold text-white text-center">${primaryTasks}</td>
+                    <td class="p-2 text-brand-400">${breakdownString}</td>
+                </tr>
+            `;
+
+            // Build Summary Item
+            const pointValue = calculationSettings.categoryValues[i]?.[lastUsedGsdValue] || 0;
+            const categoryPoints = primaryTasks * pointValue;
+            totalCategoryPoints += categoryPoints;
+            summaryCategoryItems += `
+                <div class="summary-item summary-cat-${i}">
+                    Category ${i}: 
+                    <span class="font-mono">${primaryTasks} x ${pointValue.toFixed(2)} pts = ${categoryPoints.toFixed(2)} pts</span>
+                </div>
+            `;
+        }
+    }
+    // --- End Category Breakdown Calculation ---
+
+    let categoryBreakdownHTML = '';
+    if (hasCategoryData) {
+        categoryBreakdownHTML = `
+        <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4">
+            <div>
+                <h4 class="font-semibold text-base text-white mb-2">Primary Fix Category Counts (Detailed)</h4>
+                <div class="table-container text-sm">
+                    <table class="min-w-full">
+                        <thead class="bg-brand-900/50">
+                            <tr>
+                                <th class="p-2 text-left">Category</th>
+                                <th class="p-2 text-center">Tasks Counted</th>
+                                <th class="p-2 text-left">How they were counted</th>
+                            </tr>
+                        </thead>
+                        <tbody>${detailedCategoryRows}</tbody>
+                    </table>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-semibold text-base text-white mb-2">Primary Fix Category Counts (Summary)</h4>
+                <div class="space-y-2">
+                    ${summaryCategoryItems}
+                    <div class="summary-item summary-total">
+                        Total from Categories:
+                        <span class="font-mono">(${totalCategoryTasks} tasks) ${totalCategoryPoints.toFixed(2)} pts</span>
+                    </div>
+                </div>
             </div>
         </div>
+        `;
+    }
+
+    return `<div class="space-y-4 text-sm">
+        <div class="p-3 bg-accent/10 rounded-lg border border-accent/50">
+            <h4 class="font-semibold text-base text-accent mb-2">Final Payout</h4>
+            <div class="flex justify-between font-bold text-lg"><span class="text-white">Payout (PHP):</span><span class="text-accent font-mono">${finalPayout.toFixed(2)}</span></div>
+        </div>
+        ${categoryBreakdownHTML}
         <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
             <h4 class="font-semibold text-base text-white mb-2">Points Breakdown</h4>
             <div class="space-y-1 font-mono">
@@ -1292,12 +1363,14 @@ function generateTechBreakdownHTML(tech) {
             </div>
         </div>
         <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
-            <h4 class="font-semibold text-base text-white mb-2">Quality Calculation</h4>
-            <div class="flex justify-between"><span class="text-brand-400">Fix Quality %:</span><span class="font-mono font-bold">${fixQuality.toFixed(2)}%</span></div>
-        </div>
-        <div class="p-3 bg-accent/10 rounded-lg border border-accent/50">
-            <h4 class="font-semibold text-base text-accent mb-2">Final Payout</h4>
-            <div class="flex justify-between font-bold text-lg"><span class="text-white">Payout (PHP):</span><span class="text-accent font-mono">${finalPayout.toFixed(2)}</span></div>
+            <h4 class="font-semibold text-base text-white mb-2">Core Stats & Quality</h4>
+            <div class="grid grid-cols-2 gap-4">
+                <div><span class="text-brand-400">Primary Fix Tasks:</span> <span class="font-bold text-green-400">${tech.fixTasks}</span></div>
+                <div><span class="text-brand-400">AFP Tasks (AA):</span> <span class="font-bold text-blue-400">${tech.afpTasks}</span></div>
+                <div><span class="text-brand-400">Refix Tasks:</span> <span class="font-bold text-red-400">${tech.refixTasks}</span></div>
+                <div><span class="text-brand-400">Warnings:</span> <span class="font-bold text-yellow-400">${tech.warnings.length}</span></div>
+            </div>
+            <div class="flex justify-between mt-4 pt-4 border-t border-brand-700"><span class="text-brand-400">Fix Quality %:</span><span class="font-mono font-bold">${fixQuality.toFixed(2)}%</span></div>
         </div>
     </div>`;
 }
@@ -1540,11 +1613,16 @@ function setupEventListeners() {
         document.getElementById('edit-data-btn').classList.add('hidden');
         document.getElementById('save-project-btn').disabled = false;
         document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        // Change button text
+        document.getElementById('save-project-btn').textContent = 'Update Project';
+        document.getElementById('cancel-edit-btn').textContent = 'Cancel Edit';
     });
     
     addSafeListener('cancel-edit-btn', 'click', () => {
         const projectId = document.getElementById('project-select').value;
         if (projectId) loadProjectIntoForm(projectId);
+        // Reset button text
+        document.getElementById('save-project-btn').textContent = 'Save Project';
     });
 
     addSafeListener('save-project-btn', 'click', async (e) => {
@@ -1582,6 +1660,8 @@ function setupEventListeners() {
         } finally {
             hideLoading(button);
             isSaving = false;
+            // Reset button text
+            document.getElementById('save-project-btn').textContent = 'Save Project';
         }
     });
 
