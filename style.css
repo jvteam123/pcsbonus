@@ -242,6 +242,16 @@ body {
 .quality-bar-yellow { background-color: #F79009; }
 .quality-bar-red { background-color: #F04438; }
 
+/* NEW -- Styling for Fix4 Breakdown Groups */
+.fix4-group {
+    border: 1px solid #EAECF0; /* border-color */
+    border-radius: 0.5rem; /* rounded-lg */
+    overflow: hidden; /* To make sure the border radius clips the table corners */
+}
+.fix4-group:not(:first-child) {
+    margin-top: 1rem;
+}
+
 /* Loader and Modal styles would also adapt, but are omitted for brevity */
 .loader {
     border: 2px solid #D0D5DD;
