@@ -1133,6 +1133,7 @@ function updateTLSummary(techStats) {
         return;
     }
     tlCard.classList.remove('hidden');
+    setPanelHeights(); // Recalculate heights when this panel appears
 
     // Quality Per Team
     const teamQualityContainer = document.getElementById('team-quality-container');
@@ -1790,7 +1791,7 @@ function setupEventListeners() {
     addSafeListener('search-tech-id', 'input', applyFilters);
     addSafeListener('team-filter-container', 'change', applyFilters);
     addSafeListener('refresh-teams-btn', 'click', loadTeamSettings);
-    addSafeListener('leaderboard-sort-select', 'change', () => updateLeaderboard(currentTechStats));
+    addSafeListener('leaderboard-sort-select', 'change', () => applyFilters());
 
     // --- Manage Teams Modal ---
     addSafeListener('add-team-btn', 'click', () => addTeamCard());
