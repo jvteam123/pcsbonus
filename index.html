@@ -55,7 +55,7 @@
             </div>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
             
             <div class="dashboard-panel">
                 <div class="panel-header"><h2 class="panel-title">Data & Projects</h2></div>
@@ -90,7 +90,7 @@
                             </select>
                             <div class="flex items-center gap-2">
                                 <button id="save-project-btn" class="btn-primary w-full">Save Project</button>
-                                <button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel</button>
+                                <button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel Edit</button>
                             </div>
                         </div>
                     </div>
@@ -109,9 +109,9 @@
                 </div>
             </div>
             
-            <div class="dashboard-panel">
+            <div class="dashboard-panel flex flex-col">
                 <div class="panel-header"><h2 class="panel-title">Leaderboard</h2></div>
-                <div class="p-4 space-y-4">
+                <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-semibold text-white sr-only">Leaderboard</h3>
                         <select id="leaderboard-sort-select" class="input-field text-xs py-1 w-full">
@@ -120,7 +120,7 @@
                             <option value="fixTasks">Sort by: Tasks</option>
                         </select>
                     </div>
-                    <div class="table-container text-sm h-full border border-brand-700 rounded-md custom-scrollbar">
+                    <div class="table-container text-sm">
                         <table class="min-w-full">
                             <thead class="sticky top-0 bg-brand-800">
                                 <tr>
@@ -137,16 +137,16 @@
                 </div>
             </div>
 
-            <div id="tl-summary-card" class="dashboard-panel hidden lg:col-span-1">
+            <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col">
                 <div class="panel-header"><h2 class="panel-title">TL Summary</h2></div>
-                <div class="p-4 space-y-4">
+                <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar">
                     <div>
                         <h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3>
                         <div id="team-quality-container" class="space-y-2"></div>
                     </div>
                     <div class="border-t border-brand-700 pt-4">
                         <h3 class="text-lg font-semibold text-white mb-2">Fix4 Breakdown</h3>
-                        <div id="fix4-breakdown-container" class="space-y-4 max-h-64 custom-scrollbar overflow-y-auto"></div>
+                        <div id="fix4-breakdown-container" class="space-y-4"></div>
                     </div>
                 </div>
             </div>
