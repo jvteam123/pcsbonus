@@ -264,3 +264,28 @@ body {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Tech Summary Modal Category Styles */
+.summary-item {
+    border-left-width: 4px;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(28, 28, 46, 0.6);
+    border-radius: 0.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.summary-cat-1 { border-color: #ef4444; }
+.summary-cat-2 { border-color: #f97316; }
+.summary-cat-3 { border-color: #eab308; }
+.summary-cat-4 { border-color: #84cc16; }
+.summary-cat-5 { border-color: #22c55e; }
+.summary-cat-6 { border-color: #14b8a6; }
+.summary-cat-7 { border-color: #06b6d4; }
+.summary-cat-8 { border-color: #3b82f6; }
+.summary-cat-9 { border-color: #8b5cf6; }
+.summary-total {
+    border-color: #a6a6cc;
+    font-weight: bold;
+    color: #ffffff;
+}
