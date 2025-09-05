@@ -1125,20 +1125,16 @@ function updateTLSummary(techStats) {
         }
     }
 
-    // Sort teams by quality descending
     const sortedTeams = Object.entries(teamQualities).sort(([, a], [, b]) => b - a);
 
     for (const [team, quality] of sortedTeams) {
         const qualityBar = document.createElement('div');
         qualityBar.className = 'workload-bar-wrapper';
         let colorClass = 'quality-bar-red';
-        if (quality >= 98) {
-            colorClass = 'quality-bar-green';
-        } else if (quality >= 95) {
-            colorClass = 'quality-bar-cyan';
-        } else if (quality >= 90) {
-            colorClass = 'quality-bar-yellow';
-        }
+        if (quality >= 98) colorClass = 'quality-bar-green';
+        else if (quality >= 95) colorClass = 'quality-bar-cyan';
+        else if (quality >= 90) colorClass = 'quality-bar-yellow';
+        
         qualityBar.innerHTML = `
             <div class="workload-label" title="${team}">${team}</div>
             <div class="workload-bar">
@@ -1168,32 +1164,34 @@ function updateTLSummary(techStats) {
     });
 
     if (filteredFix4.length > 0) {
-        let tableHTML = `
-            <div class="table-container text-sm">
-                <table class="min-w-full">
-                    <thead class="bg-brand-900/50">
-                        <tr>
-                            <th class="p-2 text-left">Tech ID</th>
-                            <th class="p-2 text-left">Category</th>
-                            <th class="p-2 text-left">Count</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-        
+        let allTablesHTML = '';
         for (const [techId, categories] of filteredFix4) {
             const sortedCategories = Object.entries(categories).sort(([catA], [catB]) => parseInt(catA) - parseInt(catB));
+            
+            let tableHTML = `
+                <div class="table-container text-sm mb-4">
+                    <table class="min-w-full">
+                        <thead class="bg-brand-900/50">
+                            <tr><th colspan="2" class="p-2 text-left font-bold text-white">${techId}</th></tr>
+                            <tr>
+                                <th class="p-2 text-left">Category</th>
+                                <th class="p-2 text-left">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
             for (const [category, count] of sortedCategories) {
                 tableHTML += `
                     <tr>
-                        <td class="p-2 font-semibold text-white">${techId}</td>
                         <td class="p-2">Category ${category}</td>
                         <td class="p-2">${count}</td>
                     </tr>`;
             }
-        }
 
-        tableHTML += `</tbody></table></div>`;
-        fix4Container.innerHTML = tableHTML;
+            tableHTML += `</tbody></table></div>`;
+            allTablesHTML += tableHTML;
+        }
+        fix4Container.innerHTML = allTablesHTML;
     } else {
         fix4Container.innerHTML = `<p class="text-brand-400 text-sm">No Fix4 data for selected filters.</p>`;
     }
