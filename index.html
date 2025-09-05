@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PCS Advanced Bonus Calculator - Command Center</title>
+    <title>PCS Advanced Bonus Calculator</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,10 +36,7 @@
 
     <div class="w-full max-w-screen-2xl mx-auto p-4 md:p-6">
         <header class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold text-white">PCS Bonus Calculator</h1>
-                <p class="mt-1 text-sm text-brand-400">Command Center Interface</p>
-            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white">PCS Bonus Calculator</h1>
             <div class="relative" id="main-menu-container">
                 <button id="main-menu-btn" class="menu-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
@@ -63,48 +60,33 @@
             <div class="dashboard-panel">
                 <div class="panel-header"><h2 class="panel-title">Data & Projects</h2></div>
                 <div class="p-4 space-y-4">
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="block text-sm font-medium text-brand-400">Load Saved Project</label>
-                            <div class="flex items-center gap-2">
-                                <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
-                                </button>
-                                <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <select id="project-select" class="input-field w-full"><option value="">Select a project...</option></select>
-                            <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-                            </button>
-                        </div>
+                    <div class="flex items-center gap-2">
+                        <select id="project-select" class="input-field w-full"><option value="">Select a project to load</option></select>
+                        <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                        </button>
+                        <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+                        </button>
+                        <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                        </button>
                     </div>
-                    <div class="border-t border-brand-700 pt-4 space-y-3">
-                        <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4">
-                            <div class="flex items-center">
-                                <input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
-                                <label for="is-ir-project-checkbox" class="ml-2 block text-sm font-medium text-yellow-300 whitespace-nowrap">IR Project</label>
-                            </div>
-                            <div class="flex items-center w-full">
-                                <label for="gsd-value-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label>
-                                <select id="gsd-value-select" class="input-field w-full text-sm py-1">
-                                    <option value="3in">3in</option> <option value="4in">4in</option> <option value="6in">6in</option> <option value="9in">9in</option>
-                                </select>
-                            </div>
+                    <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors">
+                        <textarea id="techData" rows="10" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste raw data here, or drag & drop files"></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="project-name" class="input-field" placeholder="Enter Project Name to Save">
+                        <div class="flex items-center gap-2">
+                            <input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
+                            <label for="is-ir-project-checkbox" class="text-sm font-medium text-yellow-300">IR Project</label>
                         </div>
-                        <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors">
-                            <label for="techData" class="block text-sm font-medium text-brand-400 mb-2">Paste raw data, or drag & drop files</label>
-                            <textarea id="techData" rows="10" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data here..."></textarea>
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-4">
-                            <input type="text" id="project-name" class="input-field w-full" placeholder="Enter Project Name to Save">
-                            <div class="flex items-center gap-2">
-                                <button id="save-project-btn" class="btn-primary whitespace-nowrap">Save Project</button>
-                                <button id="cancel-edit-btn" class="btn-secondary whitespace-nowrap hidden">Cancel</button>
-                            </div>
+                        <select id="gsd-value-select" class="input-field text-sm">
+                            <option value="3in">3in GSD</option> <option value="4in">4in GSD</option> <option value="6in">6in GSD</option> <option value="9in">9in GSD</option>
+                        </select>
+                        <div class="flex items-center gap-2">
+                            <button id="save-project-btn" class="btn-primary w-full">Save Project</button>
+                            <button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -113,42 +95,35 @@
             <div class="dashboard-panel">
                 <div class="panel-header"><h2 class="panel-title">Controls & Analytics</h2></div>
                 <div class="p-4 space-y-4">
-                    <div>
-                        <label for="bonusMultiplierDirect" class="block text-sm font-medium text-brand-400 mb-1">Bonus Multiplier (PHP)</label>
-                        <input type="number" id="bonusMultiplierDirect" class="input-field w-full" placeholder="e.g., 1.25 for a 25% bonus">
-                    </div>
-                    <div class="border-t border-brand-700 pt-4 space-y-3">
-                        <button id="calculate-btn" class="btn-primary w-full text-base">CALCULATE</button>
-                        <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
-                            <div class="flex items-center mb-2">
-                               <input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
-                               <label for="customize-calc-all-cb" class="ml-2 block text-sm font-medium text-brand-300">Select multiple projects to calculate</label>
-                           </div>
-                          <button id="calculate-all-btn" class="btn-secondary w-full">Calculate All / Selected</button>
+                    <input type="number" id="bonusMultiplierDirect" class="input-field w-full" placeholder="Bonus Multiplier (e.g., 1.25 for 25%)">
+                    <div class="pt-4 space-y-3">
+                        <button id="calculate-btn" class="btn-primary w-full text-base">Calculate</button>
+                        <div class="flex items-center">
+                           <input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
+                           <label for="customize-calc-all-cb" class="ml-2 text-sm">Calculate from multiple projects</label>
                        </div>
+                      <button id="calculate-all-btn" class="btn-secondary w-full">Calculate All / Selected</button>
                     </div>
                     <div id="results-content" class="hidden space-y-6 border-t border-brand-700 pt-4">
-                        <div>
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="text-lg font-semibold text-white">Leaderboard</h3>
-                                <select id="leaderboard-sort-select" class="input-field text-xs py-1">
-                                    <option value="fixQuality">Rank by Fix Quality %</option>
-                                    <option value="totalPoints">Rank by Total Points</option>
-                                    <option value="fixTasks">Rank by Total Tasks</option>
-                                </select>
-                            </div>
-                            <div class="table-container text-sm max-h-96 border border-brand-700 rounded-md custom-scrollbar">
-                                <table class="min-w-full">
-                                    <thead class="sticky top-0 bg-brand-800">
-                                        <tr>
-                                            <th class="p-2 text-left">Rank</th>
-                                            <th class="p-2 text-left">Tech</th>
-                                            <th id="leaderboard-metric-header" class="p-2 text-left">Value</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="leaderboard-body"></tbody>
-                                </table>
-                            </div>
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold text-white">Leaderboard</h3>
+                            <select id="leaderboard-sort-select" class="input-field text-xs py-1">
+                                <option value="fixQuality">Sort by: Quality</option>
+                                <option value="totalPoints">Sort by: Points</option>
+                                <option value="fixTasks">Sort by: Tasks</option>
+                            </select>
+                        </div>
+                        <div class="table-container text-sm max-h-96 border border-brand-700 rounded-md custom-scrollbar">
+                            <table class="min-w-full">
+                                <thead class="sticky top-0 bg-brand-800">
+                                    <tr>
+                                        <th class="p-2 text-left">Rank</th>
+                                        <th class="p-2 text-left">Tech</th>
+                                        <th id="leaderboard-metric-header" class="p-2 text-left">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-body"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -163,9 +138,7 @@
                     </div>
                     <div class="border-t border-brand-700 pt-4">
                         <h3 class="text-lg font-semibold text-white mb-2">Fix4 Breakdown</h3>
-                        <div id="fix4-breakdown-container" class="space-y-4 max-h-64 custom-scrollbar overflow-y-auto">
-                            <!-- Fix4 Breakdown content will be generated here -->
-                        </div>
+                        <div id="fix4-breakdown-container" class="space-y-4 max-h-64 custom-scrollbar overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
@@ -177,142 +150,14 @@
                 <div class="flex flex-col md:flex-row gap-4">
                     <input type="text" id="search-tech-id" class="input-field w-full md:w-1/2" placeholder="Search Results...">
                     <div id="team-filter-container" class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                        <span class="text-sm font-medium text-brand-300">Filter:</span>
+                        <span class="text-sm font-medium text-brand-300">Filter by Team:</span>
                         <button id="refresh-teams-btn" title="Refresh Team List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
                     </div>
                 </div>
                 <div id="tech-results-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 custom-scrollbar" style="max-height: 500px; overflow-y: auto;">
-                    <!-- Results will be dynamically inserted here -->
                 </div>
             </div>
         </section>
     </div>
-
-    <!-- Modals -->
-    <div id="merge-fixpoints-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Merge Partials FP</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div class="p-6 overflow-y-auto custom-scrollbar">
-                <div id="merge-drop-zone" class="p-10 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors">
-                    <p class="text-brand-400">Drag & drop shapefiles (.shp, .dbf) here to merge</p>
-                </div>
-                <div id="merge-file-list" class="mt-4 text-sm"></div>
-                <div id="merge-options" class="hidden mt-4 space-y-3">
-                    <input type="text" id="merge-project-name" class="input-field w-full" placeholder="Enter Project Name">
-                    <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4">
-                        <div class="flex items-center">
-                            <input id="merge-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
-                            <label for="merge-is-ir-checkbox" class="ml-2 block text-sm font-medium text-yellow-300 whitespace-nowrap">IR Project</label>
-                        </div>
-                        <div class="flex items-center w-full">
-                            <label for="merge-gsd-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label>
-                            <select id="merge-gsd-select" class="input-field w-full text-sm py-1">
-                                <option value="3in">3in</option> <option value="4in">4in</option> <option value="6in">6in</option> <option value="9in">9in</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button class="modal-close-btn btn-secondary">Close</button>
-                 <button id="merge-save-btn" class="btn-primary" disabled>Save Project</button>
-            </div>
-        </div>
-    </div>
-    <div id="manage-teams-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Manage Teams</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div id="team-list-container" class="p-6 overflow-y-auto custom-scrollbar space-y-4">
-                <!-- Content for Manage Teams -->
-            </div>
-            <div class="p-4 border-t border-brand-700 flex justify-between items-center">
-                <button id="add-team-btn" class="btn-secondary">Add New Team</button>
-                <div class="space-x-2">
-                    <button class="modal-close-btn btn-secondary">Close</button>
-                    <button id="save-teams-btn" class="btn-primary">Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="advance-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Advance Settings</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div id="advance-settings-body" class="p-6 overflow-y-auto custom-scrollbar">
-                <!-- Tabs and content will be injected here -->
-            </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button class="modal-close-btn btn-secondary">Close</button>
-                 <button id="save-advance-settings-btn" class="btn-primary">Save Changes</button>
-            </div>
-        </div>
-    </div>
-    <div id="how-it-works-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">How It Works</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div id="how-it-works-body" class="p-6 overflow-y-auto custom-scrollbar">
-                <!-- Content for How It Works -->
-            </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button class="modal-close-btn btn-secondary">Close</button>
-            </div>
-        </div>
-    </div>
-    <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Summary</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div id="tech-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar">
-                <!-- Content for Tech Summary -->
-            </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button class="modal-close-btn btn-secondary">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-    <script>
-        // Inline script for main menu dropdown
-        document.addEventListener('DOMContentLoaded', () => {
-            const btn = document.getElementById('main-menu-btn');
-            const dropdown = document.getElementById('main-menu-dropdown');
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dropdown.classList.toggle('hidden');
-            });
-            document.addEventListener('click', () => dropdown.classList.add('hidden'));
-
-            // Modal close buttons
-            document.querySelectorAll('.modal-close-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    button.closest('.fixed').classList.add('hidden');
-                });
-            });
-        });
-    </script>
-</body>
+    </body>
 </html>
