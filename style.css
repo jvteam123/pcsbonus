@@ -208,6 +208,33 @@ body {
     background: #4F5B6A; /* brand-600 */
 }
 
+/* --- NEW: Quality Pill Styles --- */
+.quality-pill {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.quality-pill-green {
+    background-color: #50D1AA;
+}
+
+.quality-pill-orange {
+    background-color: #FFB572;
+}
+
+.quality-pill-yellow {
+    background-color: #FDC57B;
+}
+
+.quality-pill-red {
+    background-color: #FF7CA3;
+}
+/* ------------------------------- */
+
 /* Workload & Quality Chart Styles */
 .workload-bar-wrapper {
     display: flex;
