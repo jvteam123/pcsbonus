@@ -1456,6 +1456,12 @@ function resetUIForNewCalculation() {
 
 
 async function handleDroppedFiles(files) {
+    // If a project is currently selected in the dropdown, reset it
+    const projectSelect = document.getElementById('project-select');
+    if (projectSelect && projectSelect.value) {
+        projectSelect.value = '';
+    }
+
     resetUIForNewCalculation();
     const fileGroups = {};
 
