@@ -246,7 +246,7 @@ body.light-theme .dashboard-panel {
 .table-container table tbody tr:last-child td {
     border-bottom: none;
 }
-body.dark-theme .table-container table tbody td {
+body:not(.light-theme) .table-container table tbody td {
      border-top: 1px solid var(--border-color); /* Keep top border for dark mode */
      border-bottom: none;
 }
@@ -294,7 +294,7 @@ body.dark-theme .table-container table tbody td {
     background-color: #ECFDF5;
     color: #065F46;
 }
-body.dark-theme .quality-pill-green {
+body:not(.light-theme) .quality-pill-green {
     background-color: rgba(80, 209, 170, 0.15);
     color: #50D1AA;
 }
@@ -303,7 +303,7 @@ body.dark-theme .quality-pill-green {
     background-color: #FFFBEB;
     color: #B45309;
 }
-body.dark-theme .quality-pill-orange {
+body:not(.light-theme) .quality-pill-orange {
     background-color: rgba(255, 181, 114, 0.15);
     color: #FFB572;
 }
@@ -312,7 +312,7 @@ body.dark-theme .quality-pill-orange {
     background-color: #FEFCE8;
     color: #854D0E;
 }
-body.dark-theme .quality-pill-yellow {
+body:not(.light-theme) .quality-pill-yellow {
     background-color: rgba(253, 197, 123, 0.15);
     color: #FDC57B;
 }
@@ -321,7 +321,7 @@ body.dark-theme .quality-pill-yellow {
     background-color: #FEF2F2;
     color: #991B1B;
 }
-body.dark-theme .quality-pill-red {
+body:not(.light-theme) .quality-pill-red {
     background-color: rgba(255, 124, 163, 0.15);
     color: #FF7CA3;
 }
@@ -382,7 +382,7 @@ body.dark-theme .quality-pill-red {
 
 @keyframes rotation {
     0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    100% { transform: rotate(30deg); }
 }
 
 /* Tech Summary Modal Category Styles */
@@ -408,4 +408,52 @@ body.dark-theme .quality-pill-red {
     border-color: var(--text-color);
     font-weight: bold;
     color: var(--summary-total-text);
+}
+
+
+/* --- !! NEW !! Light Theme Overrides for Tailwind Classes --- */
+/* This section fixes the unreadable text by overriding utility classes from the HTML */
+body.light-theme .text-brand-300,
+body.light-theme .text-white {
+    color: var(--text-color);
+}
+
+body.light-theme .text-brand-400 {
+    color: var(--text-muted-color);
+}
+
+body.light-theme .bg-brand-900 {
+    background-color: var(--brand-900);
+}
+
+body.light-theme .bg-brand-800 {
+    background-color: var(--brand-800);
+}
+
+body.light-theme .border-brand-700 {
+    border-color: var(--border-color);
+}
+
+body.light-theme .text-accent {
+    color: var(--accent);
+}
+
+body.light-theme .focus\:ring-accent:focus {
+    --tw-ring-color: var(--accent);
+}
+
+body.light-theme .bg-brand-700 {
+     background-color: var(--brand-700);
+}
+
+body.light-theme .border-brand-600 {
+    border-color: var(--brand-600);
+}
+
+body.light-theme .bg-opacity-80 {
+    background-color: rgba(249, 250, 251, 0.9); /* Modal backdrop */
+}
+
+body.light-theme .table-container thead.bg-brand-800 {
+    background-color: transparent;
 }
