@@ -382,7 +382,7 @@ body:not(.light-theme) .quality-pill-red {
 
 @keyframes rotation {
     0% { transform: rotate(0deg); }
-    100% { transform: rotate(30deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* Tech Summary Modal Category Styles */
@@ -411,49 +411,67 @@ body:not(.light-theme) .quality-pill-red {
 }
 
 
-/* --- !! NEW !! Light Theme Overrides for Tailwind Classes --- */
-/* This section fixes the unreadable text by overriding utility classes from the HTML */
+/* --- THEME OVERRIDES FOR TAILWIND --- */
+
+/* !! LIGHT THEME !! */
 body.light-theme .text-brand-300,
 body.light-theme .text-white {
     color: var(--text-color);
 }
-
 body.light-theme .text-brand-400 {
     color: var(--text-muted-color);
 }
-
 body.light-theme .bg-brand-900 {
     background-color: var(--brand-900);
 }
-
 body.light-theme .bg-brand-800 {
     background-color: var(--brand-800);
 }
-
 body.light-theme .border-brand-700 {
     border-color: var(--border-color);
 }
-
 body.light-theme .text-accent {
     color: var(--accent);
 }
-
 body.light-theme .focus\:ring-accent:focus {
     --tw-ring-color: var(--accent);
 }
-
 body.light-theme .bg-brand-700 {
      background-color: var(--brand-700);
 }
-
 body.light-theme .border-brand-600 {
     border-color: var(--brand-600);
 }
-
 body.light-theme .bg-opacity-80 {
     background-color: rgba(249, 250, 251, 0.9); /* Modal backdrop */
 }
-
 body.light-theme .table-container thead.bg-brand-800 {
     background-color: transparent;
+}
+
+/* !! DARK THEME !! - Explicitly define colors to prevent issues */
+body:not(.light-theme) h1.text-white,
+body:not(.light-theme) .text-brand-300 {
+    color: #FFFFFF;
+}
+body:not(.light-theme) .text-brand-400 {
+    color: #ABBBC2;
+}
+body:not(.light-theme) .panel-title,
+body:not(.light-theme) .dropdown-item,
+body:not(.light-theme) .btn-secondary,
+body:not(.light-theme) .input-field {
+    color: #FFFFFF;
+}
+body:not(.light-theme) label {
+    color: #FFFFFF;
+}
+body:not(.light-theme) label.text-accent {
+    color: #6C5ECF;
+}
+body:not(.light-theme) .panel-header,
+body:not(.light-theme) .table-container thead th,
+body:not(.light-theme) .workload-label,
+body:not(.light-theme) #fix4-breakdown-container p {
+    color: #ABBBC2;
 }
