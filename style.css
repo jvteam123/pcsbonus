@@ -342,36 +342,9 @@ body:not(.light-theme) .quality-pill-red {
     100% { transform: rotate(360deg); }
 }
 
-/* Tech Summary Modal Category Styles */
-#tech-summary-modal .bg-brand-800 {
-    background-color: var(--panel-bg);
-}
-#tech-summary-modal .border-brand-700 {
-    border-color: var(--border-color);
-}
-.summary-item {
-    border-left-width: 4px; padding: 0.5rem 0.75rem; background-color: var(--summary-item-bg); border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-color);
-}
-.summary-item .text-brand-400 {
-    color: var(--text-muted-color);
-}
-.summary-cat-1 { border-color: #FF7CA3; }
-.summary-cat-2 { border-color: #5492FF; }
-.summary-cat-3 { border-color: #50D1AA; }
-.summary-cat-4 { border-color: #7C3AED; }
-.summary-cat-5 { border-color: #6B7280; }
-.summary-cat-6 { border-color: #1F2937; }
-.summary-cat-7 { border-color: #393C49; }
-.summary-cat-8 { border-color: #FFB572; }
-.summary-cat-9 { border-color: #9290FE; }
-.summary-total {
-    border-color: var(--text-color); font-weight: bold; color: var(--summary-total-text);
-}
-
-
 /* --- THEME OVERRIDES --- */
 body.bg-brand-900 {
-    background-color: var(--brand-900);
+    background-color: var(--brand-900) !important;
 }
 
 /* Light Theme */
@@ -389,3 +362,38 @@ body:not(.light-theme) h1, body:not(.light-theme) h2, body:not(.light-theme) h3 
 body:not(.light-theme) .text-brand-300, body:not(.light-theme) .text-white { color: #FFFFFF !important; }
 body:not(.light-theme) .text-brand-400 { color: #ABBBC2 !important; }
 body:not(.light-theme) .font-semibold.text-white { color: #FFFFFF !important; }
+
+
+/* --- MODAL THEME FIX --- */
+/* Base Modal Styles */
+#tech-summary-modal .bg-brand-800 { background-color: var(--panel-bg); }
+#tech-summary-modal .border-brand-700 { border-color: var(--border-color); }
+#tech-summary-modal-body .p-3 { background-color: var(--summary-item-bg); }
+
+/* Dark Theme Modal Text */
+body:not(.light-theme) #tech-summary-modal-body { color: var(--brand-300); }
+body:not(.light-theme) #tech-summary-modal-body h4 { color: var(--brand-300); }
+body:not(.light-theme) #tech-summary-modal-body .text-brand-400 { color: var(--brand-400); }
+body:not(.light-theme) #tech-summary-modal-body .font-mono span:last-child { color: var(--brand-300); }
+
+/* Light Theme Modal Text */
+body.light-theme #tech-summary-modal-body { color: var(--text-color); }
+body.light-theme #tech-summary-modal-body h4 { color: var(--text-color); }
+body.light-theme #tech-summary-modal-body .text-brand-400 { color: var(--text-muted-color); }
+body.light-theme #tech-summary-modal-body .font-mono span:last-child { color: var(--text-color); }
+
+.summary-item {
+    border-left-width: 4px; padding: 0.5rem 0.75rem; border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-color);
+}
+.summary-cat-1 { border-color: #FF7CA3; }
+.summary-cat-2 { border-color: #5492FF; }
+.summary-cat-3 { border-color: #50D1AA; }
+.summary-cat-4 { border-color: #7C3AED; }
+.summary-cat-5 { border-color: #6B7280; }
+.summary-cat-6 { border-color: #1F2937; }
+.summary-cat-7 { border-color: #393C49; }
+.summary-cat-8 { border-color: #FFB572; }
+.summary-cat-9 { border-color: #9290FE; }
+.summary-total {
+    border-color: var(--text-color); font-weight: bold; color: var(--summary-total-text);
+}
