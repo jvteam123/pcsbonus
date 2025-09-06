@@ -1015,20 +1015,12 @@ function populateProjectSelect() {
     const currentVal = select.value;
     select.innerHTML = '<option value="">Select a project...</option>';
 
-    // Create a temporary container to render options and get their innerHTML
-    const tempContainer = document.createElement('div');
-
     projectListCache.forEach(project => {
         const option = document.createElement('option');
         option.value = project.id;
-
-        const indicator = document.createElement('span');
-        indicator.className = `project-indicator ${project.isIRProject ? 'ir' : 'non-ir'}`;
-        
-        tempContainer.innerHTML = ''; // Clear container
-        tempContainer.appendChild(indicator);
-        option.innerHTML = tempContainer.innerHTML + ` ${project.name}`; // Combine HTML strings
-        
+        // Prepend [IR] for IR projects for a cross-browser compatible solution
+        const prefix = project.isIRProject ? '[IR] ' : '';
+        option.textContent = prefix + project.name;
         select.appendChild(option);
     });
 
