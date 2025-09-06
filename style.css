@@ -379,9 +379,9 @@ body.light-theme .team-quality-label {
 }
 
 /* Core Stats Color Classes */
-.stat-orange { color: var(--status-orange); }
-.stat-green { color: var(--status-green); }
-.stat-red { color: var(--status-red); }
+.stat-orange { color: var(--status-orange) !important; }
+.stat-green { color: var(--status-green) !important; }
+.stat-red { color: var(--status-red) !important; }
 
 /* --- Leaderboard New Style --- */
 #leaderboard-panel .table-container thead {
@@ -403,8 +403,8 @@ body.light-theme .team-quality-label {
 #leaderboard-panel .table-container tbody tr {
     border-bottom: 1px solid var(--border-color);
 }
-body.light-theme #leaderboard-panel .table-container tbody tr:nth-child(even) {
-    background-color: var(--brand-600); /* Light gray for alternating rows */
+#leaderboard-panel .table-container tbody tr:nth-child(even) {
+    background-color: var(--brand-600); 
 }
 body:not(.light-theme) #leaderboard-panel .table-container {
     background-color: var(--brand-900);
@@ -415,7 +415,60 @@ body:not(.light-theme) #leaderboard-panel .table-container thead {
 body:not(.light-theme) #leaderboard-panel .table-container thead th {
     color: var(--brand-300);
 }
+body:not(.light-theme) #leaderboard-panel .table-container tbody tr:nth-child(even) {
+    background-color: var(--brand-800);
+}
 
+/* Project IR Badge */
+.project-info-badge {
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.project-info-badge.is-ir {
+    background-color: #FBBF24;
+    color: #422006;
+}
+.project-info-badge.is-not-ir {
+    background-color: #E5E7EB;
+    color: #4B5563;
+}
+body:not(.light-theme) .project-info-badge.is-not-ir {
+    background-color: var(--brand-700);
+    color: var(--brand-300);
+}
+
+/* --- Manage Teams Compact UI --- */
+.team-tech-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+}
+.tech-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #FBBF24;
+    color: #422006;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+.remove-tech-btn {
+    margin-left: 0.5rem;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #92400E;
+}
+.remove-tech-btn:hover {
+    color: #78350F;
+}
 
 /* --- THEME OVERRIDES --- */
 body.bg-brand-900 {
@@ -424,7 +477,7 @@ body.bg-brand-900 {
 
 /* Light Theme */
 body.light-theme { color: var(--text-color); }
-body.light-theme h1, body.light-theme h2, body.light-theme h3 { color: var(--text-color); }
+body.light-theme h1, body.light-theme h2, body.light-theme h3, body.light-theme h4 { color: var(--text-color); }
 body.light-theme .text-brand-300, body.light-theme .text-white { color: var(--text-color) !important; }
 body.light-theme .text-brand-400 { color: var(--text-muted-color) !important; }
 body.light-theme .bg-brand-800 { background-color: var(--brand-800) !important; }
@@ -434,7 +487,7 @@ body.light-theme .bg-brand-600 { background-color: var(--brand-600) !important; 
 
 /* Dark Theme */
 body:not(.light-theme) { color: #ABBBC2; }
-body:not(.light-theme) h1, body:not(.light-theme) h2, body:not(.light-theme) h3 { color: #FFFFFF; }
+body:not(.light-theme) h1, body:not(.light-theme) h2, body:not(.light-theme) h3, body:not(.light-theme) h4 { color: #FFFFFF; }
 body:not(.light-theme) .text-brand-300, body:not(.light-theme) .text-white { color: #FFFFFF !important; }
 body:not(.light-theme) .text-brand-400 { color: #ABBBC2 !important; }
 body:not(.light-theme) .bg-brand-800 { background-color: #252836 !important; }
@@ -442,6 +495,8 @@ body:not(.light-theme) .bg-brand-900 { background-color: #1F1D2B !important; }
 body:not(.light-theme) .border-brand-700 { border-color: #393C49 !important; }
 body:not(.light-theme) .bg-brand-600 { background-color: #4F5B6A !important; }
 body:not(.light-theme) strong { color: #FFFFFF; }
+body:not(.light-theme) .info-title { color: #FFFFFF; }
+body:not(.light-theme) .info-text { color: #ABBBC2; }
 
 /* --- MODAL THEME FIX --- */
 #tech-summary-modal .bg-brand-800 { background-color: var(--panel-bg) !important; }
