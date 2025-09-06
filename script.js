@@ -913,6 +913,7 @@ function calculateQualityModifier(qualityRate) {
 async function loadProjectIntoForm(projectId) {
     const editBtn = document.getElementById('edit-data-btn');
     const spinner = document.getElementById('project-loading-spinner');
+    const irBadge = document.getElementById('project-ir-badge');
     
     if (spinner) spinner.classList.remove('hidden');
 
@@ -932,6 +933,17 @@ async function loadProjectIntoForm(projectId) {
                 document.getElementById('save-project-btn').disabled = true;
                 document.getElementById('cancel-edit-btn').classList.add('hidden');
                 document.getElementById('save-project-btn').textContent = 'Save Project';
+
+                // Update IR Badge
+                irBadge.classList.remove('hidden', 'is-ir', 'is-not-ir');
+                if (projectData.isIRProject) {
+                    irBadge.textContent = 'IR';
+                    irBadge.classList.add('is-ir');
+                } else {
+                    irBadge.textContent = 'Non-IR';
+                    irBadge.classList.add('is-not-ir');
+                }
+
             }
         } else {
             document.getElementById('techData').value = '';
@@ -945,6 +957,7 @@ async function loadProjectIntoForm(projectId) {
             if(editBtn) editBtn.classList.add('hidden');
             document.getElementById('save-project-btn').disabled = false;
             document.getElementById('cancel-edit-btn').classList.add('hidden');
+            irBadge.classList.add('hidden'); // Hide badge when no project is selected
         }
     } finally {
         if (spinner) spinner.classList.add('hidden');
@@ -1018,7 +1031,6 @@ function populateProjectSelect() {
     projectListCache.forEach(project => {
         const option = document.createElement('option');
         option.value = project.id;
-        // Prepend [IR] for IR projects for a cross-browser compatible solution
         const prefix = project.isIRProject ? '[IR] ' : '';
         option.textContent = prefix + project.name;
         select.appendChild(option);
@@ -1044,15 +1056,15 @@ function addTeamCard(teamName = '', techIds = []) {
     const teamCard = document.createElement('div');
     teamCard.className = 'team-card p-4 rounded-lg bg-brand-900/50 border border-brand-700';
     teamCard.innerHTML = `
-        <div class="flex justify-between items-center mb-2">
+        <div class="flex justify-between items-center mb-3">
             <input type="text" class="team-name-input input-field text-lg font-bold w-full" value="${teamName}" placeholder="Enter Team Name">
             <button class="delete-team-btn control-btn-icon-danger ml-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
             </button>
         </div>
-        <div class="team-tech-list mb-2 min-h-[40px]"></div>
+        <div class="team-tech-list mb-3"></div>
         <div class="flex gap-2">
-            <input type="text" class="add-tech-input input-field w-full" placeholder="Add Tech ID">
+            <input type="text" class="add-tech-input input-field w-full" placeholder="Add Tech ID (e.g., 1234AB)">
             <button class="add-tech-btn btn-secondary">Add</button>
         </div>
     `;
@@ -1066,6 +1078,11 @@ function addTeamCard(teamName = '', techIds = []) {
         const input = e.target.previousElementSibling;
         const techId = input.value.trim().toUpperCase();
         if (techId && TECH_ID_REGEX.test(techId)) {
+            // Check if tag already exists
+            if (Array.from(techList.querySelectorAll('.tech-tag')).some(tag => tag.dataset.techId === techId)) {
+                input.value = '';
+                return;
+            }
             addTechTag(techList, techId);
             input.value = '';
         } else {
@@ -1647,9 +1664,8 @@ function setupEventListeners() {
         }
     });
     addSafeListener('save-advance-settings-btn', 'click', saveAdvanceSettings);
-    addSafeListener('how-it-works-btn', 'click', () => {
-        document.getElementById('how-it-works-body').innerHTML = calculationInfo.howItWorks.body;
-        openModal('how-it-works-modal');
+    addSafeListener('important-info-btn', 'click', () => {
+        openModal('important-info-modal');
     });
     addSafeListener('bug-report-btn', 'click', () => {
         window.open("https://teams.microsoft.com/l/chat/48:notes/conversations?context=%7B%22contextType%22%3A%22chat%22%7D", "_blank");
