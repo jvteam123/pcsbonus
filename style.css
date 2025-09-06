@@ -15,6 +15,8 @@
     --border-color: var(--brand-700);
     --shadow: 0 4px 15px rgba(0,0,0,0.2);
     --status-red: #FF7CA3;
+    --status-orange: #FFB572;
+    --status-green: #50D1AA;
     --summary-item-bg: rgba(31, 29, 43, 0.6);
     --summary-total-text: #ffffff;
     --workload-bar-inner-text: white;
@@ -36,6 +38,8 @@ body.light-theme {
     --border-color: var(--brand-700);
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); /* Lighter, modern shadow */
     --status-red: #EF4444;
+    --status-orange: #F97316;
+    --status-green: #10B981;
     --summary-item-bg: var(--brand-600);
     --summary-total-text: var(--brand-300);
     --workload-bar-inner-text: white;
@@ -392,6 +396,50 @@ body.light-theme .team-quality-label {
 .project-indicator.non-ir {
     background-color: #9CA3AF; /* Gray */
 }
+/* Style for option text to align indicator */
+#project-select option {
+    display: flex;
+    align-items: center;
+}
+
+/* Core Stats Color Classes */
+.stat-orange { color: var(--status-orange); }
+.stat-green { color: var(--status-green); }
+.stat-red { color: var(--status-red); }
+
+/* --- Leaderboard New Style --- */
+#leaderboard-panel .table-container thead {
+    background-color: #FBBF24; /* Yellow */
+}
+#leaderboard-panel .table-container thead th {
+    color: #422006; /* Dark brown for text on yellow bg */
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    border-bottom: none;
+}
+#leaderboard-panel .table-container tbody td {
+    border: none;
+    font-weight: 500;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+#leaderboard-panel .table-container tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+body.light-theme #leaderboard-panel .table-container tbody tr:nth-child(even) {
+    background-color: var(--brand-600); /* Light gray for alternating rows */
+}
+body:not(.light-theme) #leaderboard-panel .table-container {
+    background-color: var(--brand-900);
+}
+body:not(.light-theme) #leaderboard-panel .table-container thead {
+    background-color: var(--brand-700);
+}
+body:not(.light-theme) #leaderboard-panel .table-container thead th {
+    color: var(--brand-300);
+}
+
 
 /* --- THEME OVERRIDES --- */
 body.bg-brand-900 {
