@@ -212,7 +212,7 @@ const UI = {
         }
         document.getElementById('bonus-payout-section').classList.remove('hidden');
     },
-    populateProjectSelect() {
+    populateProjectSelect(projectListCache) {
         const select = document.getElementById('project-select');
         const currentVal = select.value;
         select.innerHTML = '<option value="">Select a project...</option>';
