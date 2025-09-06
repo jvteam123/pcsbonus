@@ -625,7 +625,7 @@ async function saveProjectToIndexedDB(projectData) {
 async function fetchProjectListSummary() {
     try {
         const projects = await getAllFromDB('projects');
-        projectListCache = projects.map(p => ({ id: p.id, name: p.name, projectOrder: p.projectOrder || 0 }));
+        projectListCache = projects.map(p => ({ id: p.id, name: p.name, isIRProject: p.isIRProject, projectOrder: p.projectOrder || 0 }));
         projectListCache.sort((a, b) => b.projectOrder - a.projectOrder);
         populateProjectSelect();
     } catch (err) {
@@ -1017,7 +1017,8 @@ function populateProjectSelect() {
     projectListCache.forEach(project => {
         const option = document.createElement('option');
         option.value = project.id;
-        option.textContent = project.name;
+        const indicatorClass = project.isIRProject ? 'ir' : 'non-ir';
+        option.innerHTML = `<span class="project-indicator ${indicatorClass}"></span> ${project.name}`;
         select.appendChild(option);
     });
     if (projectListCache.some(p => p.id === currentVal)) {
@@ -1182,7 +1183,7 @@ function updateTLSummary(techStats) {
         else if (quality >= 90) colorClass = 'quality-bar-yellow';
         
         qualityBar.innerHTML = `
-            <div class="workload-label" title="${team}">${team}</div>
+            <div class="team-quality-label" title="${team}">${team}</div>
             <div class="workload-bar">
                 <div class="workload-bar-inner ${colorClass}" style="width: ${quality.toFixed(2)}%;">${quality.toFixed(2)}%</div>
             </div>`;
@@ -1900,6 +1901,13 @@ function setupEventListeners() {
 async function main() {
     try {
         await openDB();
+        
+        // Replace old spinner with new one
+        const spinnerContainer = document.getElementById('project-loading-spinner');
+        if (spinnerContainer) {
+            spinnerContainer.innerHTML = `<div class="pulsing-spinner"></div>`;
+        }
+
         setupEventListeners();
         // Check for saved theme
         const savedTheme = localStorage.getItem('theme');
