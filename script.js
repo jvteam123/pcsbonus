@@ -1014,13 +1014,24 @@ function populateProjectSelect() {
     const select = document.getElementById('project-select');
     const currentVal = select.value;
     select.innerHTML = '<option value="">Select a project...</option>';
+
+    // Create a temporary container to render options and get their innerHTML
+    const tempContainer = document.createElement('div');
+
     projectListCache.forEach(project => {
         const option = document.createElement('option');
         option.value = project.id;
-        const indicatorClass = project.isIRProject ? 'ir' : 'non-ir';
-        option.innerHTML = `<span class="project-indicator ${indicatorClass}"></span> ${project.name}`;
+
+        const indicator = document.createElement('span');
+        indicator.className = `project-indicator ${project.isIRProject ? 'ir' : 'non-ir'}`;
+        
+        tempContainer.innerHTML = ''; // Clear container
+        tempContainer.appendChild(indicator);
+        option.innerHTML = tempContainer.innerHTML + ` ${project.name}`; // Combine HTML strings
+        
         select.appendChild(option);
     });
+
     if (projectListCache.some(p => p.id === currentVal)) {
         select.value = currentVal;
     }
@@ -1411,10 +1422,10 @@ function generateTechBreakdownHTML(tech) {
         <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
             <h4 class="font-semibold text-base text-white mb-2">Core Stats & Quality</h4>
             <div class="grid grid-cols-2 gap-4">
-                <div><span class="text-brand-400">Primary Fix Tasks:</span> <span class="font-bold text-green-400">${tech.fixTasks}</span></div>
-                <div><span class="text-brand-400">AFP Tasks (AA):</span> <span class="font-bold text-blue-400">${tech.afpTasks}</span></div>
-                <div><span class="text-brand-400">Refix Tasks:</span> <span class="font-bold text-red-400">${tech.refixTasks}</span></div>
-                <div><span class="text-brand-400">Warnings:</span> <span class="font-bold text-yellow-400">${tech.warnings.length}</span></div>
+                <div><span class="text-brand-400">Primary Fix Tasks:</span> <span class="font-bold stat-orange">${tech.fixTasks}</span></div>
+                <div><span class="text-brand-400">AFP Tasks (AA):</span> <span class="font-bold stat-green">${tech.afpTasks}</span></div>
+                <div><span class="text-brand-400">Refix Tasks:</span> <span class="font-bold stat-red">${tech.refixTasks}</span></div>
+                <div><span class="text-brand-400">Warnings:</span> <span class="font-bold stat-red">${tech.warnings.length}</span></div>
             </div>
             <div class="flex justify-between mt-4 pt-4 border-t border-brand-700"><span class="text-brand-400">Fix Quality %:</span><span class="font-mono font-bold">${fixQuality.toFixed(2)}%</span></div>
         </div>
