@@ -1633,6 +1633,15 @@ function setupEventListeners() {
         populateAdvanceSettingsEditor();
         openModal('advance-settings-modal');
     });
+    addSafeListener('toggle-theme-btn', 'click', () => {
+        document.body.classList.toggle('light-theme');
+        // Save theme preference
+        if (document.body.classList.contains('light-theme')) {
+            localStorage.setItem('theme', 'light');
+        } else {
+            localStorage.setItem('theme', 'dark');
+        }
+    });
     addSafeListener('save-advance-settings-btn', 'click', saveAdvanceSettings);
     addSafeListener('how-it-works-btn', 'click', () => {
         document.getElementById('how-it-works-body').innerHTML = calculationInfo.howItWorks.body;
@@ -1892,6 +1901,11 @@ async function main() {
     try {
         await openDB();
         setupEventListeners();
+        // Check for saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+        }
         await Promise.all([ 
             fetchProjectListSummary(), 
             loadTeamSettings(), 
