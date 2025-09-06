@@ -470,34 +470,6 @@ body:not(.light-theme) .project-info-badge.is-not-ir {
     color: #78350F;
 }
 
-/* --- THEME OVERRIDES --- */
-body.bg-brand-900 {
-    background-color: var(--brand-900) !important;
-}
-
-/* Light Theme */
-body.light-theme { color: var(--text-color); }
-body.light-theme h1, body.light-theme h2, body.light-theme h3, body.light-theme h4 { color: var(--text-color); }
-body.light-theme .text-brand-300, body.light-theme .text-white { color: var(--text-color) !important; }
-body.light-theme .text-brand-400 { color: var(--text-muted-color) !important; }
-body.light-theme .bg-brand-800 { background-color: var(--brand-800) !important; }
-body.light-theme .border-brand-700 { border-color: var(--border-color) !important; }
-body.light-theme .text-accent { color: var(--accent) !important; }
-body.light-theme .bg-brand-600 { background-color: var(--brand-600) !important; }
-
-/* Dark Theme */
-body:not(.light-theme) { color: #ABBBC2; }
-body:not(.light-theme) h1, body:not(.light-theme) h2, body:not(.light-theme) h3, body:not(.light-theme) h4 { color: #FFFFFF; }
-body:not(.light-theme) .text-brand-300, body:not(.light-theme) .text-white { color: #FFFFFF !important; }
-body:not(.light-theme) .text-brand-400 { color: #ABBBC2 !important; }
-body:not(.light-theme) .bg-brand-800 { background-color: #252836 !important; }
-body:not(.light-theme) .bg-brand-900 { background-color: #1F1D2B !important; }
-body:not(.light-theme) .border-brand-700 { border-color: #393C49 !important; }
-body:not(.light-theme) .bg-brand-600 { background-color: #4F5B6A !important; }
-body:not(.light-theme) strong { color: #FFFFFF; }
-body:not(.light-theme) .info-title { color: #FFFFFF; }
-body:not(.light-theme) .info-text { color: #ABBBC2; }
-
 /* --- MODAL THEME FIX --- */
 #tech-summary-modal .bg-brand-800 { background-color: var(--panel-bg) !important; }
 #tech-summary-modal .border-brand-700 { border-color: var(--border-color) !important; }
@@ -507,18 +479,18 @@ body:not(.light-theme) .info-text { color: #ABBBC2; }
 /* Dark Theme Modal Text */
 body:not(.light-theme) #tech-summary-modal-body,
 body:not(.light-theme) #tech-summary-modal-body p,
-body:not(.light-theme) #tech-summary-modal-body span { color: var(--brand-300) !important; }
-body:not(.light-theme) #tech-summary-modal-body h4 { color: var(--brand-300) !important; }
+body:not(.light-theme) #tech-summary-modal-body span,
+body:not(.light-theme) #tech-summary-modal-body h4,
+body:not(.light-theme) #tech-summary-modal-body .summary-total { color: var(--brand-300) !important; }
 body:not(.light-theme) #tech-summary-modal-body .text-brand-400 { color: var(--brand-400) !important; }
-body:not(.light-theme) #tech-summary-modal-body .summary-total { color: var(--summary-total-text) !important; }
 
 /* Light Theme Modal Text */
 body.light-theme #tech-summary-modal-body,
 body.light-theme #tech-summary-modal-body p,
-body.light-theme #tech-summary-modal-body span { color: var(--text-color) !important; }
-body.light-theme #tech-summary-modal-body h4 { color: var(--text-color) !important; }
+body.light-theme #tech-summary-modal-body span,
+body.light-theme #tech-summary-modal-body h4,
+body.light-theme #tech-summary-modal-body .summary-total { color: var(--text-color) !important; }
 body.light-theme #tech-summary-modal-body .text-brand-400 { color: var(--text-muted-color) !important; }
-body.light-theme #tech-summary-modal-body .summary-total { color: var(--summary-total-text) !important; }
 
 .summary-item {
     border-left-width: 4px; padding: 0.5rem 0.75rem; border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-color);
