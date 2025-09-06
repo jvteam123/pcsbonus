@@ -45,7 +45,6 @@ body.light-theme {
 body {
     font-family: 'Poppins', sans-serif;
     background-color: var(--brand-900);
-    color: var(--text-color);
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -238,6 +237,7 @@ body.light-theme .dashboard-panel {
     background-color: var(--brand-600);
 }
 .table-container table tbody td {
+    color: var(--text-color);
     padding: 0.75rem;
     font-size: 0.875rem;
     border-top: none;
@@ -279,7 +279,7 @@ body:not(.light-theme) .table-container table tbody td {
     background: var(--brand-600);
 }
 
-/* --- UPDATED: Quality Pill Styles --- */
+/* Quality Pill Styles */
 .quality-pill {
     display: inline-flex;
     align-items: center;
@@ -289,79 +289,44 @@ body:not(.light-theme) .table-container table tbody td {
     font-size: 0.8rem;
     font-weight: 500;
 }
-
 .quality-pill-green {
-    background-color: #ECFDF5;
-    color: #065F46;
+    background-color: #ECFDF5; color: #065F46;
 }
 body:not(.light-theme) .quality-pill-green {
-    background-color: rgba(80, 209, 170, 0.15);
-    color: #50D1AA;
+    background-color: rgba(80, 209, 170, 0.15); color: #50D1AA;
 }
-
 .quality-pill-orange {
-    background-color: #FFFBEB;
-    color: #B45309;
+    background-color: #FFFBEB; color: #B45309;
 }
 body:not(.light-theme) .quality-pill-orange {
-    background-color: rgba(255, 181, 114, 0.15);
-    color: #FFB572;
+    background-color: rgba(255, 181, 114, 0.15); color: #FFB572;
 }
-
 .quality-pill-yellow {
-    background-color: #FEFCE8;
-    color: #854D0E;
+    background-color: #FEFCE8; color: #854D0E;
 }
 body:not(.light-theme) .quality-pill-yellow {
-    background-color: rgba(253, 197, 123, 0.15);
-    color: #FDC57B;
+    background-color: rgba(253, 197, 123, 0.15); color: #FDC57B;
 }
-
 .quality-pill-red {
-    background-color: #FEF2F2;
-    color: #991B1B;
+    background-color: #FEF2F2; color: #991B1B;
 }
 body:not(.light-theme) .quality-pill-red {
-    background-color: rgba(255, 124, 163, 0.15);
-    color: #FF7CA3;
+    background-color: rgba(255, 124, 163, 0.15); color: #FF7CA3;
 }
-/* ------------------------------- */
 
 /* Workload & Quality Chart Styles */
 .workload-bar-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    display: flex; align-items: center; gap: 0.75rem;
 }
 .workload-label {
-    flex-shrink: 0;
-    width: 5rem;
-    text-align: right;
-    font-size: 0.75rem;
-    color: var(--text-muted-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex-shrink: 0; width: 5rem; text-align: right; font-size: 0.75rem; color: var(--text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .workload-bar {
-    flex-grow: 1;
-    background-color: var(--brand-600);
-    border-radius: 0.25rem;
-    height: 1.25rem;
-    overflow: hidden;
+    flex-grow: 1; background-color: var(--brand-600); border-radius: 0.25rem; height: 1.25rem; overflow: hidden;
 }
 .workload-bar-inner {
-    height: 100%;
-    border-radius: 0.25rem;
-    transition: width 0.5s ease-in-out;
-    text-align: right;
-    padding-right: 0.5rem;
-    color: var(--workload-bar-inner-text);
-    font-size: 0.75rem;
-    line-height: 1.25rem;
-    font-weight: 500;
+    height: 100%; border-radius: 0.25rem; transition: width 0.5s ease-in-out; text-align: right; padding-right: 0.5rem; color: var(--workload-bar-inner-text); font-size: 0.75rem; line-height: 1.25rem; font-weight: 500;
 }
-
 .quality-bar-green { background-color: #10B981; }
 .quality-bar-cyan { background-color: #0EA5E9; }
 .quality-bar-yellow { background-color: #F59E0B; }
@@ -370,16 +335,8 @@ body:not(.light-theme) .quality-pill-red {
 
 /* Loading Spinner */
 .loader {
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid var(--text-muted-color);
-    border-bottom-color: transparent;
-    border-radius: 50%;
-    display: inline-block;
-    box-sizing: border-box;
-    animation: rotation 1s linear infinite;
+    width: 1rem; height: 1rem; border: 2px solid var(--text-muted-color); border-bottom-color: transparent; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite;
 }
-
 @keyframes rotation {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -387,13 +344,7 @@ body:not(.light-theme) .quality-pill-red {
 
 /* Tech Summary Modal Category Styles */
 .summary-item {
-    border-left-width: 4px;
-    padding: 0.5rem 0.75rem;
-    background-color: var(--summary-item-bg);
-    border-radius: 0.25rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    border-left-width: 4px; padding: 0.5rem 0.75rem; background-color: var(--summary-item-bg); border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-color);
 }
 .summary-cat-1 { border-color: #FF7CA3; }
 .summary-cat-2 { border-color: #5492FF; }
@@ -405,9 +356,7 @@ body:not(.light-theme) .quality-pill-red {
 .summary-cat-8 { border-color: #FFB572; }
 .summary-cat-9 { border-color: #9290FE; }
 .summary-total {
-    border-color: var(--text-color);
-    font-weight: bold;
-    color: var(--summary-total-text);
+    border-color: var(--text-color); font-weight: bold; color: var(--summary-total-text);
 }
 
 
@@ -418,13 +367,17 @@ body.light-theme .text-brand-300,
 body.light-theme .text-white {
     color: var(--text-color);
 }
+body.light-theme table td.text-white { /* Specific fix for table cell text */
+    color: var(--text-color);
+}
 body.light-theme .text-brand-400 {
     color: var(--text-muted-color);
 }
 body.light-theme .bg-brand-900 {
     background-color: var(--brand-900);
 }
-body.light-theme .bg-brand-800 {
+body.light-theme .bg-brand-800, 
+body.light-theme thead.bg-brand-800 {
     background-color: var(--brand-800);
 }
 body.light-theme .border-brand-700 {
@@ -449,29 +402,25 @@ body.light-theme .table-container thead.bg-brand-800 {
     background-color: transparent;
 }
 
-/* !! DARK THEME !! - Explicitly define colors to prevent issues */
-body:not(.light-theme) h1.text-white,
-body:not(.light-theme) .text-brand-300 {
+/* !! DARK THEME !! */
+body:not(.light-theme) {
     color: #FFFFFF;
 }
-body:not(.light-theme) .text-brand-400 {
+body:not(.light-theme) h1,
+body:not(.light-theme) .panel-title,
+body:not(.light-theme) .text-brand-300,
+body:not(.light-theme) .text-white {
+    color: #FFFFFF;
+}
+body:not(.light-theme) .text-brand-400,
+body:not(.light-theme) .text-muted-color {
     color: #ABBBC2;
 }
-body:not(.light-theme) .panel-title,
-body:not(.light-theme) .dropdown-item,
-body:not(.light-theme) .btn-secondary,
-body:not(.light-theme) .input-field {
-    color: #FFFFFF;
-}
-body:not(.light-theme) label {
-    color: #FFFFFF;
+body:not(.light-theme) p,
+body:not(.light-theme) label,
+body:not(.light-theme) span {
+    color: inherit; /* Allow text to inherit the white body color */
 }
 body:not(.light-theme) label.text-accent {
     color: #6C5ECF;
-}
-body:not(.light-theme) .panel-header,
-body:not(.light-theme) .table-container thead th,
-body:not(.light-theme) .workload-label,
-body:not(.light-theme) #fix4-breakdown-container p {
-    color: #ABBBC2;
 }
