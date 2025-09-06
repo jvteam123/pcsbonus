@@ -45,11 +45,12 @@ body.light-theme {
 body {
     font-family: 'Poppins', sans-serif;
     background-color: var(--brand-900);
+    color: var(--text-color);
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-h1 {
-    font-weight: 700;
+h1, h2, h3 {
+    color: var(--text-color);
 }
 
 /* Dashboard & Panel Styles */
@@ -78,7 +79,6 @@ body.light-theme .dashboard-panel {
 .panel-title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--text-color);
 }
 
 .panel-content-scrollable {
@@ -343,8 +343,17 @@ body:not(.light-theme) .quality-pill-red {
 }
 
 /* Tech Summary Modal Category Styles */
+#tech-summary-modal .bg-brand-800 {
+    background-color: var(--panel-bg);
+}
+#tech-summary-modal .border-brand-700 {
+    border-color: var(--border-color);
+}
 .summary-item {
     border-left-width: 4px; padding: 0.5rem 0.75rem; background-color: var(--summary-item-bg); border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-color);
+}
+.summary-item .text-brand-400 {
+    color: var(--text-muted-color);
 }
 .summary-cat-1 { border-color: #FF7CA3; }
 .summary-cat-2 { border-color: #5492FF; }
@@ -360,67 +369,23 @@ body:not(.light-theme) .quality-pill-red {
 }
 
 
-/* --- THEME OVERRIDES FOR TAILWIND --- */
-
-/* !! LIGHT THEME !! */
-body.light-theme .text-brand-300,
-body.light-theme .text-white {
-    color: var(--text-color);
-}
-body.light-theme table td.text-white { /* Specific fix for table cell text */
-    color: var(--text-color);
-}
-body.light-theme .text-brand-400 {
-    color: var(--text-muted-color);
-}
-body.light-theme .bg-brand-900 {
+/* --- THEME OVERRIDES --- */
+body.bg-brand-900 {
     background-color: var(--brand-900);
 }
-body.light-theme .bg-brand-800, 
-body.light-theme thead.bg-brand-800 {
-    background-color: var(--brand-800);
-}
-body.light-theme .border-brand-700 {
-    border-color: var(--border-color);
-}
-body.light-theme .text-accent {
-    color: var(--accent);
-}
-body.light-theme .focus\:ring-accent:focus {
-    --tw-ring-color: var(--accent);
-}
-body.light-theme .bg-brand-700 {
-     background-color: var(--brand-700);
-}
-body.light-theme .border-brand-600 {
-    border-color: var(--brand-600);
-}
-body.light-theme .bg-opacity-80 {
-    background-color: rgba(249, 250, 251, 0.9); /* Modal backdrop */
-}
-body.light-theme .table-container thead.bg-brand-800 {
-    background-color: transparent;
-}
 
-/* !! DARK THEME !! */
-body:not(.light-theme) {
-    color: #FFFFFF;
-}
-body:not(.light-theme) h1,
-body:not(.light-theme) .panel-title,
-body:not(.light-theme) .text-brand-300,
-body:not(.light-theme) .text-white {
-    color: #FFFFFF;
-}
-body:not(.light-theme) .text-brand-400,
-body:not(.light-theme) .text-muted-color {
-    color: #ABBBC2;
-}
-body:not(.light-theme) p,
-body:not(.light-theme) label,
-body:not(.light-theme) span {
-    color: inherit; /* Allow text to inherit the white body color */
-}
-body:not(.light-theme) label.text-accent {
-    color: #6C5ECF;
-}
+/* Light Theme */
+body.light-theme { color: var(--text-color); }
+body.light-theme h1, body.light-theme h2, body.light-theme h3 { color: var(--text-color); }
+body.light-theme .text-brand-300, body.light-theme .text-white { color: var(--text-color) !important; }
+body.light-theme .text-brand-400 { color: var(--text-muted-color) !important; }
+body.light-theme .bg-brand-800 { background-color: var(--brand-800) !important; }
+body.light-theme .border-brand-700 { border-color: var(--border-color) !important; }
+body.light-theme .text-accent { color: var(--accent) !important; }
+
+/* Dark Theme */
+body:not(.light-theme) { color: #ABBBC2; }
+body:not(.light-theme) h1, body:not(.light-theme) h2, body:not(.light-theme) h3 { color: #FFFFFF; }
+body:not(.light-theme) .text-brand-300, body:not(.light-theme) .text-white { color: #FFFFFF !important; }
+body:not(.light-theme) .text-brand-400 { color: #ABBBC2 !important; }
+body:not(.light-theme) .font-semibold.text-white { color: #FFFFFF !important; }
