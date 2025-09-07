@@ -547,7 +547,7 @@ body.light-theme table thead th {
 
 /*
  * ===============================================
- * LIGHT THEME PROFESSIONAL MENU
+ * LIGHT THEME PROFESSIONAL MENU & MODALS
  * ===============================================
  */
 
@@ -594,4 +594,30 @@ body.light-theme #main-menu-dropdown #clear-data-btn {
 body.light-theme #main-menu-dropdown #clear-data-btn:hover {
     background-color: #FEF2F2 !important; /* Red-50 */
     color: #B91C1C !important; /* Red-700 */
+}
+
+/* Universal Modal Styling for Light Theme */
+body.light-theme .fixed.inset-0 > div { /* Target the direct child div of the modal container */
+    background-color: var(--brand-800) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.light-theme .fixed.inset-0 h3,
+body.light-theme .fixed.inset-0 p,
+body.light-theme .fixed.inset-0 label,
+body.light-theme .fixed.inset-0 .info-title,
+body.light-theme .fixed.inset-0 .info-text {
+    color: var(--text-color) !important;
+}
+body.light-theme .fixed.inset-0 .modal-close-btn {
+    color: var(--text-muted-color) !important;
+}
+body.light-theme .fixed.inset-0 .modal-close-btn:hover {
+    color: var(--text-color) !important;
+}
+
+/* Manage Teams Modal Specifics */
+body.light-theme #manage-teams-modal .team-card {
+    background-color: #F9FAFB; /* Gray-50 */
+    border-color: #E5E7EB; /* Gray-200 */
 }
