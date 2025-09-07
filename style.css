@@ -529,31 +529,69 @@ body.light-theme .bg-brand-900 {
 body.light-theme .bg-brand-800 {
     background-color: var(--brand-800) !important;
 }
-body.light-theme .text-white {
-    color: var(--text-color) !important;
-}
+body.light-theme .text-white,
 body.light-theme .text-brand-300 {
     color: var(--text-color) !important;
 }
+body.light-theme .btn-primary {
+    color: #FFFFFF !important;
+}
 
 /* Fix table headers */
-body.light-theme #bonus-payout-section table thead {
+body.light-theme table thead {
     background-color: var(--brand-600) !important;
 }
 body.light-theme table thead th {
     color: var(--text-muted-color) !important;
 }
-body.light-theme #tech-summary-modal-body table thead {
-    background-color: var(--brand-600) !important;
+
+/*
+ * ===============================================
+ * LIGHT THEME PROFESSIONAL MENU
+ * ===============================================
+ */
+
+/* Menu Button */
+body.light-theme .menu-btn {
+    background-color: #FFFFFF; /* White */
+    color: #374151; /* Gray-700 */
+    border-color: #E5E7EB; /* Gray-200 */
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
-/* Fix tech details text colors */
-body.light-theme #tech-summary-modal-body .text-white {
-    color: var(--text-color) !important;
+body.light-theme .menu-btn:hover {
+    background-color: #F9FAFB; /* Gray-50 */
+    border-color: #D1D5DB; /* Gray-300 */
 }
-body.light-theme #tech-summary-modal-body .font-bold {
-    color: var(--text-color) !important;
+
+/* Menu Dropdown Panel */
+body.light-theme #main-menu-dropdown {
+    background-color: #FFFFFF !important; /* White */
+    border-color: #E5E7EB !important; /* Gray-200 */
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
-body.light-theme #tech-summary-modal-body .text-brand-400 {
-    color: var(--text-muted-color) !important;
+
+/* Dropdown Items */
+body.light-theme #main-menu-dropdown .dropdown-item {
+    color: #374151 !important; /* Gray-700 */
+}
+
+body.light-theme #main-menu-dropdown .dropdown-item:hover {
+    background-color: #F3F4F6 !important; /* Gray-100 */
+    color: #111827 !important; /* Gray-900 */
+}
+
+/* Dropdown Dividers */
+body.light-theme #main-menu-dropdown .border-brand-700 {
+    border-color: #E5E7EB !important; /* Gray-200 */
+}
+
+/* Special item (Clear All Data) */
+body.light-theme #main-menu-dropdown #clear-data-btn {
+    color: #EF4444 !important; /* Red-500 */
+}
+
+body.light-theme #main-menu-dropdown #clear-data-btn:hover {
+    background-color: #FEF2F2 !important; /* Red-50 */
+    color: #B91C1C !important; /* Red-700 */
 }
