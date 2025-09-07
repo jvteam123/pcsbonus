@@ -418,6 +418,9 @@ body:not(.light-theme) #leaderboard-panel .table-container thead th {
 body:not(.light-theme) #leaderboard-panel .table-container tbody tr:nth-child(even) {
     background-color: var(--brand-800);
 }
+body.light-theme #leaderboard-panel .table-container tbody td {
+    color: var(--text-color);
+}
 
 /* Project IR Badge */
 .project-info-badge {
@@ -471,26 +474,42 @@ body:not(.light-theme) .project-info-badge.is-not-ir {
 }
 
 /* --- MODAL THEME FIX --- */
-#tech-summary-modal .bg-brand-800 { background-color: var(--panel-bg) !important; }
-#tech-summary-modal .border-brand-700 { border-color: var(--border-color) !important; }
-#tech-summary-modal-body .p-3 { background-color: var(--summary-item-bg); }
-#tech-summary-modal-body .font-mono { color: var(--text-color); }
+#tech-summary-modal .bg-brand-800,
+#manage-teams-modal .bg-brand-800,
+#advance-settings-modal .bg-brand-800,
+#important-info-modal .bg-brand-800,
+#merge-fixpoints-modal .bg-brand-800 { 
+    background-color: var(--panel-bg) !important; 
+}
+#tech-summary-modal .border-brand-700,
+#manage-teams-modal .border-brand-700,
+#advance-settings-modal .border-brand-700,
+#important-info-modal .border-brand-700,
+#merge-fixpoints-modal .border-brand-700 { 
+    border-color: var(--border-color) !important; 
+}
+#tech-summary-modal-body .p-3 { 
+    background-color: var(--summary-item-bg); 
+}
+#tech-summary-modal-body .font-mono { 
+    color: var(--text-color); 
+}
 
-/* Dark Theme Modal Text */
-body:not(.light-theme) #tech-summary-modal-body,
-body:not(.light-theme) #tech-summary-modal-body p,
-body:not(.light-theme) #tech-summary-modal-body span,
-body:not(.light-theme) #tech-summary-modal-body h4,
-body:not(.light-theme) #tech-summary-modal-body .summary-total { color: var(--brand-300) !important; }
-body:not(.light-theme) #tech-summary-modal-body .text-brand-400 { color: var(--brand-400) !important; }
+/* Modal Text */
+body #tech-summary-modal-body,
+body #tech-summary-modal-body p,
+body #tech-summary-modal-body span,
+body #tech-summary-modal-body h4,
+body #tech-summary-modal-body .summary-total,
+body #tech-summary-modal-body .text-brand-400,
+body .modal-body-text { 
+    color: var(--text-color) !important; 
+}
 
-/* Light Theme Modal Text */
-body.light-theme #tech-summary-modal-body,
-body.light-theme #tech-summary-modal-body p,
-body.light-theme #tech-summary-modal-body span,
-body.light-theme #tech-summary-modal-body h4,
-body.light-theme #tech-summary-modal-body .summary-total { color: var(--text-color) !important; }
-body.light-theme #tech-summary-modal-body .text-brand-400 { color: var(--text-muted-color) !important; }
+body.light-theme #tech-summary-modal-body .text-brand-400,
+body.light-theme .modal-body-text {
+    color: var(--text-muted-color) !important;
+}
 
 .summary-item {
     border-left-width: 4px; padding: 0.5rem 0.75rem; border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-color);
