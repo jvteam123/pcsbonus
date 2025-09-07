@@ -117,6 +117,7 @@ body.light-theme .dashboard-panel {
 }
 #main-menu-dropdown {
     background-color: var(--panel-bg);
+    border-color: var(--border-color);
 }
 .dropdown-item {
     display: block;
@@ -421,13 +422,6 @@ body:not(.light-theme) #leaderboard-panel .table-container thead th {
 body:not(.light-theme) #leaderboard-panel .table-container tbody tr:nth-child(even) {
     background-color: var(--brand-800);
 }
-body.light-theme #leaderboard-panel .table-container tbody td,
-body.light-theme #leaderboard-panel .table-container thead th {
-    color: var(--text-color);
-}
-body.light-theme #leaderboard-panel .table-container thead {
-    background-color: var(--brand-700);
-}
 
 /* Project IR Badge */
 .project-info-badge {
@@ -501,13 +495,6 @@ body.light-theme #tech-summary-modal-body span,
 body.light-theme #tech-summary-modal-body h4,
 body.light-theme #tech-summary-modal-body .summary-total { color: var(--text-color) !important; }
 body.light-theme #tech-summary-modal-body .text-brand-400 { color: var(--text-muted-color) !important; }
-body.light-theme h1, body.light-theme h2, body.light-theme h3, body.light-theme h4,
-body.light-theme p, body.light-theme span, body.light-theme label, body.light-theme button {
-    color: var(--text-color);
-}
-body.light-theme .btn-primary {
-    color: #ffffff;
-}
 
 .summary-item {
     border-left-width: 4px; padding: 0.5rem 0.75rem; border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-color);
@@ -523,4 +510,50 @@ body.light-theme .btn-primary {
 .summary-cat-9 { border-color: #9290FE; }
 .summary-total {
     border-color: var(--text-color); font-weight: bold;
+}
+
+/*
+ * ===============================================
+ * LIGHT THEME OVERRIDE FIXES
+ * ===============================================
+ */
+
+body.light-theme {
+    background-color: var(--brand-900) !important;
+}
+
+/* Override Tailwind's static classes */
+body.light-theme .bg-brand-900 {
+    background-color: var(--brand-900) !important;
+}
+body.light-theme .bg-brand-800 {
+    background-color: var(--brand-800) !important;
+}
+body.light-theme .text-white {
+    color: var(--text-color) !important;
+}
+body.light-theme .text-brand-300 {
+    color: var(--text-color) !important;
+}
+
+/* Fix table headers */
+body.light-theme #bonus-payout-section table thead {
+    background-color: var(--brand-600) !important;
+}
+body.light-theme table thead th {
+    color: var(--text-muted-color) !important;
+}
+body.light-theme #tech-summary-modal-body table thead {
+    background-color: var(--brand-600) !important;
+}
+
+/* Fix tech details text colors */
+body.light-theme #tech-summary-modal-body .text-white {
+    color: var(--text-color) !important;
+}
+body.light-theme #tech-summary-modal-body .font-bold {
+    color: var(--text-color) !important;
+}
+body.light-theme #tech-summary-modal-body .text-brand-400 {
+    color: var(--text-muted-color) !important;
 }
