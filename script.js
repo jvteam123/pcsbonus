@@ -399,6 +399,7 @@ const UI = {
                 });
             }
         });
+
         const filteredFix4 = Object.entries(fix4CategoryCounts).filter(([techId]) => {
             if (selectedTeams.length === 0) return true;
             const teamName = getTeamName(techId);
@@ -491,6 +492,44 @@ const UI = {
         const fixQuality = denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0;
         const qualityModifier = Calculator.calculateQualityModifier(fixQuality);
         const finalPayout = tech.points * (parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1) * qualityModifier;
+        
+        let projectBreakdownHTML = '';
+        if (tech.isCombined) {
+            let projectRows = '';
+            for (const projectName in tech.pointsBreakdownByProject) {
+                const projectData = tech.pointsBreakdownByProject[projectName];
+                projectRows += `
+                    <tr>
+                        <td class="p-2 font-semibold">${projectName}</td>
+                        <td class="p-2 text-center">${projectData.points.toFixed(3)}</td>
+                        <td class="p-2 text-center">${projectData.fixTasks}</td>
+                        <td class="p-2 text-center">${projectData.refixTasks}</td>
+                        <td class="p-2 text-center">${projectData.warnings}</td>
+                    </tr>
+                `;
+            }
+
+            projectBreakdownHTML = `
+            <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4 mb-4">
+                <h4 class="font-semibold text-base text-white mb-2">Project Contribution Breakdown</h4>
+                <div class="table-container text-sm">
+                    <table class="min-w-full">
+                        <thead class="bg-brand-900/50">
+                            <tr>
+                                <th class="p-2 text-left">Project Name</th>
+                                <th class="p-2 text-center">Points</th>
+                                <th class="p-2 text-center">Fix Tasks</th>
+                                <th class="p-2 text-center">Refix Tasks</th>
+                                <th class="p-2 text-center">Warnings</th>
+                            </tr>
+                        </thead>
+                        <tbody>${projectRows}</tbody>
+                    </table>
+                </div>
+            </div>
+            `;
+        }
+
         let detailedCategoryRows = '';
         let summaryCategoryItems = '';
         let totalCategoryTasks = 0;
@@ -558,6 +597,7 @@ const UI = {
             `;
         }
         return `<div class="space-y-4 text-sm">
+            ${projectBreakdownHTML}
             <div class="p-3 bg-accent/10 rounded-lg border border-accent/50">
                 <h4 class="font-semibold text-base text-accent mb-2">Final Payout</h4>
                 <div class="flex justify-between font-bold text-lg"><span class="text-white">Payout (PHP):</span><span class="text-accent font-mono">${finalPayout.toFixed(2)}</span></div>
@@ -635,18 +675,25 @@ const UI = {
 
 // --- CALCULATION MODULE ---
 const Calculator = {
-    createNewTechStat() {
+    createNewTechStat(isCombined = false) {
         const categoryCounts = {};
         for (let i = 1; i <= 9; i++) {
             categoryCounts[i] = { primary: 0, i3qa: 0, afp: 0, rv: 0 };
         }
-        return {
+        const baseStat = {
             id: '', points: 0, fixTasks: 0, afpTasks: 0, refixTasks: 0, warnings: [],
             refixDetails: [], missedCategories: [], approvedByRQA: [],
             approvedByRQACategoryCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 },
             categoryCounts: categoryCounts,
-            pointsBreakdown: { fix: 0, qc: 0, i3qa: 0, rv: 0, qcTransfer: 0 }
+            pointsBreakdown: { fix: 0, qc: 0, i3qa: 0, rv: 0, qcTransfer: 0 },
+            isCombined: isCombined
         };
+
+        if (isCombined) {
+            baseStat.pointsBreakdownByProject = {};
+        }
+
+        return baseStat;
     },
     parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Data", gsdForCalculation = "3in") {
         const techStats = {};
@@ -1530,14 +1577,45 @@ const Handlers = {
                     for (const techId in parsed.techStats) {
                         const stat = parsed.techStats[techId];
                         if (!combinedTechStats[techId]) {
-                            combinedTechStats[techId] = Calculator.createNewTechStat();
+                            combinedTechStats[techId] = Calculator.createNewTechStat(true);
+                            combinedTechStats[techId].id = techId;
                         }
-                        combinedTechStats[techId].id = techId;
+
+                        // Initialize project-specific breakdown if it doesn't exist
+                        if (!combinedTechStats[techId].pointsBreakdownByProject[project.name]) {
+                            combinedTechStats[techId].pointsBreakdownByProject[project.name] = {
+                                points: 0,
+                                fixTasks: 0,
+                                refixTasks: 0,
+                                warnings: 0
+                            };
+                        }
+
+                        // Add project-specific stats
+                        combinedTechStats[techId].pointsBreakdownByProject[project.name].points += stat.points;
+                        combinedTechStats[techId].pointsBreakdownByProject[project.name].fixTasks += stat.fixTasks;
+                        combinedTechStats[techId].pointsBreakdownByProject[project.name].refixTasks += stat.refixTasks;
+                        combinedTechStats[techId].pointsBreakdownByProject[project.name].warnings += stat.warnings.length;
+
+                        // Aggregate total stats
                         combinedTechStats[techId].points += stat.points;
                         combinedTechStats[techId].fixTasks += stat.fixTasks;
                         combinedTechStats[techId].afpTasks += stat.afpTasks;
                         combinedTechStats[techId].refixTasks += stat.refixTasks;
                         combinedTechStats[techId].warnings.push(...stat.warnings);
+                        
+                        // Aggregate breakdown totals
+                        combinedTechStats[techId].pointsBreakdown.fix += stat.pointsBreakdown.fix;
+                        combinedTechStats[techId].pointsBreakdown.qc += stat.pointsBreakdown.qc;
+                        combinedTechStats[techId].pointsBreakdown.i3qa += stat.pointsBreakdown.i3qa;
+                        combinedTechStats[techId].pointsBreakdown.rv += stat.pointsBreakdown.rv;
+                        combinedTechStats[techId].pointsBreakdown.qcTransfer += stat.pointsBreakdown.qcTransfer;
+
+                        for(const category in stat.categoryCounts) {
+                            for(const type in stat.categoryCounts[category]) {
+                                combinedTechStats[techId].categoryCounts[category][type] += stat.categoryCounts[category][type];
+                            }
+                        }
                     }
                 }
             }
