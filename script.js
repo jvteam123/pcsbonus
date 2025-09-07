@@ -828,28 +828,26 @@ const Calculator = {
             }
 
             if (penaltyTriggered) {
-    const i3qaTechId = values[headerMap['i3qa_id']]?.trim();
-    // -- FIX STARTS HERE --
-    if (i3qaTechId && techStats[i3qaTechId]) { // Only proceed if there is a valid i3qa tech
-        let pointsToTransfer = 0;
-        const qcColIndices = AppState.countingSettings.taskColumns.qc.map(c => headerMap[c]).filter(i => i !== undefined);
-        
-        qcColIndices.forEach(qcColIndex => {
-            const qcTechId = values[qcColIndex]?.trim();
-            if (qcTechId && techStats[qcTechId]) {
-                techStats[qcTechId].points -= AppState.calculationSettings.points.qc;
-                techStats[qcTechId].pointsBreakdown.qc -= AppState.calculationSettings.points.qc;
-                pointsToTransfer += AppState.calculationSettings.points.qc;
+                const i3qaTechId = values[headerMap['i3qa_id']]?.trim();
+                if (i3qaTechId && techStats[i3qaTechId]) { 
+                    let pointsToTransfer = 0;
+                    const qcColIndices = AppState.countingSettings.taskColumns.qc.map(c => headerMap[c]).filter(i => i !== undefined);
+                    
+                    qcColIndices.forEach(qcColIndex => {
+                        const qcTechId = values[qcColIndex]?.trim();
+                        if (qcTechId && techStats[qcTechId]) {
+                            techStats[qcTechId].points -= AppState.calculationSettings.points.qc;
+                            techStats[qcTechId].pointsBreakdown.qc -= AppState.calculationSettings.points.qc;
+                            pointsToTransfer += AppState.calculationSettings.points.qc;
+                        }
+                    });
+            
+                    if (pointsToTransfer > 0) {
+                        techStats[i3qaTechId].points += pointsToTransfer;
+                        techStats[i3qaTechId].pointsBreakdown.qcTransfer += pointsToTransfer;
+                    }
+                }
             }
-        });
-
-        if (pointsToTransfer > 0) {
-            techStats[i3qaTechId].points += pointsToTransfer;
-            techStats[i3qaTechId].pointsBreakdown.qcTransfer += pointsToTransfer;
-        }
-    }
-    // -- FIX ENDS HERE --
-}
 
             refixCheckCols.forEach(colIndex => {
                 const labelValue = values[colIndex]?.trim().toLowerCase();
@@ -1633,9 +1631,12 @@ const Handlers = {
         });
         addSafeListener('customize-calc-all-cb', 'change', (e) => {
             const selectEl = document.getElementById('project-select');
-            if (selectEl) {
-                selectEl.multiple = e.target.checked;
-                selectEl.size = e.target.checked ? 6 : 1;
+            const calculateBtn = document.getElementById('calculate-btn');
+            if (selectEl && calculateBtn) {
+                const isChecked = e.target.checked;
+                selectEl.multiple = isChecked;
+                selectEl.size = isChecked ? 6 : 1;
+                calculateBtn.disabled = isChecked;
             }
         });
         addSafeListener('search-tech-id', 'input', UI.applyFilters.bind(UI));
