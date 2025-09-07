@@ -219,8 +219,7 @@ const UI = {
         projectListCache.forEach(project => {
             const option = document.createElement('option');
             option.value = project.id;
-            const prefix = project.isIRProject ? '[IR] ' : '';
-            option.textContent = prefix + project.name;
+            option.textContent = project.name;
             select.appendChild(option);
         });
         if (projectListCache.some(p => p.id === currentVal)) {
@@ -386,6 +385,21 @@ const UI = {
             }
             return null;
         };
+        const fix4CategoryCounts = {};
+        Object.values(techStats).forEach(tech => {
+            if (tech.fix4) {
+                if (!fix4CategoryCounts[tech.id]) {
+                    fix4CategoryCounts[tech.id] = {};
+                }
+                tech.fix4.forEach(item => {
+                    if (!fix4CategoryCounts[tech.id][item.category]) {
+                        fix4CategoryCounts[tech.id][item.category] = 0;
+                    }
+                    fix4CategoryCounts[tech.id][item.category]++;
+                });
+            }
+        });
+
         const filteredFix4 = Object.entries(fix4CategoryCounts).filter(([techId]) => {
             if (selectedTeams.length === 0) return true;
             const teamName = getTeamName(techId);
