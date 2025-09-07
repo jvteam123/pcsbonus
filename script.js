@@ -399,7 +399,6 @@ const UI = {
                 });
             }
         });
-
         const filteredFix4 = Object.entries(fix4CategoryCounts).filter(([techId]) => {
             if (selectedTeams.length === 0) return true;
             const teamName = getTeamName(techId);
@@ -1554,8 +1553,8 @@ const Handlers = {
                 selectEl.size = e.target.checked ? 6 : 1;
             }
         });
-        addSafeListener('search-tech-id', 'input', UI.applyFilters);
-        addSafeListener('team-filter-container', 'change', UI.applyFilters);
+        addSafeListener('search-tech-id', 'input', UI.applyFilters.bind(UI));
+        addSafeListener('team-filter-container', 'change', UI.applyFilters.bind(UI));
         addSafeListener('refresh-teams-btn', 'click', this.loadTeamSettings);
         addSafeListener('leaderboard-sort-select', 'change', () => UI.applyFilters());
         addSafeListener('add-team-btn', 'click', () => UI.addTeamCard());
