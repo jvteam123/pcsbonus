@@ -115,6 +115,9 @@ body.light-theme .dashboard-panel {
 .menu-btn:hover {
     background-color: var(--brand-600);
 }
+#main-menu-dropdown {
+    background-color: var(--panel-bg);
+}
 .dropdown-item {
     display: block;
     padding: 0.5rem 1rem;
@@ -418,8 +421,12 @@ body:not(.light-theme) #leaderboard-panel .table-container thead th {
 body:not(.light-theme) #leaderboard-panel .table-container tbody tr:nth-child(even) {
     background-color: var(--brand-800);
 }
-body.light-theme #leaderboard-panel .table-container tbody td {
+body.light-theme #leaderboard-panel .table-container tbody td,
+body.light-theme #leaderboard-panel .table-container thead th {
     color: var(--text-color);
+}
+body.light-theme #leaderboard-panel .table-container thead {
+    background-color: var(--brand-700);
 }
 
 /* Project IR Badge */
@@ -474,41 +481,32 @@ body:not(.light-theme) .project-info-badge.is-not-ir {
 }
 
 /* --- MODAL THEME FIX --- */
-#tech-summary-modal .bg-brand-800,
-#manage-teams-modal .bg-brand-800,
-#advance-settings-modal .bg-brand-800,
-#important-info-modal .bg-brand-800,
-#merge-fixpoints-modal .bg-brand-800 { 
-    background-color: var(--panel-bg) !important; 
-}
-#tech-summary-modal .border-brand-700,
-#manage-teams-modal .border-brand-700,
-#advance-settings-modal .border-brand-700,
-#important-info-modal .border-brand-700,
-#merge-fixpoints-modal .border-brand-700 { 
-    border-color: var(--border-color) !important; 
-}
-#tech-summary-modal-body .p-3 { 
-    background-color: var(--summary-item-bg); 
-}
-#tech-summary-modal-body .font-mono { 
-    color: var(--text-color); 
-}
+#tech-summary-modal .bg-brand-800 { background-color: var(--panel-bg) !important; }
+#tech-summary-modal .border-brand-700 { border-color: var(--border-color) !important; }
+#tech-summary-modal-body .p-3 { background-color: var(--summary-item-bg); }
+#tech-summary-modal-body .font-mono { color: var(--text-color); }
 
-/* Modal Text */
-body #tech-summary-modal-body,
-body #tech-summary-modal-body p,
-body #tech-summary-modal-body span,
-body #tech-summary-modal-body h4,
-body #tech-summary-modal-body .summary-total,
-body #tech-summary-modal-body .text-brand-400,
-body .modal-body-text { 
-    color: var(--text-color) !important; 
-}
+/* Dark Theme Modal Text */
+body:not(.light-theme) #tech-summary-modal-body,
+body:not(.light-theme) #tech-summary-modal-body p,
+body:not(.light-theme) #tech-summary-modal-body span,
+body:not(.light-theme) #tech-summary-modal-body h4,
+body:not(.light-theme) #tech-summary-modal-body .summary-total { color: var(--brand-300) !important; }
+body:not(.light-theme) #tech-summary-modal-body .text-brand-400 { color: var(--brand-400) !important; }
 
-body.light-theme #tech-summary-modal-body .text-brand-400,
-body.light-theme .modal-body-text {
-    color: var(--text-muted-color) !important;
+/* Light Theme Modal Text */
+body.light-theme #tech-summary-modal-body,
+body.light-theme #tech-summary-modal-body p,
+body.light-theme #tech-summary-modal-body span,
+body.light-theme #tech-summary-modal-body h4,
+body.light-theme #tech-summary-modal-body .summary-total { color: var(--text-color) !important; }
+body.light-theme #tech-summary-modal-body .text-brand-400 { color: var(--text-muted-color) !important; }
+body.light-theme h1, body.light-theme h2, body.light-theme h3, body.light-theme h4,
+body.light-theme p, body.light-theme span, body.light-theme label, body.light-theme button {
+    color: var(--text-color);
+}
+body.light-theme .btn-primary {
+    color: #ffffff;
 }
 
 .summary-item {
