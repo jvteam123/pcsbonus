@@ -474,28 +474,6 @@ body:not(.light-theme) .project-info-badge.is-not-ir {
     color: #78350F;
 }
 
-/* --- MODAL THEME FIX --- */
-#tech-summary-modal .bg-brand-800 { background-color: var(--panel-bg) !important; }
-#tech-summary-modal .border-brand-700 { border-color: var(--border-color) !important; }
-#tech-summary-modal-body .p-3 { background-color: var(--summary-item-bg); }
-#tech-summary-modal-body .font-mono { color: var(--text-color); }
-
-/* Dark Theme Modal Text */
-body:not(.light-theme) #tech-summary-modal-body,
-body:not(.light-theme) #tech-summary-modal-body p,
-body:not(.light-theme) #tech-summary-modal-body span,
-body:not(.light-theme) #tech-summary-modal-body h4,
-body:not(.light-theme) #tech-summary-modal-body .summary-total { color: var(--brand-300) !important; }
-body:not(.light-theme) #tech-summary-modal-body .text-brand-400 { color: var(--brand-400) !important; }
-
-/* Light Theme Modal Text */
-body.light-theme #tech-summary-modal-body,
-body.light-theme #tech-summary-modal-body p,
-body.light-theme #tech-summary-modal-body span,
-body.light-theme #tech-summary-modal-body h4,
-body.light-theme #tech-summary-modal-body .summary-total { color: var(--text-color) !important; }
-body.light-theme #tech-summary-modal-body .text-brand-400 { color: var(--text-muted-color) !important; }
-
 .summary-item {
     border-left-width: 4px; padding: 0.5rem 0.75rem; border-radius: 0.25rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-color);
 }
@@ -616,8 +594,33 @@ body.light-theme .fixed.inset-0 .modal-close-btn:hover {
     color: var(--text-color) !important;
 }
 
-/* Manage Teams Modal Specifics */
+/* Advance Settings & Manage Teams Modal Specifics */
+body.light-theme #advance-settings-modal .tab-button,
 body.light-theme #manage-teams-modal .team-card {
     background-color: #F9FAFB; /* Gray-50 */
     border-color: #E5E7EB; /* Gray-200 */
+}
+
+body.light-theme #advance-settings-modal .tab-button {
+    color: var(--text-muted-color);
+}
+
+body.light-theme #advance-settings-modal .tab-button.active {
+    background-color: #FFFFFF;
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+body.light-theme #advance-settings-modal h4,
+body.light-theme #advance-settings-modal .text-gray-400 {
+    color: var(--text-color) !important;
+}
+
+body.light-theme #advance-settings-modal #category-points-tbody tr,
+body.light-theme #advance-settings-modal .bg-gray-800\/50 {
+    background-color: transparent !important;
+}
+
+body.light-theme #advance-settings-modal #category-points-tbody tr:nth-child(even) {
+    background-color: var(--brand-600) !important;
 }
