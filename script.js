@@ -828,22 +828,28 @@ const Calculator = {
             }
 
             if (penaltyTriggered) {
-                const i3qaTechId = values[headerMap['i3qa_id']]?.trim();
-                let pointsToTransfer = 0;
-                const qcColIndices = AppState.countingSettings.taskColumns.qc.map(c => headerMap[c]).filter(i => i !== undefined);
-                qcColIndices.forEach(qcColIndex => {
-                    const qcTechId = values[qcColIndex]?.trim();
-                    if (qcTechId && techStats[qcTechId]) {
-                        techStats[qcTechId].points -= AppState.calculationSettings.points.qc;
-                        techStats[qcTechId].pointsBreakdown.qc -= AppState.calculationSettings.points.qc;
-                        pointsToTransfer += AppState.calculationSettings.points.qc;
-                    }
-                });
-                if (i3qaTechId && techStats[i3qaTechId] && pointsToTransfer > 0) {
-                    techStats[i3qaTechId].points += pointsToTransfer;
-                    techStats[i3qaTechId].pointsBreakdown.qcTransfer += pointsToTransfer;
-                }
+    const i3qaTechId = values[headerMap['i3qa_id']]?.trim();
+    // -- FIX STARTS HERE --
+    if (i3qaTechId && techStats[i3qaTechId]) { // Only proceed if there is a valid i3qa tech
+        let pointsToTransfer = 0;
+        const qcColIndices = AppState.countingSettings.taskColumns.qc.map(c => headerMap[c]).filter(i => i !== undefined);
+        
+        qcColIndices.forEach(qcColIndex => {
+            const qcTechId = values[qcColIndex]?.trim();
+            if (qcTechId && techStats[qcTechId]) {
+                techStats[qcTechId].points -= AppState.calculationSettings.points.qc;
+                techStats[qcTechId].pointsBreakdown.qc -= AppState.calculationSettings.points.qc;
+                pointsToTransfer += AppState.calculationSettings.points.qc;
             }
+        });
+
+        if (pointsToTransfer > 0) {
+            techStats[i3qaTechId].points += pointsToTransfer;
+            techStats[i3qaTechId].pointsBreakdown.qcTransfer += pointsToTransfer;
+        }
+    }
+    // -- FIX ENDS HERE --
+}
 
             refixCheckCols.forEach(colIndex => {
                 const labelValue = values[colIndex]?.trim().toLowerCase();
@@ -1500,7 +1506,8 @@ const Handlers = {
             }
             const existingId = document.getElementById('project-select').value;
             const isEditing = !!existingId && !document.getElementById('techData').readOnly;
-            const projectId = isEditing ? existingId : projectName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_' + Date.now();
+            const randomComponent = Math.random().toString(36).substring(2, 7);
+            const projectId = isEditing ? existingId : `${projectName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}_${Date.now()}_${randomComponent}`;
             const isIR = document.getElementById('is-ir-project-checkbox').checked;
             const gsdVal = document.getElementById('gsd-value-select').value;
             const projectData = { id: projectId, name: projectName, rawData: techData, isIRProject: isIR, gsdValue: gsdVal };
