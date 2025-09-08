@@ -235,9 +235,16 @@ const UI = {
         if (!tbody || !sortSelect || !metricHeader) return;
         const sortBy = sortSelect.value;
         tbody.innerHTML = '';
-        const techArray = Object.values(techStats).map(tech => {
-             const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
-             return { id: tech.id, fixTasks: tech.fixTasks, totalPoints: tech.points, fixQuality: denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0, };
+        const techArray = Object.values(techStats)
+            .filter(tech => tech.id === tech.id.toUpperCase())
+            .map(tech => {
+                const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
+                return { 
+                    id: tech.id, 
+                    fixTasks: tech.fixTasks, 
+                    totalPoints: tech.points, 
+                    fixQuality: denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0, 
+                };
         });
         if (sortBy === 'totalPoints') { techArray.sort((a, b) => b.totalPoints - a.totalPoints); metricHeader.textContent = 'Points'; }
         else if (sortBy === 'fixTasks') { techArray.sort((a, b) => b.fixTasks - a.fixTasks); metricHeader.textContent = 'Tasks'; }
@@ -496,7 +503,7 @@ const Calculator = {
             const values = line.split('\t');
             headers.forEach((h, i) => {
                 if (h.endsWith('_id')) {
-                    const techId = values[i]?.trim();
+                    const techId = values[i]?.trim().toUpperCase();
                     if (techId && CONSTANTS.TECH_ID_REGEX.test(techId)) allTechs.add(techId);
                 }
             });
@@ -512,7 +519,7 @@ const Calculator = {
             const get = (col) => values[headerMap[col]];
             const isComboIR = get('combo?') === 'Y';
 
-            const fixIds = [get('fix1_id'), get('fix2_id'), get('fix3_id'), get('fix4_id')].map(id => id?.trim());
+            const fixIds = [get('fix1_id'), get('fix2_id'), get('fix3_id'), get('fix4_id')].map(id => id?.trim().toUpperCase());
 
             const processFixTech = (techId, catSources) => {
                 if (!techId || !techStats[techId]) return;
@@ -546,17 +553,17 @@ const Calculator = {
                     techStats[techId].pointsBreakdown[field] += points;
                 }
             };
-            taskColumns.qc.forEach(c => addPointsForTask(get(c)?.trim(), AppState.calculationSettings.points.qc, 'qc'));
-            taskColumns.i3qa.forEach(c => addPointsForTask(get(c)?.trim(), AppState.calculationSettings.points.i3qa, 'i3qa'));
-            taskColumns.rv1.forEach(c => addPointsForTask(get(c)?.trim(), isComboIR ? AppState.calculationSettings.points.rv1_combo : AppState.calculationSettings.points.rv1, 'rv'));
-            taskColumns.rv2.forEach(c => addPointsForTask(get(c)?.trim(), AppState.calculationSettings.points.rv2, 'rv'));
+            taskColumns.qc.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.qc, 'qc'));
+            taskColumns.i3qa.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.i3qa, 'i3qa'));
+            taskColumns.rv1.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), isComboIR ? AppState.calculationSettings.points.rv1_combo : AppState.calculationSettings.points.rv1, 'rv'));
+            taskColumns.rv2.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.rv2, 'rv'));
             
             if (triggers.qcPenalty.columns.some(c => triggers.qcPenalty.labels.includes(get(c)?.trim().toLowerCase()))) {
-                const i3qaTechId = get('i3qa_id')?.trim();
+                const i3qaTechId = get('i3qa_id')?.trim().toUpperCase();
                 if (i3qaTechId && techStats[i3qaTechId]) {
                     let pointsToTransfer = 0;
                     taskColumns.qc.forEach(c => {
-                        const qcTechId = get(c)?.trim();
+                        const qcTechId = get(c)?.trim().toUpperCase();
                         if (qcTechId && techStats[qcTechId]) {
                             techStats[qcTechId].points -= AppState.calculationSettings.points.qc;
                             techStats[qcTechId].pointsBreakdown.qc -= AppState.calculationSettings.points.qc;
@@ -583,7 +590,7 @@ const Calculator = {
                 }
             });
             
-            const fix4Id = get('fix4_id')?.trim();
+            const fix4Id = get('fix4_id')?.trim().toUpperCase();
             if (fix4Id && techStats[fix4Id]) {
                 const cat = parseInt(get('rv3_cat'));
                 if (!isNaN(cat) && get('rv3_cat')?.trim()) techStats[fix4Id].fix4.push({ category: cat });
