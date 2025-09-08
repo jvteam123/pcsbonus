@@ -682,6 +682,7 @@ const Calculator = {
         }
         const baseStat = {
             id: '', points: 0, fixTasks: 0, afpTasks: 0, refixTasks: 0, warnings: [],
+            fix4: [],
             refixDetails: [], missedCategories: [], approvedByRQA: [],
             approvedByRQACategoryCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 },
             categoryCounts: categoryCounts,
@@ -896,6 +897,17 @@ const Calculator = {
                     }
                 }
             });
+             const fix4_id_for_breakdown = values[headerMap['fix4_id']]?.trim();
+            const rv3_label_for_breakdown = values[headerMap['rv3_label']]?.trim().toUpperCase();
+            
+            const isMissForBreakdown = AppState.countingSettings.triggers.miss.labels.some(l => rv3_label_for_breakdown && rv3_label_for_breakdown.includes(l.toUpperCase()));
+
+            if (fix4_id_for_breakdown && techStats[fix4_id_for_breakdown] && isMissForBreakdown) {
+                const rv3_cat_for_breakdown = parseInt(values[headerMap['rv3_cat']]);
+                if (!isNaN(rv3_cat_for_breakdown)) {
+                    techStats[fix4_id_for_breakdown].fix4.push({ category: rv3_cat_for_breakdown });
+                }
+            }
         });
         return { techStats, summaryStats };
     },
