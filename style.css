@@ -112,6 +112,11 @@ body.light-theme .summary-card { background-color: var(--brand-600); }
 .sortable-header::after { content: ''; border: 4px solid transparent; position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); }
 .sortable-header.sort-asc::after { border-bottom-color: var(--accent); transform: translateY(-75%); }
 .sortable-header.sort-desc::after { border-top-color: var(--accent); transform: translateY(-25%); }
+
+.payout-amount {
+    font-weight: 700;
+    color: var(--status-green);
+}
 /* Light Theme Overrides */
 body.light-theme { background-color: var(--brand-900) !important; }
 body.light-theme .bg-brand-900 { background-color: var(--brand-900) !important; }
