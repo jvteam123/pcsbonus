@@ -368,7 +368,7 @@ const UI = {
             else if (quality >= 95) colorClass = 'quality-bar-cyan';
             else if (quality >= 90) colorClass = 'quality-bar-yellow';
             qualityBar.innerHTML = `
-                <div class="team-quality-label" title="${team}">${team}</div>
+                <div class="team-quality-label team-summary-trigger" data-team-name="${team}" title="${team}">${team}</div>
                 <div class="workload-bar">
                     <div class="workload-bar-inner ${colorClass}" style="width: ${quality.toFixed(2)}%;">${quality.toFixed(2)}%</div>
                 </div>`;
@@ -629,6 +629,86 @@ const UI = {
                 <div class="flex justify-between mt-4 pt-4 border-t border-brand-700"><span class="text-brand-400">Fix Quality %:</span><span class="font-mono font-bold">${fixQuality.toFixed(2)}%</span></div>
             </div>
         </div>`;
+    },
+    generateTeamBreakdownHTML(teamName, teamTechs, allTechStats) {
+        const projectBreakdown = {};
+        let totalTeamPoints = 0;
+
+        teamTechs.forEach(techId => {
+            const tech = allTechStats[techId];
+            if (!tech || !tech.isCombined) return; // Only works for combined calculations
+
+            totalTeamPoints += tech.points;
+
+            for (const projectName in tech.pointsBreakdownByProject) {
+                const projectData = tech.pointsBreakdownByProject[projectName];
+                if (!projectBreakdown[projectName]) {
+                    projectBreakdown[projectName] = { points: 0, fixTasks: 0, refixTasks: 0, warnings: 0 };
+                }
+                projectBreakdown[projectName].points += projectData.points;
+                projectBreakdown[projectName].fixTasks += projectData.fixTasks;
+                projectBreakdown[projectName].refixTasks += projectData.refixTasks;
+                projectBreakdown[projectName].warnings += projectData.warnings;
+            }
+        });
+
+        if (Object.keys(projectBreakdown).length === 0) {
+            return `<p class="text-brand-400">No project contribution data available. This feature is only available when using "Calculate All / Selected".</p>`;
+        }
+
+        let projectRows = '';
+        for (const projectName in projectBreakdown) {
+            const projectData = projectBreakdown[projectName];
+            projectRows += `
+                <tr>
+                    <td class="p-2 font-semibold">${projectName}</td>
+                    <td class="p-2 text-center">${projectData.points.toFixed(3)}</td>
+                    <td class="p-2 text-center">${projectData.fixTasks}</td>
+                    <td class="p-2 text-center">${projectData.refixTasks}</td>
+                    <td class="p-2 text-center">${projectData.warnings}</td>
+                </tr>
+            `;
+        }
+
+        return `
+            <div class="space-y-4 text-sm">
+                <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4 mb-4">
+                    <h4 class="font-semibold text-base text-white mb-2">Project Contribution Breakdown</h4>
+                    <div class="table-container text-sm">
+                        <table class="min-w-full">
+                            <thead class="bg-brand-900/50">
+                                <tr>
+                                    <th class="p-2 text-left">Project Name</th>
+                                    <th class="p-2 text-center">Points</th>
+                                    <th class="p-2 text-center">Fix Tasks</th>
+                                    <th class="p-2 text-center">Refix Tasks</th>
+                                    <th class="p-2 text-center">Warnings</th>
+                                </tr>
+                            </thead>
+                            <tbody>${projectRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+                 <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700">
+                    <h4 class="font-semibold text-base text-white mb-2">Total Team Points</h4>
+                    <div class="flex justify-between font-bold text-lg">
+                        <span class="text-white">Total Points:</span>
+                        <span class="text-accent font-mono">${totalTeamPoints.toFixed(3)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+    openTeamSummaryModal(teamName) {
+        const teamTechs = AppState.teamSettings[teamName];
+        if (!teamTechs) return;
+
+        const modalTitle = `Summary for ${teamName}`;
+        const modalBody = this.generateTeamBreakdownHTML(teamName, teamTechs, AppState.currentTechStats);
+        
+        document.getElementById('team-summary-modal-title').textContent = modalTitle;
+        document.getElementById('team-summary-modal-body').innerHTML = modalBody;
+        this.openModal('team-summary-modal');
     },
     openTechSummaryModal(techId) {
         const tech = AppState.currentTechStats[techId];
@@ -1481,6 +1561,11 @@ const Handlers = {
             const techIcon = e.target.closest('.tech-summary-icon');
             if (techIcon && techIcon.dataset.techId) {
                 UI.openTechSummaryModal(techIcon.dataset.techId);
+            }
+
+            const teamLabel = e.target.closest('.team-summary-trigger');
+            if (teamLabel && teamLabel.dataset.teamName) {
+                UI.openTeamSummaryModal(teamLabel.dataset.teamName);
             }
         });
 
