@@ -697,27 +697,36 @@ const Handlers = {
         }
     },
     async loadProjectIntoForm(projectId) {
-        const spinner = document.getElementById('project-loading-spinner');
-        spinner.classList.remove('hidden');
-        const projectData = projectId ? await this.fetchFullProjectData(projectId) : null;
-        document.getElementById('techData').value = projectData?.rawData || '';
-        document.getElementById('techData').readOnly = !!projectData;
-        document.getElementById('project-name').value = projectData?.name || '';
-        document.getElementById('project-name').readOnly = !!projectData;
-        document.getElementById('is-ir-project-checkbox').checked = projectData?.isIRProject || false;
-        document.getElementById('is-ir-project-checkbox').disabled = !!projectData;
-        document.getElementById('gsd-value-select').value = projectData?.gsdValue || '3in';
-        document.getElementById('gsd-value-select').disabled = !!projectData;
-        document.getElementById('edit-data-btn').classList.toggle('hidden', !projectData);
-        document.getElementById('save-project-btn').disabled = !!projectData;
-        document.getElementById('cancel-edit-btn').classList.add('hidden');
-        const irBadge = document.getElementById('project-ir-badge');
-        irBadge.classList.toggle('hidden', !projectData);
-        if(projectData) {
-            irBadge.textContent = projectData.isIRProject ? 'IR' : 'Non-IR';
-            irBadge.className = `project-info-badge ${projectData.isIRProject ? 'is-ir' : 'is-not-ir'}`;
+        const refreshBtn = document.getElementById('refresh-projects-btn');
+        if (refreshBtn) {
+            refreshBtn.classList.add('spinning');
+            refreshBtn.disabled = true;
         }
-        spinner.classList.add('hidden');
+        try {
+            const projectData = projectId ? await this.fetchFullProjectData(projectId) : null;
+            document.getElementById('techData').value = projectData?.rawData || '';
+            document.getElementById('techData').readOnly = !!projectData;
+            document.getElementById('project-name').value = projectData?.name || '';
+            document.getElementById('project-name').readOnly = !!projectData;
+            document.getElementById('is-ir-project-checkbox').checked = projectData?.isIRProject || false;
+            document.getElementById('is-ir-project-checkbox').disabled = !!projectData;
+            document.getElementById('gsd-value-select').value = projectData?.gsdValue || '3in';
+            document.getElementById('gsd-value-select').disabled = !!projectData;
+            document.getElementById('edit-data-btn').classList.toggle('hidden', !projectData);
+            document.getElementById('save-project-btn').disabled = !!projectData;
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            const irBadge = document.getElementById('project-ir-badge');
+            irBadge.classList.toggle('hidden', !projectData);
+            if(projectData) {
+                irBadge.textContent = projectData.isIRProject ? 'IR' : 'Non-IR';
+                irBadge.className = `project-info-badge ${projectData.isIRProject ? 'is-ir' : 'is-not-ir'}`;
+            }
+        } finally {
+            if (refreshBtn) {
+                refreshBtn.classList.remove('spinning');
+                refreshBtn.disabled = false;
+            }
+        }
     },
     async handleDroppedFiles(files) {
         document.getElementById('project-select').value = '';
