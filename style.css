@@ -115,7 +115,7 @@ body.light-theme .summary-card { background-color: var(--brand-600); }
 
 .payout-amount {
     font-weight: 700;
-    color: var(--status-green);
+    color: var(--status-green) !important;
 }
 /* Light Theme Overrides */
 body.light-theme { background-color: var(--brand-900) !important; }
