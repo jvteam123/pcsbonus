@@ -959,7 +959,7 @@ const Handlers = {
             AppState.currentTechStats = combinedStats;
             UI.applyFilters();
             let title = 'Bonus Payouts for: ';
-            if (isCombined) title += projectIds.length > 1 ? 'Selected Projects' : (await this.fetchFullProjectData(projectIds[0]))?.name || '...';
+            if (isCombined) title += projectIds.length > 1 ? 'All Projects / Specific' : (await this.fetchFullProjectData(projectIds[0]))?.name || '...';
             else title += projectIds.length > 0 ? (await this.fetchFullProjectData(projectIds[0]))?.name : 'Pasted Data';
             document.getElementById('results-title').textContent = title;
         };
