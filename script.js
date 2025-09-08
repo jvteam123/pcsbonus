@@ -901,14 +901,14 @@ const Calculator = {
                     }
                 }
             });
-             const fix4_id_for_breakdown = values[headerMap['fix4_id']]?.trim();
-            const rv3_label_for_breakdown = values[headerMap['rv3_label']]?.trim().toUpperCase();
-            
-            const isMissForBreakdown = AppState.countingSettings.triggers.miss.labels.some(l => rv3_label_for_breakdown && rv3_label_for_breakdown.includes(l.toUpperCase()));
+            // New block to count ALL Fix4 categories, ignoring RV3_LABEL
+            const fix4_id_for_breakdown = values[headerMap['fix4_id']]?.trim();
 
-            if (fix4_id_for_breakdown && techStats[fix4_id_for_breakdown] && isMissForBreakdown) {
+            if (fix4_id_for_breakdown && techStats[fix4_id_for_breakdown]) {
                 const rv3_cat_for_breakdown = parseInt(values[headerMap['rv3_cat']]);
-                if (!isNaN(rv3_cat_for_breakdown)) {
+                
+                // Check if rv3_cat has a valid number and is not an empty cell
+                if (!isNaN(rv3_cat_for_breakdown) && values[headerMap['rv3_cat']]?.trim()) {
                     techStats[fix4_id_for_breakdown].fix4.push({ category: rv3_cat_for_breakdown });
                 }
             }
