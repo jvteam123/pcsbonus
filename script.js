@@ -316,16 +316,18 @@ const UI = {
         const topPoints = findTopTech('points', (a, b) => a.points > b.points);
         const topTasks = findTopTech('fixTasks', (a, b) => a.fixTasks > b.fixTasks);
         const mostRefix = findTopTech('refixTasks', (a, b) => a.refixTasks > b.refixTasks);
-        const topQuality = findTopTech('quality', (a, b) => {
-            const qualityA = (a.fixTasks + a.refixTasks + a.warnings.length) > 0 ? (a.fixTasks / (a.fixTasks + a.refixTasks + a.warnings.length)) * 100 : 0;
-            const qualityB = (b.fixTasks + b.refixTasks + b.warnings.length) > 0 ? (b.fixTasks / (b.fixTasks + b.refixTasks + b.warnings.length)) * 100 : 0;
-            return qualityA > qualityB;
+        
+        const techArrayWithQuality = techArray.map(tech => {
+            const quality = (tech.fixTasks + tech.refixTasks + tech.warnings.length) > 0 ? (tech.fixTasks / (tech.fixTasks + tech.refixTasks + tech.warnings.length)) * 100 : 0;
+            return { ...tech, quality };
         });
+
+        const maxQuality = Math.max(...techArrayWithQuality.map(t => t.quality), 0);
+        const topQualityTechs = techArrayWithQuality.filter(t => t.quality === maxQuality);
 
         container.innerHTML = createSummaryCard('Top Points', topPoints.id, `${topPoints.points.toFixed(2)} pts`);
         container.innerHTML += createSummaryCard('Most Tasks', topTasks.id, `${topTasks.fixTasks} tasks`);
-        const topQualityVal = (topQuality.fixTasks + topQuality.refixTasks + topQuality.warnings.length) > 0 ? (topQuality.fixTasks / (topQuality.fixTasks + topQuality.refixTasks + topQuality.warnings.length)) * 100 : 0;
-        container.innerHTML += createSummaryCard('Best Quality', topQuality.id, `${topQualityVal.toFixed(2)}%`);
+        container.innerHTML += createSummaryCard('Best Quality', topQualityTechs.map(t => t.id).join(', '), `${maxQuality.toFixed(2)}%`);
         container.innerHTML += createSummaryCard('Most Refixes', mostRefix.refixTasks > 0 ? mostRefix.id : 'N/A', mostRefix.refixTasks > 0 ? `${mostRefix.refixTasks} refixes` : '-');
         
         summarySection.classList.remove('hidden');
