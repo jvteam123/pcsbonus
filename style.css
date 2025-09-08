@@ -122,6 +122,7 @@ body.light-theme { background-color: var(--brand-900) !important; }
 body.light-theme .bg-brand-900 { background-color: var(--brand-900) !important; }
 body.light-theme .bg-brand-800 { background-color: var(--brand-800) !important; }
 body.light-theme .text-white, body.light-theme .text-brand-300 { color: var(--text-color) !important; }
+body.light-theme label { color: var(--text-color); }
 body.light-theme .btn-primary { color: #FFFFFF !important; }
 body.light-theme table thead { background-color: var(--brand-600) !important; }
 body.light-theme table thead th { color: var(--text-muted-color) !important; }
@@ -134,7 +135,7 @@ body.light-theme #main-menu-dropdown .border-brand-700 { border-color: #E5E7EB !
 body.light-theme #main-menu-dropdown #clear-data-btn { color: #EF4444 !important; }
 body.light-theme #main-menu-dropdown #clear-data-btn:hover { background-color: #FEF2F2 !important; color: #B91C1C !important; }
 body.light-theme .fixed.inset-0 > div { background-color: var(--brand-800) !important; border-color: var(--border-color) !important; }
-body.light-theme .fixed.inset-0 h3, body.light-theme .fixed.inset-0 p, body.light-theme .fixed.inset-0 label, body.light-theme .fixed.inset-0 .info-title, body.light-theme .fixed.inset-0 .info-text { color: var(--text-color) !important; }
+body.light-theme .fixed.inset-0 h3, body.light-theme .fixed.inset-0 p, body.light-theme .fixed.inset-0 .info-title, body.light-theme .fixed.inset-0 .info-text { color: var(--text-color) !important; }
 body.light-theme .fixed.inset-0 .modal-close-btn { color: var(--text-muted-color) !important; }
 body.light-theme .fixed.inset-0 .modal-close-btn:hover { color: var(--text-color) !important; }
 body.light-theme #advance-settings-modal .tab-button, body.light-theme #manage-teams-modal .team-card { background-color: #F9FAFB; border-color: #E5E7EB; }
