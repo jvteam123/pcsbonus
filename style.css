@@ -336,10 +336,18 @@ body:not(.light-theme) .quality-pill-red {
     text-align: center;
     width: 6rem;
     flex-shrink: 0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.team-quality-label:hover {
+    background-color: #059669;
 }
 body.light-theme .team-quality-label {
     background-color: #D1FAE5;
     color: #065F46;
+}
+body.light-theme .team-quality-label:hover {
+    background-color: #A7F3D0;
 }
 
 .workload-bar {
