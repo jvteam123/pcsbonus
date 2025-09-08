@@ -150,7 +150,7 @@ const UI = {
                     <td class="${tech.refixTasks > 0 ? 'text-red-400' : ''}">${tech.refixTasks}</td>
                     <td><span class="quality-pill ${tech.quality >= 95 ? 'quality-pill-green' : tech.quality >= 85 ? 'quality-pill-orange' : 'quality-pill-red'}">${tech.quality.toFixed(2)}%</span></td>
                     <td>${tech.bonusEarned.toFixed(2)}%</td>
-                    <td class="font-bold text-accent">${tech.payout.toFixed(2)}</td>
+                    <td class="payout-amount">${tech.payout.toFixed(2)}</td>
                     <td class="text-center"><button class="info-icon tech-summary-icon" data-tech-id="${tech.id}" title="View Details">${infoIconSvg}</button></td>
                 `;
                 resultsTbody.appendChild(row);
