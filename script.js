@@ -638,10 +638,29 @@ const Handlers = {
         AppState.bonusTiers.forEach(t => this.addBonusTierRow(t.quality, t.bonus * 100));
         document.getElementById('add-tier-btn').addEventListener('click', () => this.addBonusTierRow());
         document.getElementById('setting-ir-modifier').value = AppState.calculationSettings.irModifierValue;
-        Object.keys(AppState.calculationSettings.points).forEach(k => document.getElementById(`setting-${k.replace('_','-')}-points`).value = AppState.calculationSettings.points[k]);
+        Object.keys(AppState.calculationSettings.points).forEach(k => {
+            const pointInput = document.getElementById(`setting-${k.replace('_','-')}-points`);
+            if (pointInput) {
+                pointInput.value = AppState.calculationSettings.points[k];
+            }
+        });
         document.getElementById('category-points-tbody').innerHTML = Object.entries(AppState.calculationSettings.categoryValues).map(([cat, gsd]) => `<tr data-category="${cat}"><td>Cat ${cat}</td>${Object.entries(gsd).map(([size, val]) => `<td><input type="number" step="0.01" class="input-field w-full p-1" data-gsd="${size}" value="${val}"></td>`).join('')}</tr>`).join('');
-        Object.keys(AppState.countingSettings.taskColumns).forEach(k => document.getElementById(`setting-${k}-cols`).value = AppState.countingSettings.taskColumns[k].join(', '));
-        Object.keys(AppState.countingSettings.triggers).forEach(k => { document.getElementById(`setting-${k}-labels`).value = AppState.countingSettings.triggers[k].labels.join(', '); document.getElementById(`setting-${k}-cols`).value = AppState.countingSettings.triggers[k].columns.join(', '); });
+        Object.keys(AppState.countingSettings.taskColumns).forEach(k => {
+            const taskColInput = document.getElementById(`setting-${k}-cols`);
+            if (taskColInput) {
+                taskColInput.value = AppState.countingSettings.taskColumns[k].join(', ');
+            }
+        });
+        Object.keys(AppState.countingSettings.triggers).forEach(k => {
+            const labelsInput = document.getElementById(`setting-${k}-labels`);
+            if (labelsInput) {
+                labelsInput.value = AppState.countingSettings.triggers[k].labels.join(', ');
+            }
+            const colsInput = document.getElementById(`setting-${k}-cols`);
+            if (colsInput) {
+                colsInput.value = AppState.countingSettings.triggers[k].columns.join(', ');
+            }
+        });
         container.querySelectorAll('.tab-button').forEach(tab => tab.addEventListener('click', () => { container.querySelectorAll('.tab-button, .tab-content').forEach(el => el.classList.remove('active')); tab.classList.add('active'); document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active'); }));
     },
     addBonusTierRow(quality = '', bonus = '') {
