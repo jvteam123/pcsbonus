@@ -788,13 +788,36 @@ const Handlers = {
            alert("No valid .shp/.dbf pairs found.");
         }
     },
-    clearAllData() {
-        if (confirm("Clear ALL data? This deletes projects and resets all settings.")) {
-            if (AppState.db) AppState.db.close();
+    async clearAllData() {
+        if (confirm("Clear ALL data? This deletes projects and resets all settings to their defaults.")) {
+            if (AppState.db) {
+                AppState.db.close();
+            }
             const req = indexedDB.deleteDatabase('BonusCalculatorDB');
-            req.onsuccess = () => { alert("All data cleared. Page will reload."); location.reload(); };
-            req.onerror = () => alert("Error clearing data.");
-            req.onblocked = () => alert("Could not clear data. Close other tabs with this tool open.");
+            req.onsuccess = async () => {
+                alert("All data has been cleared. The application will now reset.");
+                // Reset the in-memory state
+                AppState.db = null;
+                AppState.teamSettings = {};
+                AppState.bonusTiers = [];
+                AppState.calculationSettings = {};
+                AppState.countingSettings = {};
+                AppState.currentTechStats = {};
+                // Re-initialize the application from scratch
+                await Handlers.initializeApp();
+                // Reset the UI to its initial state
+                UI.resetUIForNewCalculation();
+                document.getElementById('project-select').innerHTML = '<option value="">Select a project...</option>';
+                document.getElementById('leaderboard-body').innerHTML = '<tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr>';
+                document.getElementById('tech-results-tbody').innerHTML = '';
+
+            };
+            req.onerror = () => {
+                alert("Error clearing data. Please close all other tabs with this application open and try again.");
+            };
+            req.onblocked = () => {
+                alert("Could not clear data. Please close all other tabs with this application open and try again.");
+            };
         }
     },
     setupEventListeners() {
