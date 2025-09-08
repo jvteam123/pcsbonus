@@ -652,11 +652,12 @@ const Handlers = {
             }
         });
         Object.keys(AppState.countingSettings.triggers).forEach(k => {
-            const labelsInput = document.getElementById(`setting-${k}-labels`);
+            const kebabCaseKey = k.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
+            const labelsInput = document.getElementById(`setting-${kebabCaseKey}-labels`);
             if (labelsInput) {
                 labelsInput.value = AppState.countingSettings.triggers[k].labels.join(', ');
             }
-            const colsInput = document.getElementById(`setting-${k}-cols`);
+            const colsInput = document.getElementById(`setting-${kebabCaseKey}-cols`);
             if (colsInput) {
                 colsInput.value = AppState.countingSettings.triggers[k].columns.join(', ');
             }
