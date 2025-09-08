@@ -126,7 +126,8 @@ const UI = {
             const quality = denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0;
             const qualityModifier = Calculator.calculateQualityModifier(quality);
             const payout = tech.points * bonusMultiplier * qualityModifier;
-            return { ...tech, quality, payout };
+            const bonusEarned = qualityModifier * 100;
+            return { ...tech, quality, payout, bonusEarned };
         });
 
         const sortKey = AppState.currentSort.column;
@@ -138,7 +139,7 @@ const UI = {
         });
 
         if (techArray.length === 0) {
-            resultsTbody.innerHTML = `<tr><td colspan="7" class="text-center text-brand-400 p-4">No results to display.</td></tr>`;
+            resultsTbody.innerHTML = `<tr><td colspan="8" class="text-center text-brand-400 p-4">No results to display.</td></tr>`;
         } else {
             techArray.forEach(tech => {
                 const row = document.createElement('tr');
@@ -148,6 +149,7 @@ const UI = {
                     <td>${tech.fixTasks}</td>
                     <td class="${tech.refixTasks > 0 ? 'text-red-400' : ''}">${tech.refixTasks}</td>
                     <td><span class="quality-pill ${tech.quality >= 95 ? 'quality-pill-green' : tech.quality >= 85 ? 'quality-pill-orange' : 'quality-pill-red'}">${tech.quality.toFixed(2)}%</span></td>
+                    <td>${tech.bonusEarned.toFixed(2)}%</td>
                     <td class="font-bold text-accent">${tech.payout.toFixed(2)}</td>
                     <td class="text-center"><button class="info-icon tech-summary-icon" data-tech-id="${tech.id}" title="View Details">${infoIconSvg}</button></td>
                 `;
