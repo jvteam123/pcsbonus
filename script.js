@@ -30,7 +30,7 @@ const CONSTANTS = {
     ],
     DEFAULT_CALCULATION_SETTINGS: {
         irModifierValue: 1.5,
-        points: { qc: 0.125, i3qa: 0.08333333333333333, rv1: 0.2, rv1_combo: 0.25, rv2: 0.5 },
+        points: { qc: 0.125, i3qa: 0.08333333333333333, rv1: 0.3333, rv1_combo: 0.25, rv2: 0.5 },
         categoryValues: {
             1: { "3in": 2.19, "4in": 2.19, "6in": 2.19, "9in": 0.99 }, 2: { "3in": 5.86, "4in": 5.86, "6in": 5.86, "9in": 2.07 },
             3: { "3in": 7.44, "4in": 7.44, "6in": 7.44, "9in": 2.78 }, 4: { "3in": 2.29, "4in": 2.29, "6in": 2.29, "9in": 1.57 },
