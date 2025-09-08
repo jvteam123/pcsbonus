@@ -70,7 +70,11 @@ body.light-theme .team-quality-label { background-color: #D1FAE5; color: #065F46
 body.light-theme .team-quality-label:hover { background-color: #A7F3D0; }
 .workload-bar { flex-grow: 1; background-color: var(--brand-600); border-radius: 0.25rem; height: 1.25rem; overflow: hidden; }
 .workload-bar-inner { height: 100%; border-radius: 0.25rem; transition: width 0.5s ease-in-out; text-align: right; padding-right: 0.5rem; color: var(--workload-bar-inner-text); font-size: 0.75rem; line-height: 1.25rem; font-weight: 500; }
-.quality-bar-green { background-color: #10B981; } .quality-bar-cyan { background-color: #0EA5E9; } .quality-bar-yellow { background-color: #F59E0B; } .quality-bar-red { background-color: #EF4444; }
+.quality-bar-red { background-color: #EF4444; }
+.quality-bar-90 { background-color: #F59E0B; } .quality-bar-91 { background-color: #EAB308; } .quality-bar-92 { background-color: #D9B31A; }
+.quality-bar-93 { background-color: #C2B32C; } .quality-bar-94 { background-color: #A3B33D; } .quality-bar-95 { background-color: #84B34F; }
+.quality-bar-96 { background-color: #65B361; } .quality-bar-97 { background-color: #46B373; } .quality-bar-98 { background-color: #27B385; }
+.quality-bar-99 { background-color: #10B981; } .quality-bar-100 { background-color: #04C77B; }
 .pulsing-spinner { width: 1rem; height: 1rem; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); } }
 .stat-orange { color: var(--status-orange) !important; } .stat-green { color: var(--status-green) !important; } .stat-red { color: var(--status-red) !important; }
