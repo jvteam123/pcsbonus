@@ -701,10 +701,23 @@ const Handlers = {
         UI.closeModal('manage-teams-modal');
     },
     async saveProjectToIndexedDB(projectData) {
-        const compressed = pako.deflate(new TextEncoder().encode(projectData.rawData));
-        const base64 = btoa(String.fromCharCode.apply(null, compressed));
-        await DB.put('projects', { ...projectData, rawData: base64, projectOrder: projectData.projectOrder || Date.now() });
-        UI.showNotification("Project saved/updated.");
+        try {
+            const compressed = pako.deflate(new TextEncoder().encode(projectData.rawData));
+            
+            // Chunked base64 encoding
+            let binary = '';
+            const len = compressed.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(compressed[i]);
+            }
+            const base64 = btoa(binary);
+    
+            await DB.put('projects', { ...projectData, rawData: base64, projectOrder: projectData.projectOrder || Date.now() });
+            UI.showNotification("Project saved/updated.");
+        } catch (error) {
+            console.error("Error saving project:", error);
+            alert("An error occurred while saving the project. The data might be too large or invalid.");
+        }
     },
     async fetchProjectListSummary() {
         const projects = await DB.getAll('projects');
@@ -713,8 +726,13 @@ const Handlers = {
     async fetchFullProjectData(projectId) {
         const data = await DB.get('projects', projectId);
         if (data && data.rawData) {
-            const compressed = new Uint8Array(atob(data.rawData).split('').map(c => c.charCodeAt(0)));
-            data.rawData = pako.inflate(compressed, { to: 'string' });
+            const binary_string = atob(data.rawData);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary_string.charCodeAt(i);
+            }
+            data.rawData = pako.inflate(bytes, { to: 'string' });
             return data;
         }
         return null;
@@ -820,6 +838,15 @@ const Handlers = {
             };
         }
     },
+    resetAdvanceSettingsToDefaults() {
+        if (confirm("Are you sure you want to reset all advanced settings to their original defaults?")) {
+            AppState.bonusTiers = CONSTANTS.DEFAULT_BONUS_TIERS;
+            AppState.calculationSettings = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CALCULATION_SETTINGS));
+            AppState.countingSettings = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_COUNTING_SETTINGS));
+            this.populateAdvanceSettingsEditor();
+            UI.showNotification("Settings have been reset to defaults.");
+        }
+    },
     setupEventListeners() {
         const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
         listen('merge-fixpoints-btn', 'click', () => { UI.resetMergeModal(); UI.openModal('merge-fixpoints-modal'); });
@@ -843,6 +870,14 @@ const Handlers = {
                 UI.applyFilters();
             }
         });
+        
+        // This needs to be delegated since the button is added dynamically
+        document.body.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'reset-defaults-btn') {
+                this.resetAdvanceSettingsToDefaults();
+            }
+        });
+
         listen('refresh-projects-btn', 'click', this.fetchProjectListSummary);
         listen('project-select', 'change', e => this.loadProjectIntoForm(e.target.value));
         listen('delete-project-btn', 'click', () => { const id = document.getElementById('project-select').value; if(id) this.deleteProjectFromIndexedDB(id); });
