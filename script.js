@@ -400,7 +400,11 @@ const UI = {
             }
         });
 
-        const filteredFix4 = Object.entries(fix4CategoryCounts).filter(([techId]) => {
+        const filteredFix4 = Object.entries(fix4CategoryCounts).filter(([techId, categories]) => {
+            // First, check if there's any data to display
+            if (Object.keys(categories).length === 0) return false;
+
+            // Then, apply team filters
             if (selectedTeams.length === 0) return true;
             const teamName = getTeamName(techId);
             return teamName && selectedTeams.includes(teamName);
