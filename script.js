@@ -129,7 +129,6 @@ const UI = {
             return { ...tech, quality, payout };
         });
 
-        // Sorting logic
         const sortKey = AppState.currentSort.column;
         const sortDir = AppState.currentSort.direction === 'asc' ? 1 : -1;
         techArray.sort((a, b) => {
@@ -269,8 +268,9 @@ const UI = {
         Object.entries(teamQualities).sort(([, a], [, b]) => b - a).forEach(([team, quality]) => {
             const qualityBar = document.createElement('div');
             qualityBar.className = 'workload-bar-wrapper';
-            let color = quality >= 98 ? 'green' : quality >= 95 ? 'cyan' : quality >= 90 ? 'yellow' : 'red';
-            qualityBar.innerHTML = `<div class="team-quality-label team-summary-trigger" data-team-name="${team}" title="${team}">${team}</div><div class="workload-bar"><div class="workload-bar-inner quality-bar-${color}" style="width:${quality.toFixed(2)}%;">${quality.toFixed(2)}%</div></div>`;
+            const qualityFloor = Math.floor(quality);
+            let colorClass = qualityFloor < 90 ? 'red' : String(qualityFloor);
+            qualityBar.innerHTML = `<div class="team-quality-label team-summary-trigger" data-team-name="${team}" title="${team}">${team}</div><div class="workload-bar"><div class="workload-bar-inner quality-bar-${colorClass}" style="width:${quality.toFixed(2)}%;">${quality.toFixed(2)}%</div></div>`;
             teamQualityContainer.appendChild(qualityBar);
         });
         const fix4Container = document.getElementById('fix4-breakdown-container');
