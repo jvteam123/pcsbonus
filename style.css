@@ -77,6 +77,8 @@ body.light-theme .team-quality-label:hover { background-color: #A7F3D0; }
 .quality-bar-99 { background-color: #10B981; } .quality-bar-100 { background-color: #04C77B; }
 .pulsing-spinner { width: 1rem; height: 1rem; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spinning { animation: spin 1s linear infinite; }
 .stat-orange { color: var(--status-orange) !important; } .stat-green { color: var(--status-green) !important; } .stat-red { color: var(--status-red) !important; }
 #leaderboard-panel .table-container thead { background-color: #FBBF24; }
 #leaderboard-panel .table-container thead th { color: #422006; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; border-bottom: none; }
