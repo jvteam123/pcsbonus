@@ -890,13 +890,24 @@ const Handlers = {
         });
         listen('cancel-edit-btn', 'click', () => this.loadProjectIntoForm(document.getElementById('project-select').value));
         listen('save-project-btn', 'click', async e => {
-            const button = e.target; UI.showLoading(button);
+            const button = e.target;
+            UI.showLoading(button);
             const name = document.getElementById('project-name').value.trim();
             const data = document.getElementById('techData').value.trim();
-            if (!name || !data) { alert("Project Name and Data are required."); UI.hideLoading(button); return; }
+            if (!name || !data) {
+                alert("Project Name and Data are required.");
+                UI.hideLoading(button);
+                return;
+            }
             const existingId = document.getElementById('project-select').value;
-            const projectId = existingId && !document.getElementById('techData').readOnly ? existingId : `${name.replace(/\W/g, '_').toLowerCase()}_${Date.now()}`;
-            const projectData = { id: projectId, name: name, rawData: data, isIRProject: document.getElementById('is-ir-project-checkbox').checked, gsdValue: document.getElementById('gsd-value-select').value };
+            const projectId = existingId ? existingId : `${name.replace(/\W/g, '_').toLowerCase()}_${Date.now()}`;
+            const projectData = {
+                id: projectId,
+                name: name,
+                rawData: data,
+                isIRProject: document.getElementById('is-ir-project-checkbox').checked,
+                gsdValue: document.getElementById('gsd-value-select').value
+            };
             await this.saveProjectToIndexedDB(projectData);
             await this.fetchProjectListSummary();
             document.getElementById('project-select').value = projectData.id;
