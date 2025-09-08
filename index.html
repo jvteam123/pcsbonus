@@ -13,23 +13,16 @@
     
     <link rel="stylesheet" href="style.css">
     <script>
-        // Custom Tailwind theme based on the CRAVEAT dashboard
+        // Custom Tailwind theme
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'brand-900': '#1F1D2B', // Main background (darker purple)
-                        'brand-800': '#252836', // Panel background (lighter purple)
-                        'brand-700': '#393C49', // Borders, secondary buttons
-                        'brand-600': '#393C49', // Inputs (same as border)
-                        'brand-400': '#ABBBC2', // Muted text
-                        'brand-300': '#FFFFFF', // Primary text
-                        'accent': { 'DEFAULT': '#6C5ECF', 'hover': '#584BAF' }, // Vibrant purple
-                        'status-red': '#FF7CA3',
-                        'status-blue': '#5492FF',
-                        'status-green': '#50D1AA',
-                        'status-orange': '#FFB572', // New color for 85-90% range
-                        'status-yellow': '#FDC57B', // New color for 75-80% range
+                        'brand-900': '#1F1D2B', 'brand-800': '#252836', 'brand-700': '#393C49',
+                        'brand-600': '#4F5B6A', 'brand-400': '#ABBBC2', 'brand-300': '#FFFFFF',
+                        'accent': { 'DEFAULT': '#6C5ECF', 'hover': '#584BAF' },
+                        'status-red': '#FF7CA3', 'status-green': '#50D1AA', 'status-orange': '#FFB572',
+                        'status-yellow': '#FDC57B',
                     }
                 }
             }
@@ -73,35 +66,19 @@
                         <div class="flex items-center gap-2">
                             <select id="project-select" class="input-field w-full"><option value="">Select a project...</option></select>
                             <span id="project-ir-badge" class="project-info-badge hidden"></span>
-                            <div id="project-loading-spinner" class="hidden">
-                                <div class="pulsing-spinner"></div>
-                            </div>
-                            <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon" aria-label="Refresh Project List">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
-                            </button>
-                            <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden" aria-label="Edit Selected Project">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
-                            </button>
-                            <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger" aria-label="Delete Selected Project">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-                            </button>
+                            <div id="project-loading-spinner" class="hidden"><div class="pulsing-spinner"></div></div>
+                            <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+                            <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
+                            <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
                         </div>
                         <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
-                            <textarea id="techData" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="You can now select all files inside the Fix folder and drag and drop them here to automatically merge.."></textarea>
+                            <textarea id="techData" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <input type="text" id="project-name" class="input-field" placeholder="Project Name">
-                            <div class="flex items-center gap-2">
-                                <input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
-                                <label for="is-ir-project-checkbox" class="text-sm font-medium text-accent">IR Project</label>
-                            </div>
-                            <select id="gsd-value-select" class="input-field text-sm">
-                                <option value="3in">3in GSD</option> <option value="4in">4in GSD</option> <option value="6in">6in GSD</option> <option value="9in">9in GSD</option>
-                            </select>
-                            <div class="flex items-center gap-2">
-                                <button id="save-project-btn" class="btn-primary w-full">Save Project</button>
-                                <button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel Edit</button>
-                            </div>
+                            <div class="flex items-center gap-2"><input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="is-ir-project-checkbox" class="text-sm font-medium text-accent">IR Project</label></div>
+                            <select id="gsd-value-select" class="input-field text-sm"><option value="3in">3in GSD</option><option value="4in">4in GSD</option><option value="6in">6in GSD</option><option value="9in">9in GSD</option></select>
+                            <div class="flex items-center gap-2"><button id="save-project-btn" class="btn-primary w-full">Save Project</button><button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel</button></div>
                         </div>
                     </div>
                     
@@ -109,11 +86,8 @@
                         <input type="number" id="bonusMultiplierDirect" class="input-field w-full" placeholder="Bonus Multiplier (e.g., 9)">
                         <div class="space-y-3">
                             <button id="calculate-btn" class="btn-primary w-full text-base">Calculate</button>
-                            <div class="flex items-center">
-                               <input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
-                               <label for="customize-calc-all-cb" class="ml-2 text-sm">Calculate Specific Projects</label>
-                           </div>
-                          <button id="calculate-all-btn" class="btn-primary w-full">Calculate All / Selected</button>
+                            <div class="flex items-center"><input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="customize-calc-all-cb" class="ml-2 text-sm">Calculate Specific Projects</label></div>
+                            <button id="calculate-all-btn" class="btn-primary w-full">Calculate All / Selected</button>
                         </div>
                     </div>
                 </div>
@@ -124,36 +98,16 @@
                 <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-semibold text-white sr-only">Leaderboard</h3>
-                        <select id="leaderboard-sort-select" class="input-field text-xs py-1 w-full">
-                            <option value="fixQuality">Sort by: Quality</option>
-                            <option value="totalPoints">Sort by: Points</option>
-                            <option value="fixTasks">Sort by: Tasks</option>
-                        </select>
+                        <select id="leaderboard-sort-select" class="input-field text-xs py-1 w-full"><option value="fixQuality">Sort by: Quality</option><option value="totalPoints">Sort by: Points</option><option value="fixTasks">Sort by: Tasks</option></select>
                     </div>
-                    <div class="table-container text-sm">
-                        <table class="min-w-full">
-                            <thead class="sticky top-0 bg-brand-800">
-                                <tr>
-                                    <th class="p-2 text-left">Rank</th>
-                                    <th class="p-2 text-left">Tech</th>
-                                    <th id="leaderboard-metric-header" class="p-2 text-left">Value</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaderboard-body">
-                                <tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <div class="table-container text-sm"><table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr><th class="p-2 text-left">Rank</th><th class="p-2 text-left">Tech</th><th id="leaderboard-metric-header" class="p-2 text-left">Value</th></tr></thead><tbody id="leaderboard-body"><tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr></tbody></table></div>
                 </div>
             </div>
 
             <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col">
                 <div class="panel-header"><h2 class="panel-title">TL Summary</h2></div>
                 <div class="p-4 space-y-4 flex flex-col min-h-0">
-                    <div>
-                        <h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3>
-                        <div id="team-quality-container" class="space-y-2"></div>
-                    </div>
+                    <div><h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3><div id="team-quality-container" class="space-y-2"></div></div>
                     <div class="border-t border-brand-700 pt-4 mt-4 flex flex-col min-h-0 flex-grow">
                         <h3 class="text-lg font-semibold text-white mb-2 flex-shrink-0">Fix4 Breakdown</h3>
                         <div id="fix4-breakdown-container" class="space-y-4 overflow-y-auto custom-scrollbar flex-grow"></div>
@@ -162,186 +116,53 @@
             </div>
         </main>
         
+        <section id="quick-summary-section" class="mt-6 dashboard-panel hidden">
+            <div class="panel-header"><h2 class="panel-title">Quick Summary</h2></div>
+            <div id="quick-summary-container" class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        </section>
+
         <section id="bonus-payout-section" class="mt-6 dashboard-panel hidden">
             <div class="panel-header"><h2 id="results-title" class="panel-title">Bonus Payouts</h2></div>
             <div class="p-4 space-y-4 panel-content-flex">
                 <div class="flex flex-col md:flex-row gap-4">
                     <input type="text" id="search-tech-id" class="input-field w-full md:w-1/3" placeholder="Search Tech ID...">
-                    <div id="team-filter-container" class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                        <span class="text-sm font-medium text-brand-300">Filter by Team:</span>
-                        <button id="refresh-teams-btn" title="Refresh Team List" class="control-btn-icon" aria-label="Refresh Team List"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
-                    </div>
+                    <div id="team-filter-container" class="flex flex-wrap gap-x-4 gap-y-2 items-center"><span class="text-sm font-medium text-brand-300">Filter by Team:</span><button id="refresh-teams-btn" title="Refresh Team List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button></div>
                 </div>
                 <div class="table-container max-h-[500px] custom-scrollbar border border-brand-700 rounded-md">
-                    <table class="min-w-full">
-                        <thead class="sticky top-0 bg-brand-800">
-                            <tr>
-                                <th class="p-2 text-left">Tech ID</th>
-                                <th class="p-2 text-left">Points</th>
-                                <th class="p-2 text-left">Quality</th>
-                                <th class="p-2 text-left">Bonus %</th>
-                                <th class="p-2 text-left">Payout</th>
-                                <th class="p-2 text-center">Details</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tech-results-tbody">
-                            </tbody>
-                    </table>
+                    <table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr>
+                        <th class="p-2 text-left sortable-header" data-sort="id">Tech ID</th>
+                        <th class="p-2 text-left sortable-header" data-sort="points">Points</th>
+                        <th class="p-2 text-left sortable-header" data-sort="fixTasks">Tasks</th>
+                        <th class="p-2 text-left sortable-header" data-sort="refixTasks">Refix</th>
+                        <th class="p-2 text-left sortable-header" data-sort="quality">Quality</th>
+                        <th class="p-2 text-left sortable-header" data-sort="payout">Payout</th>
+                        <th class="p-2 text-center">Details</th>
+                    </tr></thead><tbody id="tech-results-tbody"></tbody></table>
                 </div>
             </div>
         </section>
     </div>
 
-    <div id="merge-fixpoints-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Merge Partials FP</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white" aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div class="p-6 overflow-y-auto custom-scrollbar">
-                <div id="merge-drop-zone" class="p-10 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors">
-                    <p class="text-brand-400">Drag & drop shapefiles (.shp, .dbf) here to merge</p>
-                </div>
-                <div id="merge-file-list" class="mt-4 text-sm"></div>
-                <div id="merge-options" class="hidden mt-4 space-y-3">
-                    <input type="text" id="merge-project-name" class="input-field w-full" placeholder="Enter Project Name">
-                    <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4">
-                        <div class="flex items-center">
-                            <input id="merge-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
-                            <label for="merge-is-ir-checkbox" class="ml-2 block text-sm font-medium text-accent whitespace-nowrap">IR Project</label>
-                        </div>
-                        <div class="flex items-center w-full">
-                            <label for="merge-gsd-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label>
-                            <select id="merge-gsd-select" class="input-field w-full text-sm py-1">
-                                <option value="3in">3in</option> <option value="4in">4in</option> <option value="6in">6in</option> <option value="9in">9in</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button class="modal-close-btn btn-secondary">Close</button>
-                 <button id="merge-save-btn" class="btn-primary" disabled>Save Project</button>
-            </div>
-        </div>
-    </div>
-    <div id="manage-teams-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Manage Teams</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white" aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div id="team-list-container" class="p-6 overflow-y-auto custom-scrollbar space-y-4">
-                </div>
-            <div class="p-4 border-t border-brand-700 flex justify-between items-center">
-                <button id="add-team-btn" class="btn-secondary">Add New Team</button>
-                <div class="space-x-2">
-                    <button class="modal-close-btn btn-secondary">Close</button>
-                    <button id="save-teams-btn" class="btn-primary">Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="advance-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Advance Settings</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white" aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div id="advance-settings-body" class="p-6 overflow-y-auto custom-scrollbar">
-                </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button class="modal-close-btn btn-secondary">Close</button>
-                 <button id="save-advance-settings-btn" class="btn-primary">Save Changes</button>
-            </div>
-        </div>
-    </div>
-    <div id="important-info-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Important Information</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white" aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div class="p-6 overflow-y-auto custom-scrollbar space-y-4" id="important-info-body">
-                <div class="info-section">
-                    <h4 class="info-title">Calculation Logic</h4>
-                    <p class="info-text">This calculator is based on the formulas and tables provided in the "Phili IC Fixpoints App Documentation v1.0." The logic employed in all calculations is designed to be transparent and accurate according to this official documentation.</p>
-                </div>
-                <div class="info-section">
-                    <h4 class="info-title">Disclaimer and Intended Use</h4>
-                    <p class="info-text">This tool is intended for personal and informational purposes only. The results generated are estimates and should be used as a general guideline. These figures are not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p>
-                </div>
-            </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button class="modal-close-btn btn-secondary">Close</button>
-            </div>
-        </div>
-    </div>
-    <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Summary</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white" aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div id="tech-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar">
-                </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button class="modal-close-btn btn-secondary">Close</button>
-            </div>
-        </div>
-    </div>
-    <div id="team-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 id="team-summary-modal-title" class="text-lg font-semibold text-white">Team Summary</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white" aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
-            </div>
-            <div id="team-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar">
-                </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                 <button class="modal-close-btn btn-secondary">Close</button>
-            </div>
-        </div>
-    </div>
+    <div id="merge-fixpoints-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Merge Partials FP</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar"><div id="merge-drop-zone" class="p-10 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors"><p class="text-brand-400">Drag & drop shapefiles (.shp, .dbf) here</p></div><div id="merge-file-list" class="mt-4 text-sm"></div><div id="merge-options" class="hidden mt-4 space-y-3"><input type="text" id="merge-project-name" class="input-field w-full" placeholder="Enter Project Name"><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4"><div class="flex items-center"><input id="merge-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="merge-is-ir-checkbox" class="ml-2 block text-sm font-medium text-accent whitespace-nowrap">IR Project</label></div><div class="flex items-center w-full"><label for="merge-gsd-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label><select id="merge-gsd-select" class="input-field w-full text-sm py-1"><option value="3in">3in</option><option value="4in">4in</option><option value="6in">6in</option><option value="9in">9in</option></select></div></div></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="merge-save-btn" class="btn-primary" disabled>Save Project</button></div></div></div>
+    <div id="manage-teams-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Manage Teams</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-list-container" class="p-6 overflow-y-auto custom-scrollbar space-y-4"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button id="add-team-btn" class="btn-secondary">Add New Team</button><div class="space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-teams-btn" class="btn-primary">Save Changes</button></div></div></div></div>
+    <div id="advance-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Advance Settings</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="advance-settings-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-advance-settings-btn" class="btn-primary">Save Changes</button></div></div></div>
+    <div id="important-info-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Important Information</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar space-y-4" id="important-info-body"><div class="info-section"><h4 class="info-title">Calculation Logic</h4><p class="info-text">This calculator is based on the formulas and tables provided in the "Phili IC Fixpoints App Documentation v1.0." The logic employed in all calculations is designed to be transparent and accurate according to this official documentation.</p></div><div class="info-section"><h4 class="info-title">Disclaimer and Intended Use</h4><p class="info-text">This tool is intended for personal and informational purposes only. The results generated are estimates and should be used as a general guideline. These figures are not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+    <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="tech-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+    <div id="team-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="team-summary-modal-title" class="text-lg font-semibold text-white">Team Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+
     <script src="script.js"></script>
     <script>
-        // Inline script for main menu dropdown & modals
         document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('main-menu-btn');
             const dropdown = document.getElementById('main-menu-dropdown');
-
-            // Menu functionality
             if (btn && dropdown) {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    dropdown.classList.toggle('hidden');
-                });
-                document.addEventListener('click', (e) => {
-                    if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
-                        dropdown.classList.add('hidden');
-                    }
-                });
+                btn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); });
+                document.addEventListener('click', (e) => { if (!btn.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden'); });
             }
-
-            // Generic modal close button functionality
             document.querySelectorAll('.modal-close-btn').forEach(button => {
                 button.addEventListener('click', () => {
                     const modal = button.closest('.fixed');
-                    if (modal) {
-                        modal.classList.add('hidden');
-                    }
+                    if (modal) modal.classList.add('hidden');
                 });
             });
         });
