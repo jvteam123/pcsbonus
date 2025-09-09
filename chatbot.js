@@ -124,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function getBotResponse(userMessage) {
         const lowerCaseMessage = userMessage.toLowerCase();
         
-        // --- FIXED: Check for affirmative response to a remembered action FIRST ---
         const affirmativeResponses = ['yes', 'yep', 'sure', 'ok', 'okay', 'do it', 'open it'];
         if (lastOfferedAction && affirmativeResponses.includes(lowerCaseMessage)) {
             const actionToPerform = Array.isArray(lastOfferedAction) ? lastOfferedAction[0] : lastOfferedAction;
