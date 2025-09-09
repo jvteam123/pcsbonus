@@ -145,28 +145,14 @@ body.light-theme #advance-settings-modal h4, body.light-theme #advance-settings-
 body.light-theme #advance-settings-modal #category-points-tbody tr, body.light-theme #advance-settings-modal .bg-gray-800\/50 { background-color: transparent !important; }
 body.light-theme #advance-settings-modal #category-points-tbody tr:nth-child(even) { background-color: var(--brand-600) !important; }
 
-/* Performance Outlier Highlighting */
-tr.performance-top { background-color: rgba(80, 209, 170, 0.1) !important; }
-tr.performance-bottom { background-color: rgba(255, 124, 163, 0.1) !important; }
-tr.performance-top:hover, tr.performance-bottom:hover { background-color: var(--brand-600) !important; }
+/* Guided Setup Styles */
+.setup-step { display: none; }
+.setup-step.active { display: block; animation: fadeIn 0.5s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.step-indicator-item { display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 9999px; border: 2px solid var(--border-color); color: var(--text-muted-color); font-weight: 600; transition: all 0.3s ease; }
+.step-indicator-item.active { border-color: var(--accent); background-color: var(--accent); color: #FFFFFF; }
+.step-indicator-item.completed { border-color: var(--status-green); background-color: var(--status-green); color: #FFFFFF; }
 
-/* Project Difficulty Stars */
-.star-rating .star { color: var(--brand-600); cursor: pointer; transition: color 0.2s; }
-.star-rating .star:hover, .star-rating .star.selected { color: #FBBF24; }
-
-/* Draggable Dashboard Placeholders */
-.sortable-ghost { background-color: var(--brand-700); border: 2px dashed var(--accent); opacity: 0.5; }
-
-/* Audit Log Styles */
-.audit-log-entry { padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
-.audit-log-entry:last-child { border-bottom: none; }
-.audit-timestamp { font-size: 0.75rem; color: var(--text-muted-color); margin-right: 1rem; flex-shrink: 0; }
-
-/* User Role Display */
-#user-role-display.admin { background-color: var(--status-orange); color: var(--brand-900); }
-#user-role-display.user { background-color: var(--status-green); color: var(--brand-900); }
-
-/* Spotlight Overlay for Guided Tour */
 #spotlight-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.7); z-index: 9998; }
 .spotlight { box-shadow: 0 0 0 9999px rgba(0,0,0,0.7); z-index: 9999; position: relative; border-radius: 0.5rem; }
 .spotlight-tooltip { position: fixed; background-color: var(--panel-bg); color: var(--text-color); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); z-index: 10000; max-width: 300px; box-shadow: var(--shadow); }
