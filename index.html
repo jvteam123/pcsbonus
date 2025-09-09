@@ -31,6 +31,8 @@
 </head>
 <body class="bg-brand-900 text-brand-300 font-sans antialiased">
 
+    <div id="spotlight-overlay" class="hidden"></div>
+
     <div id="update-notification" class="hidden fixed top-5 right-5 bg-accent text-white py-2 px-4 rounded-lg shadow-lg z-50 transition-all duration-300">
         Notification message.
     </div>
@@ -159,11 +161,10 @@
             </div>
             <div class="p-6 overflow-y-auto custom-scrollbar">
                 <div id="setup-step-indicator" class="flex justify-center items-center gap-4 mb-6"></div>
-                
                 <div id="setup-steps-container">
                     <div class="setup-step" data-step="1">
                         <h4 class="text-xl font-bold text-center mb-2">Welcome to the PCS Bonus Calculator!</h4>
-                        <p class="text-center text-brand-400 max-w-2xl mx-auto">This guided setup will help you configure the calculator for the first time. We'll set up your teams and review the default calculation settings. You can change these settings any time from the main menu.</p>
+                        <p class="text-center text-brand-400 max-w-2xl mx-auto">This guided setup will help you configure the calculator. We'll set up your teams, review settings, and show you how to perform calculations.</p>
                     </div>
                     <div class="setup-step" data-step="2">
                         <h4 class="text-xl font-bold mb-4">Step 1: Configure Your Teams</h4>
@@ -172,18 +173,12 @@
                         <button id="setup-add-team-btn" class="btn-secondary mt-4">Add New Team</button>
                     </div>
                     <div class="setup-step" data-step="3">
-                        <h4 class="text-xl font-bold mb-4">Step 2: Review Bonus Tiers</h4>
-                        <p class="text-brand-400 mb-4">These are the default bonus tiers based on quality percentage. You can adjust them now or later via "Advance Settings".</p>
-                        <div id="setup-bonus-tier-list" class="space-y-2 max-h-96 overflow-y-auto custom-scrollbar p-2">
-                            <div class="grid grid-cols-2 gap-4 font-semibold text-brand-400 pb-2 border-b border-brand-600">
-                                <span>Minimum Quality %</span>
-                                <span>Bonus Earned %</span>
-                            </div>
-                        </div>
+                        <h4 class="text-xl font-bold mb-4">Step 2: How to Calculate</h4>
+                        <p class="text-brand-400 mb-4">This tour will guide you through the main calculation steps on the main screen. The modal will close temporarily.</p>
                     </div>
                      <div class="setup-step" data-step="4">
                         <h4 class="text-xl font-bold text-center mb-2">Setup Complete!</h4>
-                        <p class="text-center text-brand-400 max-w-2xl mx-auto">You're all set! You can now start pasting data or loading projects to calculate bonuses. Remember, you can always revisit these settings from the "Manage Teams" and "Advance Settings" options in the main menu.</p>
+                        <p class="text-center text-brand-400 max-w-2xl mx-auto">You're all set! You can now start using the calculator. Remember, you can always revisit team and calculation settings from the main menu.</p>
                     </div>
                 </div>
             </div>
