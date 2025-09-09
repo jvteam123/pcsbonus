@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isOpen = false;
     let consecutiveMisses = 0;
     let currentTechIdContext = null;
-    let lastOfferedAction = null;
+    let lastOfferedAction = null; 
 
     // Toggle chatbot window
     chatbotBubble.addEventListener('click', () => {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'open_modal' && typeof window.UI !== 'undefined') {
             window.UI.openModal(value);
         }
-        lastOfferedAction = null; // Clear memory after action is taken
+        lastOfferedAction = null; 
     }
 
     // Add a message to the chat window
@@ -111,8 +111,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Main Response Logic ---
     function getBotResponse(userMessage) {
         const lowerCaseMessage = userMessage.toLowerCase();
+        
+        // --- FIXED: Check for affirmative response to a remembered action ---
         const affirmativeResponses = ['yes', 'yep', 'sure', 'ok', 'okay', 'do it', 'open it'];
-        if (lastOfferedAction && affirmativeResponses.includes(lowerCaseMessage)) { performAction(lastOfferedAction.type, lastOfferedAction.value); return; }
+        if (lastOfferedAction && affirmativeResponses.includes(lowerCaseMessage)) {
+            performAction(lastOfferedAction.type, lastOfferedAction.value);
+            return;
+        }
 
         const techIdRegex = /(\d{4}[A-Z]{2})/;
         const potentialIdMatch = lowerCaseMessage.toUpperCase().match(techIdRegex);
