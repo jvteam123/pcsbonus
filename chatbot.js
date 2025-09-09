@@ -57,8 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getBotResponse(userMessage) {
         const upperCaseMessage = userMessage.toUpperCase();
         
-        // --- NEW: Tech ID Search Logic ---
-        // First, check if the message contains a potential Tech ID (e.g., "7236LE")
+        // --- Tech ID Search Logic ---
         const techIdRegex = /\d{4}[A-Z]{2}/;
         const potentialIdMatch = upperCaseMessage.match(techIdRegex);
         
@@ -68,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const name = techNameDatabase[foundId];
                 addMessage('bot', `Tech ID ${foundId} belongs to ${name}.`);
                 consecutiveMisses = 0;
-                return; // Stop here if we found a name
+                return; 
             }
         }
         
@@ -110,12 +109,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getSuggestionMessage(greeting) {
+        // --- NEW & IMPROVED SUGGESTIONS ---
         const suggestions = [
-            "How is quality calculated?",
-            "What is a refix?",
             "How do I use the calculator?",
-            "Who is 7236LE?",
-            "Who is the developer?"
+            "How is quality calculated?",
+            "What files can I drop here?",
+            "Can I combine multiple projects?",
+            "What is an IR project?",
+            "How do I edit a saved project?"
         ];
         
         let suggestionHTML = `${greeting}<div class='suggestions-container'>`;
