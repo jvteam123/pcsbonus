@@ -3,9 +3,6 @@ const AppState = {
     db: null, teamSettings: {}, bonusTiers: [], calculationSettings: {},
     countingSettings: {}, currentTechStats: {}, lastUsedGsdValue: '3in',
     currentSort: { column: 'payout', direction: 'desc' },
-    currentUserRole: 'Admin', // 'Admin' or 'User'
-    auditLog: [],
-    refixAnalysisData: [],
     guidedSetup: {
         currentStep: 1,
         totalSteps: 4,
@@ -51,7 +48,7 @@ const CONSTANTS = {
     DEFAULT_COUNTING_SETTINGS: {
         taskColumns: { qc: ['qc1_id', 'qc2_id', 'qc3_id'], i3qa: ['i3qa_id'], rv1: ['rv1_id'], rv2: ['rv2_id'] },
         triggers: {
-            refix: { labels: ['i'], columns: ['rv1_label', 'rv2_label', 'rv3_label', 'rv4_label'] },
+            refix: { labels: ['i'], columns: ['rv1_label', 'rv2_label', 'rv3_label'] },
             miss: { labels: ['m', 'c'], columns: ['i3qa_label', 'rv1_label', 'rv2_label', 'rv3_label'] },
             warning: { labels: ['b', 'c', 'd', 'e', 'f', 'g', 'i'], columns: ['r1_warn', 'r2_warn', 'r3_warn', 'r4_warn'] },
             qcPenalty: { labels: ['m', 'e'], columns: ['i3qa_label'] }
@@ -139,10 +136,6 @@ const UI = {
             return { ...tech, quality, payout, bonusEarned };
         });
 
-        const payouts = techArray.map(t => t.payout).sort((a,b) => a - b);
-        const top10Percentile = payouts[Math.floor(payouts.length * 0.9)];
-        const bottom10Percentile = payouts[Math.floor(payouts.length * 0.1)];
-
         const sortKey = AppState.currentSort.column;
         const sortDir = AppState.currentSort.direction === 'asc' ? 1 : -1;
         techArray.sort((a, b) => {
@@ -156,8 +149,6 @@ const UI = {
         } else {
             techArray.forEach(tech => {
                 const row = document.createElement('tr');
-                if (tech.payout >= top10Percentile && top10Percentile > 0) row.classList.add('performance-top');
-                if (tech.payout <= bottom10Percentile && tech.payout < top10Percentile) row.classList.add('performance-bottom');
                 row.innerHTML = `
                     <td class="font-semibold text-white">${tech.id}</td>
                     <td>${tech.points.toFixed(3)}</td>
@@ -464,17 +455,17 @@ const UI = {
         const teamTechs = AppState.teamSettings[teamName];
         if (!teamTechs) return;
         const currentProjectName = document.getElementById('results-title').textContent.replace('Bonus Payouts for: ', '');
-        const modalBody = UI.generateTeamBreakdownHTML(teamName, teamTechs, AppState.currentTechStats, currentProjectName);
+        const modalBody = this.generateTeamBreakdownHTML(teamName, teamTechs, AppState.currentTechStats, currentProjectName);
         document.getElementById('team-summary-modal-title').textContent = `Summary for ${teamName}`;
         document.getElementById('team-summary-modal-body').innerHTML = modalBody;
-        UI.openModal('team-summary-modal');
+        this.openModal('team-summary-modal');
     },
     openTechSummaryModal(techId) {
         const tech = AppState.currentTechStats[techId];
         if (!tech) return;
         document.getElementById('tech-summary-modal-title').textContent = `Summary for ${techId}`;
-        document.getElementById('tech-summary-modal-body').innerHTML = UI.generateTechBreakdownHTML(tech);
-        UI.openModal('tech-summary-modal');
+        document.getElementById('tech-summary-modal-body').innerHTML = this.generateTechBreakdownHTML(tech);
+        this.openModal('tech-summary-modal');
     },
     resetUIForNewCalculation() {
         ['#bonus-payout-section', '#tl-summary-card', '#quick-summary-section'].forEach(s => document.querySelector(s)?.classList.add('hidden'));
@@ -493,94 +484,7 @@ const UI = {
         document.getElementById('merge-save-btn').disabled = true;
     },
     showLoading(button) { button.disabled = true; const loader = document.createElement('span'); loader.className = 'loader'; button.prepend(loader); },
-    hideLoading(button) { button.disabled = false; button.querySelector('.loader')?.remove(); },
-    initDashboardLayout() {
-        const dashboard = document.getElementById('main-dashboard');
-        const savedLayout = localStorage.getItem('dashboardLayout');
-        if (savedLayout) {
-            const panelOrder = JSON.parse(savedLayout);
-            panelOrder.forEach(panelId => {
-                const panel = document.getElementById(panelId);
-                if(panel) dashboard.appendChild(panel);
-            });
-        }
-        new Sortable(dashboard, {
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            handle: '.panel-header',
-            onEnd: (evt) => {
-                const panelOrder = Array.from(dashboard.children).map(child => child.id);
-                localStorage.setItem('dashboardLayout', JSON.stringify(panelOrder));
-                Handlers.logAction("Dashboard layout changed.");
-            },
-        });
-    },
-    updateUserRoleDisplay() {
-        const display = document.getElementById('user-role-display');
-        display.textContent = AppState.currentUserRole;
-        display.className = `text-sm font-semibold px-3 py-1 rounded-full ${AppState.currentUserRole.toLowerCase()}`;
-        
-        const isAdmin = AppState.currentUserRole === 'Admin';
-        document.querySelectorAll('#advance-settings-btn, #manage-teams-btn, #clear-data-btn, #audit-log-btn, #backup-data-btn, #restore-data-btn').forEach(el => {
-            el.style.display = isAdmin ? 'block' : 'none';
-        });
-    },
-    populateProjectSettingsModal(project) {
-        const selector = document.getElementById('project-difficulty-selector');
-        selector.innerHTML = '';
-        const difficulty = project.difficulty || 0;
-        for (let i = 1; i <= 5; i++) {
-            const star = document.createElement('span');
-            star.className = 'star';
-            star.dataset.value = i;
-            star.innerHTML = i <= difficulty ? '&#9733;' : '&#9734;';
-            selector.appendChild(star);
-        }
-        document.getElementById('use-difficulty-multiplier').checked = project.useMultiplier || false;
-    },
-    populateRefixAnalysisModal() {
-        const container = document.getElementById('refix-analysis-body');
-        if (AppState.refixAnalysisData.length === 0) {
-            container.innerHTML = '<p class="text-brand-400">No refix data to analyze from the last calculation.</p>';
-            return;
-        }
-        const rows = AppState.refixAnalysisData.map(item => `
-            <tr>
-                <td class="p-2">${item.qcTech}</td>
-                <td class="p-2">${item.fixTech}</td>
-                <td class="p-2">${item.agreed ? 'Yes' : 'No'}</td>
-                <td class="p-2 font-mono">${item.reasonNote}</td>
-            </tr>
-        `).join('');
-
-        container.innerHTML = `
-            <div class="table-container text-sm">
-                <table class="min-w-full">
-                    <thead>
-                        <tr>
-                            <th class="p-2 text-left">QC Tech (Incorrect)</th>
-                            <th class="p-2 text-left">Fix Tech</th>
-                            <th class="p-2 text-left">Tech Agreed?</th>
-                            <th class="p-2 text-left">Reasoning Note</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
-            </div>`;
-    },
-    populateAuditLogModal() {
-        const container = document.getElementById('audit-log-body');
-        if (AppState.auditLog.length === 0) {
-            container.innerHTML = '<p class="text-brand-400">The audit log is empty.</p>';
-            return;
-        }
-        container.innerHTML = AppState.auditLog.map(entry => `
-            <div class="audit-log-entry flex items-center">
-                <span class="audit-timestamp">${new Date(entry.timestamp).toLocaleString()}</span>
-                <span class="flex-grow">${entry.action}</span>
-            </div>
-        `).join('');
-    }
+    hideLoading(button) { button.disabled = false; button.querySelector('.loader')?.remove(); }
 };
 
 // --- CALCULATION MODULE ---
@@ -599,8 +503,7 @@ const Calculator = {
         if (isCombined) baseStat.pointsBreakdownByProject = {};
         return baseStat;
     },
-    parseRawData(data, project) {
-        AppState.refixAnalysisData = [];
+    parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Data", gsdForCalculation = "3in") {
         const techStats = {};
         const lines = data.split('\n').filter(line => line.trim());
         if (lines.length < 1) return null;
@@ -620,7 +523,7 @@ const Calculator = {
             });
         });
         allTechs.forEach(techId => {
-            techStats[techId] = this.createNewTechStat(false, project.name);
+            techStats[techId] = this.createNewTechStat(false, currentProjectName);
             techStats[techId].id = techId;
         });
 
@@ -643,12 +546,12 @@ const Calculator = {
                     const catValue = parseInt(get(source.cat));
                     if (!isNaN(catValue) && catValue >= 1 && catValue <= 9) {
                         techCategories++;
-                        techPoints += AppState.calculationSettings.categoryValues[catValue]?.[project.gsdValue] || 0;
+                        techPoints += AppState.calculationSettings.categoryValues[catValue]?.[gsdForCalculation] || 0;
                         if(techStats[techId].categoryCounts[catValue]) techStats[techId].categoryCounts[catValue][source.sourceType]++;
                     }
                 });
                 techStats[techId].fixTasks += techCategories;
-                let pointsToAdd = techPoints * (project.isIRProject ? AppState.calculationSettings.irModifierValue : 1);
+                let pointsToAdd = techPoints * (isFixTaskIR ? AppState.calculationSettings.irModifierValue : 1);
                 techStats[techId].points += pointsToAdd;
                 techStats[techId].pointsBreakdown.fix += pointsToAdd;
             };
@@ -691,6 +594,12 @@ const Calculator = {
                 }
             }
             
+            triggers.refix.columns.forEach((c, i) => {
+                if (triggers.refix.labels.some(l => get(c)?.trim().toLowerCase().includes(l))) {
+                    const fixTechId = fixIds[i + 1];
+                    if (fixTechId && techStats[fixTechId]) techStats[fixTechId].refixTasks++;
+                }
+            });
             triggers.warning.columns.forEach((c, i) => {
                 if (triggers.warning.labels.includes(get(c)?.trim().toLowerCase())) {
                     const fixTechId = fixIds[i];
@@ -698,44 +607,12 @@ const Calculator = {
                 }
             });
             
-            for (let i = 1; i <= 4; i++) {
-                const rvLabelCol = `rv${i}_label`;
-                const rvIdCol = `rv${i}_id`;
-                const fixIdCol = `fix${i}_id`;
-                const fixNotesCol = `fix${i}_notes`;
-                
-                if (get(rvLabelCol)?.trim().toUpperCase().includes('I')) {
-                    const qcTech = get(rvIdCol)?.trim().toUpperCase();
-                    const fixTech = get(fixIdCol)?.trim().toUpperCase();
-                    const reasonNote = get(fixNotesCol)?.trim().toUpperCase();
-                    
-                    if (qcTech && fixTech) {
-                        AppState.refixAnalysisData.push({
-                            qcTech,
-                            fixTech,
-                            agreed: reasonNote.includes('Y'),
-                            reasonNote
-                        });
-                        if (techStats[fixTech]) {
-                            techStats[fixTech].refixTasks++;
-                        }
-                    }
-                }
-            }
-
             const fix4Id = get('fix4_id')?.trim().toUpperCase();
             if (fix4Id && techStats[fix4Id]) {
                 const cat = parseInt(get('rv3_cat'));
                 if (!isNaN(cat) && get('rv3_cat')?.trim()) techStats[fix4Id].fix4.push({ category: cat });
             }
         });
-        
-        if (project.useMultiplier && project.difficulty > 0) {
-            const multiplier = 1 + (project.difficulty * 0.1);
-            Object.values(techStats).forEach(stat => {
-                stat.points *= multiplier;
-            });
-        }
         return { techStats };
     },
     calculateQualityModifier(qualityRate) {
@@ -747,19 +624,9 @@ const Calculator = {
 const Handlers = {
     async initializeApp() {
         await DB.open();
-        await Promise.all([
-            this.loadTeamSettings(),
-            this.loadBonusTiers(),
-            this.loadCalculationSettings(),
-            this.loadCountingSettings(),
-            this.loadAuditLog(),
-            this.fetchProjectListSummary()
-        ]);
-        
-        this.setupEventListeners();
+        Handlers.setupEventListeners();
         document.body.classList.toggle('light-theme', localStorage.getItem('theme') === 'light');
-        UI.initDashboardLayout();
-        UI.updateUserRoleDisplay();
+        await Promise.all([ Handlers.fetchProjectListSummary(), Handlers.loadTeamSettings(), Handlers.loadBonusTiers(), Handlers.loadCalculationSettings(), Handlers.loadCountingSettings() ]);
         
         const hasBeenSetup = await DB.get('settings', 'hasBeenSetup');
         if (!hasBeenSetup) {
@@ -768,13 +635,6 @@ const Handlers = {
 
         UI.setPanelHeights();
         window.addEventListener('resize', UI.setPanelHeights);
-    },
-    
-    async loadTeamSettings() {
-        const teamsData = await DB.get('teams', 'teams');
-        AppState.teamSettings = (teamsData && Object.keys(teamsData.settings).length > 0) ? teamsData.settings : CONSTANTS.DEFAULT_TEAMS;
-        UI.populateTeamFilters();
-        UI.populateAdminTeamManagement();
     },
     async loadBonusTiers() {
         const saved = await DB.get('bonusTiers', 'customTiers');
@@ -788,147 +648,329 @@ const Handlers = {
         const saved = await DB.get('countingSettings', 'customCounting');
         AppState.countingSettings = saved ? { ...CONSTANTS.DEFAULT_COUNTING_SETTINGS, ...saved.settings, triggers: { ...CONSTANTS.DEFAULT_COUNTING_SETTINGS.triggers, ...saved.settings.triggers } } : JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_COUNTING_SETTINGS));
     },
-    async loadAuditLog() {
-        const logData = await DB.get('settings', 'auditLog');
-        AppState.auditLog = logData ? logData.log : [];
+    async saveAdvanceSettings() {
+        const getValues = id => document.getElementById(id).value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        const newTiers = Array.from(document.querySelectorAll('#bonus-tier-editor-container .tier-row')).map(row => ({ quality: parseFloat(row.querySelector('.tier-quality-input').value), bonus: parseFloat(row.querySelector('.tier-bonus-input').value) / 100 })).filter(t => !isNaN(t.quality) && !isNaN(t.bonus)).sort((a, b) => b.quality - a.quality);
+        const newCalcSettings = {
+            irModifierValue: parseFloat(document.getElementById('setting-ir-modifier').value),
+            points: { qc: parseFloat(document.getElementById('setting-qc-points').value), i3qa: parseFloat(document.getElementById('setting-i3qa-points').value), rv1: parseFloat(document.getElementById('setting-rv1-points').value), rv1_combo: parseFloat(document.getElementById('setting-rv1-combo-points').value), rv2: parseFloat(document.getElementById('setting-rv2-points').value) },
+            categoryValues: Object.fromEntries(Array.from({length: 9}, (_, i) => [i + 1, { "3in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="3in"]`).value), "4in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="4in"]`).value), "6in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="6in"]`).value), "9in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="9in"]`).value) }]))
+        };
+        const newCountingSettings = {
+            taskColumns: { qc: getValues('setting-qc-cols'), i3qa: getValues('setting-i3qa-cols'), rv1: getValues('setting-rv1-cols'), rv2: getValues('setting-rv2-cols'), },
+            triggers: { refix: { labels: getValues('setting-refix-labels'), columns: getValues('setting-refix-cols') }, miss: { labels: getValues('setting-miss-labels'), columns: getValues('setting-miss-cols') }, warning: { labels: getValues('setting-warning-labels'), columns: getValues('setting-warning-cols') }, qcPenalty: { labels: getValues('setting-qc-penalty-labels'), columns: getValues('setting-qc-penalty-cols') } }
+        };
+        await Promise.all([ DB.put('bonusTiers', { id: 'customTiers', tiers: newTiers }), DB.put('calculationSettings', { id: 'customSettings', settings: newCalcSettings }), DB.put('countingSettings', { id: 'customCounting', settings: newCountingSettings }) ]);
+        [AppState.bonusTiers, AppState.calculationSettings, AppState.countingSettings] = [newTiers, newCalcSettings, newCountingSettings];
+        UI.showNotification("Advance settings saved."); UI.closeModal('advance-settings-modal');
     },
-
-    async logAction(actionText) {
-        AppState.auditLog.unshift({
-            timestamp: Date.now(),
-            user: AppState.currentUserRole,
-            action: actionText
+    populateAdvanceSettingsEditor() {
+        const container = document.getElementById('advance-settings-body');
+        container.innerHTML = `<div class="flex items-center gap-2 border-b border-brand-700 mb-4"><button class="tab-button active" data-tab="bonus-tiers">Bonus Tiers</button><button class="tab-button" data-tab="points">Points</button><button class="tab-button" data-tab="counting">Counting Logic</button></div><div id="tab-bonus-tiers" class="tab-content active"><div id="bonus-tier-editor-container" class="space-y-2"></div><button id="add-tier-btn" class="btn-secondary mt-4">Add Tier</button></div><div id="tab-points" class="tab-content"><div class="space-y-4"><div><label for="setting-ir-modifier">IR Modifier</label><input type="number" step="0.1" id="setting-ir-modifier" class="input-field w-full mt-1"></div><div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div><label for="setting-qc-points">QC</label><input type="number" step="0.01" id="setting-qc-points" class="input-field w-full mt-1"></div><div><label for="setting-i3qa-points">i3QA</label><input type="number" step="0.01" id="setting-i3qa-points" class="input-field w-full mt-1"></div><div><label for="setting-rv1-points">RV1</label><input type="number" step="0.01" id="setting-rv1-points" class="input-field w-full mt-1"></div><div><label for="setting-rv1-combo-points">RV1 Combo</label><input type="number" step="0.01" id="setting-rv1-combo-points" class="input-field w-full mt-1"></div><div><label for="setting-rv2-points">RV2</label><input type="number" step="0.01" id="setting-rv2-points" class="input-field w-full mt-1"></div></div><div class="table-container text-sm border border-brand-700 rounded-md"><table class="min-w-full"><thead class="bg-brand-800"><tr><th>Category</th><th>3in</th><th>4in</th><th>6in</th><th>9in</th></tr></thead><tbody id="category-points-tbody"></tbody></table></div></div></div><div id="tab-counting" class="tab-content"><div class="space-y-4"><div><h4 class="font-semibold">Task Columns</h4><div class="grid grid-cols-2 gap-4"><div><label>QC</label><input type="text" id="setting-qc-cols" class="input-field w-full mt-1"></div><div><label>i3QA</label><input type="text" id="setting-i3qa-cols" class="input-field w-full mt-1"></div><div><label>RV1</label><input type="text" id="setting-rv1-cols" class="input-field w-full mt-1"></div><div><label>RV2</label><input type="text" id="setting-rv2-cols" class="input-field w-full mt-1"></div></div></div><div><h4 class="font-semibold">Trigger Conditions</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label>Refix Labels</label><input type="text" id="setting-refix-labels" class="input-field w-full mt-1"></div><div><label>Refix Columns</label><input type="text" id="setting-refix-cols" class="input-field w-full mt-1"></div><div><label>Miss Labels</label><input type="text" id="setting-miss-labels" class="input-field w-full mt-1"></div><div><label>Miss Columns</label><input type="text" id="setting-miss-cols" class="input-field w-full mt-1"></div><div><label>Warning Labels</label><input type="text" id="setting-warning-labels" class="input-field w-full mt-1"></div><div><label>Warning Columns</label><input type="text" id="setting-warning-cols" class="input-field w-full mt-1"></div><div><label>QC Penalty Labels</label><input type="text" id="setting-qc-penalty-labels" class="input-field w-full mt-1"></div><div><label>QC Penalty Columns</label><input type="text" id="setting-qc-penalty-cols" class="input-field w-full mt-1"></div></div></div></div></div>`;
+        const tierContainer = document.getElementById('bonus-tier-editor-container');
+        tierContainer.innerHTML = `<div class="grid grid-cols-3 gap-4 font-semibold text-gray-400 pb-2 border-b border-gray-600"><span>Min. Quality %</span><span>Bonus Earned %</span><span>Action</span></div>`;
+        AppState.bonusTiers.forEach(t => this.addBonusTierRow(t.quality, t.bonus * 100));
+        document.getElementById('add-tier-btn').addEventListener('click', () => this.addBonusTierRow());
+        document.getElementById('setting-ir-modifier').value = AppState.calculationSettings.irModifierValue;
+        Object.keys(AppState.calculationSettings.points).forEach(k => {
+            const pointInput = document.getElementById(`setting-${k.replace('_','-')}-points`);
+            if (pointInput) {
+                pointInput.value = AppState.calculationSettings.points[k];
+            }
         });
-        if (AppState.auditLog.length > 100) {
-            AppState.auditLog.pop();
+        document.getElementById('category-points-tbody').innerHTML = Object.entries(AppState.calculationSettings.categoryValues).map(([cat, gsd]) => `<tr data-category="${cat}"><td>Cat ${cat}</td>${Object.entries(gsd).map(([size, val]) => `<td><input type="number" step="0.01" class="input-field w-full p-1" data-gsd="${size}" value="${val}"></td>`).join('')}</tr>`).join('');
+        Object.keys(AppState.countingSettings.taskColumns).forEach(k => {
+            const taskColInput = document.getElementById(`setting-${k}-cols`);
+            if (taskColInput) {
+                taskColInput.value = AppState.countingSettings.taskColumns[k].join(', ');
+            }
+        });
+        Object.keys(AppState.countingSettings.triggers).forEach(k => {
+            const kebabCaseKey = k.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
+            const labelsInput = document.getElementById(`setting-${kebabCaseKey}-labels`);
+            if (labelsInput) {
+                labelsInput.value = AppState.countingSettings.triggers[k].labels.join(', ');
+            }
+            const colsInput = document.getElementById(`setting-${kebabCaseKey}-cols`);
+            if (colsInput) {
+                colsInput.value = AppState.countingSettings.triggers[k].columns.join(', ');
+            }
+        });
+        container.querySelectorAll('.tab-button').forEach(tab => tab.addEventListener('click', () => { container.querySelectorAll('.tab-button, .tab-content').forEach(el => el.classList.remove('active')); tab.classList.add('active'); document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active'); }));
+    },
+    addBonusTierRow(quality = '', bonus = '') {
+        const row = document.createElement('div');
+        row.className = 'tier-row grid grid-cols-3 gap-4 items-center';
+        row.innerHTML = `<input type="number" step="0.5" class="tier-quality-input w-full p-2 input-field" value="${quality}"><input type="number" step="1" class="tier-bonus-input w-full p-2 input-field" value="${bonus}"><button class="delete-tier-btn bg-red-600/80 text-white rounded-lg hover:bg-red-700 text-sm p-2">Delete</button>`;
+        document.getElementById('bonus-tier-editor-container').appendChild(row);
+        row.querySelector('.delete-tier-btn').addEventListener('click', () => row.remove());
+    },
+    async loadTeamSettings() {
+        const teamsData = await DB.get('teams', 'teams');
+        AppState.teamSettings = (teamsData && Object.keys(teamsData.settings).length > 0) ? teamsData.settings : CONSTANTS.DEFAULT_TEAMS;
+        UI.populateTeamFilters();
+        UI.populateAdminTeamManagement();
+    },
+    async saveTeamSettings(containerId = 'team-list-container') {
+        const newSettings = {};
+        document.querySelectorAll(`#${containerId} .team-card`).forEach(div => {
+            const teamName = div.querySelector('.team-name-input').value.trim();
+            if (teamName) newSettings[teamName] = Array.from(div.querySelectorAll('.tech-tag')).map(tag => tag.dataset.techId);
+        });
+        await DB.put('teams', { id: 'teams', settings: newSettings });
+        UI.showNotification("Team settings saved.");
+        AppState.teamSettings = newSettings;
+        UI.populateTeamFilters();
+        UI.closeModal('manage-teams-modal');
+    },
+    async saveProjectToIndexedDB(projectData) {
+        try {
+            const compressed = pako.deflate(new TextEncoder().encode(projectData.rawData));
+            
+            let binary = '';
+            const len = compressed.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(compressed[i]);
+            }
+            const base64 = btoa(binary);
+    
+            await DB.put('projects', { ...projectData, rawData: base64, projectOrder: projectData.projectOrder || Date.now() });
+            UI.showNotification("Project saved/updated.");
+        } catch (error) {
+            console.error("Error saving project:", error);
+            alert("An error occurred while saving the project. The data might be too large or invalid.");
         }
-        await DB.put('settings', { id: 'auditLog', log: AppState.auditLog });
     },
-    
-    async backupData() {
-        if (AppState.currentUserRole !== 'Admin') return UI.showNotification("Permission denied.");
-        const dataToBackup = {
-            projects: await DB.getAll('projects'),
-            teams: await DB.get('teams', 'teams'),
-            bonusTiers: await DB.get('bonusTiers', 'customTiers'),
-            calcSettings: await DB.get('calculationSettings', 'customSettings'),
-            countSettings: await DB.get('countingSettings', 'customCounting'),
-            auditLog: await DB.get('settings', 'auditLog'),
-            theme: localStorage.getItem('theme'),
-            dashboardLayout: localStorage.getItem('dashboardLayout')
-        };
-        const blob = new Blob([JSON.stringify(dataToBackup, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `pcs_bonus_calculator_backup_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.logAction("Full application data backed up.");
+    async fetchProjectListSummary() {
+        const projects = await DB.getAll('projects');
+        UI.populateProjectSelect(projects.map(p => ({ id: p.id, name: p.name })).sort((a, b) => (b.projectOrder || 0) - (a.projectOrder || 0)));
     },
-
-    restoreData(file) {
-        if (AppState.currentUserRole !== 'Admin') return UI.showNotification("Permission denied.");
-        if (!file) return;
-        if (!confirm("This will overwrite all existing data. Are you sure you want to proceed?")) return;
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = JSON.parse(e.target.result);
-                await Promise.all([
-                    ... (await DB.getAll('projects')).map(p => DB.delete('projects', p.id)),
-                    DB.delete('teams', 'teams'),
-                    DB.delete('bonusTiers', 'customTiers'),
-                    DB.delete('calculationSettings', 'customSettings'),
-                    DB.delete('countingSettings', 'customCounting'),
-                    DB.delete('settings', 'auditLog')
-                ]);
-
-                if (data.projects) await Promise.all(data.projects.map(p => DB.put('projects', p)));
-                if (data.teams) await DB.put('teams', data.teams);
-                if (data.bonusTiers) await DB.put('bonusTiers', data.bonusTiers);
-                if (data.calcSettings) await DB.put('calculationSettings', data.calcSettings);
-                if (data.countSettings) await DB.put('countingSettings', data.countSettings);
-                if (data.auditLog) await DB.put('settings', data.auditLog);
-                if (data.theme) localStorage.setItem('theme', data.theme);
-                if (data.dashboardLayout) localStorage.setItem('dashboardLayout', data.dashboardLayout);
-                
-                await this.logAction("Full application data restored from backup.");
-                alert("Data restored successfully. The application will now reload.");
-                window.location.reload();
-            } catch (error) {
-                console.error("Restore error:", error);
-                alert("Failed to restore data. The file may be invalid.");
+    async fetchFullProjectData(projectId) {
+        const data = await DB.get('projects', projectId);
+        if (data && data.rawData) {
+            const binary_string = atob(data.rawData);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary_string.charCodeAt(i);
             }
-        };
-        reader.readAsText(file);
+            data.rawData = pako.inflate(bytes, { to: 'string' });
+            return data;
+        }
+        return null;
     },
-    
-    setupEventListeners() {
-        const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler.bind(this));
-
-        listen('refix-analysis-btn', 'click', () => { UI.populateRefixAnalysisModal(); UI.openModal('refix-analysis-modal'); });
-        listen('audit-log-btn', 'click', () => { UI.populateAuditLogModal(); UI.openModal('audit-log-modal'); });
-        listen('backup-data-btn', 'click', this.backupData);
-        listen('restore-data-btn', 'click', () => document.getElementById('restore-file-input').click());
-        listen('restore-file-input', 'change', (e) => this.restoreData(e.target.files[0]));
-        listen('project-settings-btn', 'click', async () => {
-            const projectId = document.getElementById('project-select').value;
-            if (!projectId) return;
-            const project = await this.fetchFullProjectData(projectId);
-            UI.populateProjectSettingsModal(project);
-            UI.openModal('project-settings-modal');
-        });
-        document.getElementById('project-difficulty-selector').addEventListener('click', (e) => {
-            if (e.target.classList.contains('star')) {
-                const value = parseInt(e.target.dataset.value);
-                const stars = document.querySelectorAll('#project-difficulty-selector .star');
-                stars.forEach((star, index) => {
-                    star.innerHTML = index < value ? '&#9733;' : '&#9734;';
+    async deleteProjectFromIndexedDB(projectId) {
+        if (confirm("Delete this project? This cannot be undone.")) {
+            await DB.delete('projects', projectId);
+            await this.fetchProjectListSummary();
+            UI.showNotification("Project deleted.");
+            this.loadProjectIntoForm("");
+        }
+    },
+    async loadProjectIntoForm(projectId) {
+        const refreshBtn = document.getElementById('refresh-projects-btn');
+        if (refreshBtn) {
+            refreshBtn.classList.add('spinning');
+            refreshBtn.disabled = true;
+        }
+        try {
+            const projectData = projectId ? await this.fetchFullProjectData(projectId) : null;
+            document.getElementById('techData').value = projectData?.rawData || '';
+            document.getElementById('techData').readOnly = !!projectData;
+            document.getElementById('project-name').value = projectData?.name || '';
+            document.getElementById('project-name').readOnly = !!projectData;
+            document.getElementById('is-ir-project-checkbox').checked = projectData?.isIRProject || false;
+            document.getElementById('is-ir-project-checkbox').disabled = !!projectData;
+            document.getElementById('gsd-value-select').value = projectData?.gsdValue || '3in';
+            document.getElementById('gsd-value-select').disabled = !!projectData;
+            document.getElementById('edit-data-btn').classList.toggle('hidden', !projectData);
+            document.getElementById('save-project-btn').disabled = !!projectData;
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            const irBadge = document.getElementById('project-ir-badge');
+            irBadge.classList.toggle('hidden', !projectData);
+            if(projectData) {
+                irBadge.textContent = projectData.isIRProject ? 'IR' : 'Non-IR';
+                irBadge.className = `project-info-badge ${projectData.isIRProject ? 'is-ir' : 'is-not-ir'}`;
+            }
+        } finally {
+            if (refreshBtn) {
+                refreshBtn.classList.remove('spinning');
+                refreshBtn.disabled = false;
+            }
+        }
+    },
+    async handleDroppedFiles(files) {
+        document.getElementById('project-select').value = '';
+        UI.resetUIForNewCalculation();
+        const fileGroups = {};
+        for (const file of files) {
+            const baseName = file.name.split('.')[0];
+            fileGroups[baseName] = fileGroups[baseName] || {};
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (['shp', 'dbf'].includes(ext)) fileGroups[baseName][ext] = file;
+        }
+        let allFeatures = [];
+        let count = 0;
+        for (const group of Object.values(fileGroups)) {
+            if (group.shp && group.dbf) {
+                const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
+                if (geojson && geojson.features) { allFeatures.push(...geojson.features); count++; }
+            }
+        }
+        if (allFeatures.length > 0) {
+            const allKeys = new Set();
+            allFeatures.forEach(feature => {
+                if (feature.properties) {
+                    Object.keys(feature.properties).forEach(key => allKeys.add(key));
+                }
+            });
+            const headers = Array.from(allKeys);
+            let tsv = headers.join('\t') + '\n';
+            allFeatures.forEach(feature => {
+                const row = headers.map(header => {
+                    return feature.properties ? (feature.properties[header] ?? '') : '';
                 });
-            }
-        });
-        listen('save-project-settings-btn', 'click', async () => {
-             const projectId = document.getElementById('project-select').value;
-             const difficulty = Array.from(document.querySelectorAll('#project-difficulty-selector .star')).filter(s => s.innerHTML.includes('9733')).length;
-             const useMultiplier = document.getElementById('use-difficulty-multiplier').checked;
-             const project = await this.fetchFullProjectData(projectId);
-             project.difficulty = difficulty;
-             project.useMultiplier = useMultiplier;
-             await this.saveProjectToIndexedDB(project);
-             UI.closeModal('project-settings-modal');
-        });
-        listen('import-url-input', 'paste', async (e) => {
-            const url = e.clipboardData.getData('text');
-            try {
-                const response = await fetch(url);
-                const data = await response.text();
-                document.getElementById('techData').value = data;
-                UI.showNotification("Data imported from URL.");
-                this.logAction("Data imported from URL.");
-            } catch (error) {
-                UI.showNotification("Failed to fetch data from URL.");
-            }
-        });
-        
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                document.getElementById('save-project-btn').click();
-            }
-            if (e.ctrlKey && e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('calculate-btn').click();
-            }
-        });
+                tsv += row.join('\t') + '\n';
+            });
 
+            document.getElementById('techData').value = tsv;
+            UI.showNotification(`${count} shapefile set(s) processed.`);
+        } else {
+           alert("No valid .shp/.dbf pairs found.");
+        }
+    },
+    async clearAllData() {
+        if (confirm("Clear ALL data? This deletes projects and resets all settings to their defaults.")) {
+            if (AppState.db) {
+                AppState.db.close();
+            }
+            const req = indexedDB.deleteDatabase('BonusCalculatorDB');
+            req.onsuccess = async () => {
+                alert("All data has been cleared. The application will now reset.");
+                localStorage.removeItem('theme');
+                window.location.reload();
+            };
+            req.onerror = () => alert("Error clearing data. Please close all other tabs with this application open and try again.");
+            req.onblocked = () => alert("Could not clear data. Please close all other tabs with this application open and try again.");
+        }
+    },
+    resetAdvanceSettingsToDefaults() {
+        if (confirm("Are you sure you want to reset all advanced settings to their original defaults?")) {
+            AppState.bonusTiers = CONSTANTS.DEFAULT_BONUS_TIERS;
+            AppState.calculationSettings = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CALCULATION_SETTINGS));
+            AppState.countingSettings = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_COUNTING_SETTINGS));
+            this.populateAdvanceSettingsEditor();
+            UI.showNotification("Settings have been reset to defaults.");
+        }
+    },
+    // --- Guided Setup Functions ---
+    startGuidedSetup() {
+        AppState.guidedSetup.currentStep = 1;
+        this.updateGuidedSetupView();
+        
+        const teamContainer = document.getElementById('setup-team-list');
+        teamContainer.innerHTML = '';
+        Object.entries(AppState.teamSettings).forEach(([teamName, techIds]) => UI.addTeamCard(teamName, techIds, 'setup-team-list'));
+
+        UI.openModal('guided-setup-modal');
+    },
+    updateGuidedSetupView() {
+        const { currentStep, totalSteps } = AppState.guidedSetup;
+        const indicatorContainer = document.getElementById('setup-step-indicator');
+        indicatorContainer.innerHTML = '';
+        for (let i = 1; i <= totalSteps; i++) {
+            const item = document.createElement('div');
+            item.className = 'step-indicator-item';
+            if (i < currentStep) item.classList.add('completed');
+            if (i === currentStep) item.classList.add('active');
+            item.textContent = i;
+            indicatorContainer.appendChild(item);
+        }
+        
+        document.querySelectorAll('.setup-step').forEach(step => step.classList.remove('active'));
+        document.querySelector(`.setup-step[data-step="${currentStep}"]`).classList.add('active');
+
+        document.getElementById('setup-prev-btn').classList.toggle('hidden', currentStep === 1);
+        document.getElementById('setup-next-btn').classList.toggle('hidden', currentStep === totalSteps);
+        document.getElementById('setup-finish-btn').classList.toggle('hidden', currentStep !== totalSteps);
+
+        // Special handling for interactive tour step
+        if (currentStep === 3) {
+            UI.closeModal('guided-setup-modal');
+            this.startInteractiveTour();
+        }
+    },
+    startInteractiveTour() {
+        AppState.guidedSetup.tourElements = [
+            { id: 'drop-zone', text: 'First, paste your raw data here, or drag and drop your shapefiles onto this area.' },
+            { id: 'bonusMultiplierDirect', text: 'Next, enter the bonus multiplier for this calculation.' },
+            { id: 'calculate-btn', text: 'Finally, click here to calculate the bonus payouts. The results will appear at the bottom of the page.' }
+        ];
+        AppState.guidedSetup.tourStep = 0;
+        this.runTourStep();
+    },
+    runTourStep() {
+        const { tourStep, tourElements } = AppState.guidedSetup;
+        this.clearSpotlight();
+        if (tourStep >= tourElements.length) {
+            AppState.guidedSetup.currentStep = 4; // Move to final step
+            this.updateGuidedSetupView();
+            UI.openModal('guided-setup-modal');
+            return;
+        }
+        const { id, text } = tourElements[tourStep];
+        const element = document.getElementById(id);
+        this.spotlightElement(element, text);
+    },
+    spotlightElement(element, text) {
+        const overlay = document.getElementById('spotlight-overlay');
+        overlay.classList.remove('hidden');
+        element.classList.add('spotlight');
+
+        const tooltip = document.createElement('div');
+        tooltip.id = 'spotlight-tooltip';
+        tooltip.className = 'spotlight-tooltip bottom';
+        tooltip.innerHTML = `${text}<div class="flex justify-end mt-4 gap-2"><button id="tour-next-btn" class="btn-primary">Next</button></div>`;
+        
+        document.body.appendChild(tooltip);
+        
+        const rect = element.getBoundingClientRect();
+        tooltip.style.left = `${rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2)}px`;
+        tooltip.style.top = `${rect.bottom + 10}px`;
+        
+        document.getElementById('tour-next-btn').onclick = () => {
+            AppState.guidedSetup.tourStep++;
+            this.runTourStep();
+        };
+    },
+    clearSpotlight() {
+        document.getElementById('spotlight-overlay').classList.add('hidden');
+        document.querySelector('.spotlight')?.classList.remove('spotlight');
+        document.getElementById('spotlight-tooltip')?.remove();
+    },
+    async finishGuidedSetup() {
+        await this.saveTeamSettings('setup-team-list');
+        await DB.put('settings', { id: 'hasBeenSetup', value: true });
+        UI.closeModal('guided-setup-modal');
+        UI.showNotification("Setup complete. Welcome!");
+    },
+    // --- End Guided Setup Functions ---
+    setupEventListeners() {
+        const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
+        listen('guided-setup-btn', 'click', this.startGuidedSetup.bind(this));
         listen('manage-teams-btn', 'click', () => { UI.populateAdminTeamManagement(); UI.openModal('manage-teams-modal'); });
-        listen('advance-settings-btn', 'click', this.populateAdvanceSettingsEditor);
+        listen('advance-settings-btn', 'click', () => { this.populateAdvanceSettingsEditor(); UI.openModal('advance-settings-modal'); });
         listen('toggle-theme-btn', 'click', () => { document.body.classList.toggle('light-theme'); localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark'); });
         listen('save-advance-settings-btn', 'click', this.saveAdvanceSettings);
+        listen('important-info-btn', 'click', () => UI.openModal('important-info-modal'));
+        listen('bug-report-btn', 'click', () => window.open("https://teams.microsoft.com/l/chat/48:notes/conversations?context=%7B%22contextType%22%3A%22chat%22%7D", "_blank"));
         listen('clear-data-btn', 'click', this.clearAllData);
 
+        listen('setup-next-btn', 'click', () => { AppState.guidedSetup.currentStep++; this.updateGuidedSetupView(); });
+        listen('setup-prev-btn', 'click', () => { AppState.guidedSetup.currentStep--; this.updateGuidedSetupView(); });
+        listen('setup-finish-btn', 'click', this.finishGuidedSetup.bind(this));
+        listen('setup-add-team-btn', 'click', () => UI.addTeamCard('', [], 'setup-team-list'));
+        
         document.body.addEventListener('click', e => {
             const techIcon = e.target.closest('.tech-summary-icon');
             if (techIcon) UI.openTechSummaryModal(techIcon.dataset.techId);
@@ -943,6 +985,13 @@ const Handlers = {
             }
         });
         
+        document.body.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'reset-defaults-btn') {
+                this.resetAdvanceSettingsToDefaults();
+            }
+        });
+
+        listen('refresh-projects-btn', 'click', this.fetchProjectListSummary);
         listen('project-select', 'change', e => this.loadProjectIntoForm(e.target.value));
         listen('delete-project-btn', 'click', () => { const id = document.getElementById('project-select').value; if(id) this.deleteProjectFromIndexedDB(id); });
         listen('edit-data-btn', 'click', () => {
@@ -972,10 +1021,47 @@ const Handlers = {
             await this.loadProjectIntoForm(projectData.id);
             UI.hideLoading(button);
         });
+        const runCalculation = async (isCombined, projectIds) => {
+            let combinedStats = {};
+            if (isCombined) {
+                for (const id of projectIds) {
+                    const project = await this.fetchFullProjectData(id);
+                    if (!project) continue;
+                    const parsed = Calculator.parseRawData(project.rawData, project.isIRProject, project.name, project.gsdValue);
+                    if (!parsed) continue;
+                    for (const [techId, stat] of Object.entries(parsed.techStats)) {
+                        if (!combinedStats[techId]) combinedStats[techId] = Calculator.createNewTechStat(true);
+                        combinedStats[techId].id = techId;
+                        Object.keys(stat.pointsBreakdown).forEach(k => combinedStats[techId].pointsBreakdown[k] += stat.pointsBreakdown[k]);
+                        ['points', 'fixTasks', 'afpTasks', 'refixTasks'].forEach(k => combinedStats[techId][k] += stat[k]);
+                        ['warnings', 'fix4'].forEach(k => combinedStats[techId][k].push(...stat[k]));
+                        if (!combinedStats[techId].pointsBreakdownByProject[project.name]) combinedStats[techId].pointsBreakdownByProject[project.name] = { points: 0, fixTasks: 0, refixTasks: 0, warnings: 0 };
+                        const projBreakdown = combinedStats[techId].pointsBreakdownByProject[project.name];
+                        projBreakdown.points += stat.points; projBreakdown.fixTasks += stat.fixTasks; projBreakdown.refixTasks += stat.refixTasks; projBreakdown.warnings += stat.warnings.length;
+                    }
+                }
+            } else {
+                const project = projectIds.length > 0 ? await this.fetchFullProjectData(projectIds[0]) : null;
+                const data = project ? project.rawData : document.getElementById('techData').value.trim();
+                const name = project ? project.name : 'Pasted Data';
+                const isIR = project ? project.isIRProject : document.getElementById('is-ir-project-checkbox').checked;
+                const gsd = project ? project.gsdValue : document.getElementById('gsd-value-select').value;
+                if (!data) return alert("No data to calculate.");
+                AppState.lastUsedGsdValue = gsd;
+                const parsed = Calculator.parseRawData(data, isIR, name, gsd);
+                if (parsed) combinedStats = parsed.techStats;
+            }
+            AppState.currentTechStats = combinedStats;
+            UI.applyFilters();
+            let title = 'Bonus Payouts for: ';
+            if (isCombined) title += projectIds.length > 1 ? 'All Projects / Specific' : (await this.fetchFullProjectData(projectIds[0]))?.name || '...';
+            else title += projectIds.length > 0 ? (await this.fetchFullProjectData(projectIds[0]))?.name : 'Pasted Data';
+            document.getElementById('results-title').textContent = title;
+        };
         listen('calculate-btn', 'click', async e => {
             const button = e.target; UI.showLoading(button);
             const projectId = document.getElementById('project-select').value;
-            await this.runCalculation(false, projectId ? [projectId] : []);
+            await runCalculation(false, projectId ? [projectId] : []);
             UI.hideLoading(button);
         });
         listen('calculate-all-btn', 'click', async e => {
@@ -986,25 +1072,25 @@ const Handlers = {
             const selectedIds = Array.from(selectEl.selectedOptions).map(opt => opt.value);
             const idsToRun = isCustom ? selectedIds : allProjectIds;
             if (isCustom && idsToRun.length === 0) alert("Select projects from the list to calculate.");
-            else if (idsToRun.length > 0) await this.runCalculation(true, idsToRun);
+            else if (idsToRun.length > 0) await runCalculation(true, idsToRun);
             UI.hideLoading(button);
         });
         listen('customize-calc-all-cb', 'change', e => {
             const selectEl = document.getElementById('project-select');
             const isChecked = e.target.checked;
-            selectEl.multiple = isChecked;
-            selectEl.size = isChecked ? 6 : 1;
+            selectEl.multiple = isChecked; selectEl.size = isChecked ? 6 : 1;
             document.getElementById('calculate-btn').disabled = isChecked;
         });
         listen('search-tech-id', 'input', UI.applyFilters.bind(UI));
         listen('team-filter-container', 'change', UI.applyFilters.bind(UI));
+        listen('refresh-teams-btn', 'click', this.loadTeamSettings);
         listen('leaderboard-sort-select', 'change', () => UI.applyFilters());
         listen('add-team-btn', 'click', () => UI.addTeamCard());
-        listen('save-teams-btn', 'click', this.saveTeamSettings);
+        listen('save-teams-btn', 'click', () => this.saveTeamSettings());
         listen('drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.add('bg-brand-700'); });
         listen('drop-zone', 'dragleave', e => e.target.closest('#drop-zone').classList.remove('bg-brand-700'));
         listen('drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.remove('bg-brand-700'); this.handleDroppedFiles(e.dataTransfer.files); });
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => Handlers.initializeApp());
+document.addEventListener('DOMContentLoaded', Handlers.initializeApp);
