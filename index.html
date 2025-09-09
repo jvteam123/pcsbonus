@@ -13,6 +13,7 @@
     
     <link rel="stylesheet" href="style.css">
     <script>
+        // Custom Tailwind theme
         tailwind.config = {
             theme: {
                 extend: {
@@ -38,26 +39,19 @@
 
     <div class="w-full max-w-screen-2xl mx-auto p-4 md:p-6">
         <header class="flex justify-between items-center mb-6">
-            <div class="flex items-center gap-4">
-                <h1 class="text-xl md:text-2xl font-bold text-white">PCS Bonus Calculator V3</h1>
-                <div id="user-role-display" class="text-sm font-semibold px-3 py-1 rounded-full"></div>
-            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white">PCS Bonus Calculator V2</h1>
             <div class="relative" id="main-menu-container">
                 <button id="main-menu-btn" class="menu-btn" aria-label="Main Menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                     <span>Menu</span>
                 </button>
                 <div id="main-menu-dropdown" class="absolute right-0 mt-2 w-56 bg-brand-800 border border-brand-700 rounded-md shadow-lg z-20 hidden">
+                    <a href="#" id="guided-setup-btn" class="dropdown-item">Guided Setup</a>
                     <a href="#" id="manage-teams-btn" class="dropdown-item">Manage Teams</a>
-                    <a href="#" id="refix-analysis-btn" class="dropdown-item">Refix Analysis</a>
                     <a href="#" id="advance-settings-btn" class="dropdown-item">Advance Settings</a>
-                    <a href="#" id="audit-log-btn" class="dropdown-item">Audit Log</a>
                     <a href="#" id="toggle-theme-btn" class="dropdown-item">Toggle Theme</a>
                     <div class="border-t border-brand-700 my-1"></div>
-                    <a href="#" id="backup-data-btn" class="dropdown-item">Backup All Data</a>
-                    <a href="#" id="restore-data-btn" class="dropdown-item">Restore Data</a>
-                    <input type="file" id="restore-file-input" class="hidden" accept=".json">
-                    <div class="border-t border-brand-700 my-1"></div>
+                    <a href="#" id="important-info-btn" class="dropdown-item">Important Information</a>
                     <a href="#" id="bug-report-btn" class="dropdown-item">Report a Bug</a>
                     <div class="border-t border-brand-700 my-1"></div>
                     <a href="#" id="clear-data-btn" class="dropdown-item text-red-400 hover:bg-red-500/20">Clear All Data</a>
@@ -65,7 +59,7 @@
             </div>
         </header>
 
-        <main id="main-dashboard" class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
             
             <div id="data-projects-panel" class="dashboard-panel flex flex-col">
                 <div class="panel-header"><h2 class="panel-title">Data & Projects</h2></div>
@@ -74,14 +68,13 @@
                         <div class="flex items-center gap-2">
                             <select id="project-select" class="input-field w-full"><option value="">Select a project...</option></select>
                             <span id="project-ir-badge" class="project-info-badge hidden"></span>
-                            <button id="project-settings-btn" title="Project Settings" class="control-btn-icon hidden"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1 0 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105 0l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-1.283.698-.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105 0l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987-1.987l.169-.311a1.464 1.464 0 0 1 0-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105 0l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c1.283-.698.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105 0l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858z"/></svg></button>
+                            <div id="project-loading-spinner" class="hidden"><div class="pulsing-spinner"></div></div>
+                            <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+                            <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
                             <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
                         </div>
                         <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
-                            <textarea id="techData" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop files here..."></textarea>
-                        </div>
-                         <div class="mt-2">
-                            <input type="text" id="import-url-input" class="input-field w-full" placeholder="Or paste a URL to import data...">
+                            <textarea id="techData" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <input type="text" id="project-name" class="input-field" placeholder="Project Name">
@@ -102,7 +95,7 @@
                 </div>
             </div>
             
-            <div id="leaderboard-panel" class="dashboard-panel flex flex-col" data-sortable-id="leaderboard">
+            <div id="leaderboard-panel" class="dashboard-panel flex flex-col">
                 <div class="panel-header"><h2 class="panel-title">Leaderboard</h2></div>
                 <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
                     <div class="flex justify-between items-center">
@@ -113,7 +106,7 @@
                 </div>
             </div>
 
-            <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col" data-sortable-id="tl-summary">
+            <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col">
                 <div class="panel-header"><h2 class="panel-title">TL Summary</h2></div>
                 <div class="p-4 space-y-4 flex flex-col min-h-0">
                     <div><h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3><div id="team-quality-container" class="space-y-2"></div></div>
@@ -153,38 +146,63 @@
         </section>
     </div>
 
-    <div id="project-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-lg">
+    <div id="merge-fixpoints-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Merge Partials FP</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar"><div id="merge-drop-zone" class="p-10 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors"><p class="text-brand-400">Drag & drop shapefiles (.shp, .dbf) here</p></div><div id="merge-file-list" class="mt-4 text-sm"></div><div id="merge-options" class="hidden mt-4 space-y-3"><input type="text" id="merge-project-name" class="input-field w-full" placeholder="Enter Project Name"><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4"><div class="flex items-center"><input id="merge-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="merge-is-ir-checkbox" class="ml-2 block text-sm font-medium text-accent whitespace-nowrap">IR Project</label></div><div class="flex items-center w-full"><label for="merge-gsd-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label><select id="merge-gsd-select" class="input-field w-full text-sm py-1"><option value="3in">3in</option><option value="4in">4in</option><option value="6in">6in</option><option value="9in">9in</option></select></div></div></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="merge-save-btn" class="btn-primary" disabled>Save Project</button></div></div></div>
+    <div id="manage-teams-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Manage Teams</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-list-container" class="p-6 overflow-y-auto custom-scrollbar space-y-4"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button id="add-team-btn" class="btn-secondary">Add New Team</button><div class="space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-teams-btn" class="btn-primary">Save Changes</button></div></div></div></div>
+    <div id="advance-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Advance Settings</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="advance-settings-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button id="reset-defaults-btn" class="btn-secondary">Reset Defaults</button><div class="space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-advance-settings-btn" class="btn-primary">Save Changes</button></div></div></div></div>
+    <div id="important-info-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Important Information</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar space-y-4" id="important-info-body"><div class="info-section"><h4 class="info-title">Calculation Logic</h4><p class="info-text">This calculator is based on the formulas and tables provided in the "Phili IC Fixpoints App Documentation v1.0." The logic employed in all calculations is designed to be transparent and accurate according to this official documentation.</p></div><div class="info-section"><h4 class="info-title">Disclaimer and Intended Use</h4><p class="info-text">This tool is intended for personal and informational purposes only. The results generated are estimates and should be used as a general guideline. These figures are not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+    <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="tech-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+    <div id="team-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="team-summary-modal-title" class="text-lg font-semibold text-white">Team Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+
+    <div id="guided-setup-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Project Settings</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white">&times;</button>
+                <h3 class="text-lg font-semibold text-white">Guided Setup</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
             </div>
-            <div class="p-6 space-y-4">
-                <div>
-                    <label for="project-difficulty" class="block text-sm font-medium text-brand-300 mb-2">Project Difficulty Rating</label>
-                    <div id="project-difficulty-selector" class="flex items-center gap-2 text-2xl star-rating">
-                        </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input id="use-difficulty-multiplier" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
-                    <label for="use-difficulty-multiplier" class="text-sm font-medium text-accent">Use as bonus multiplier</label>
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <div id="setup-step-indicator" class="flex justify-center items-center gap-4 mb-6"></div>
+                <div id="setup-steps-container">
+                    <div class="setup-step" data-step="1">
+                        <h4 class="text-xl font-bold text-center mb-2">Welcome to the PCS Bonus Calculator!</h4>
+                        <p class="text-center text-brand-400 max-w-2xl mx-auto">This guided setup will help you configure the calculator. We'll set up your teams, review settings, and show you how to perform calculations.</p>
+                    </div>
+                    <div class="setup-step" data-step="2">
+                        <h4 class="text-xl font-bold mb-4">Step 1: Configure Your Teams</h4>
+                        <p class="text-brand-400 mb-4">Add your teams and assign Tech IDs to them. The default teams are provided as an example.</p>
+                        <div id="setup-team-list" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar p-2"></div>
+                        <button id="setup-add-team-btn" class="btn-secondary mt-4">Add New Team</button>
+                    </div>
+                    <div class="setup-step" data-step="3">
+                        <h4 class="text-xl font-bold mb-4">Step 2: How to Calculate</h4>
+                        <p class="text-brand-400 mb-4">This tour will guide you through the main calculation steps on the main screen. The modal will close temporarily.</p>
+                    </div>
+                     <div class="setup-step" data-step="4">
+                        <h4 class="text-xl font-bold text-center mb-2">Setup Complete!</h4>
+                        <p class="text-center text-brand-400 max-w-2xl mx-auto">You're all set! You can now start using the calculator. Remember, you can always revisit team and calculation settings from the main menu.</p>
+                    </div>
                 </div>
             </div>
-            <div class="p-4 border-t border-brand-700 text-right space-x-2">
-                <button class="modal-close-btn btn-secondary">Cancel</button>
-                <button id="save-project-settings-btn" class="btn-primary">Save Settings</button>
+            <div class="p-4 border-t border-brand-700 flex justify-end items-center gap-2">
+                <button id="setup-prev-btn" class="btn-secondary">Previous</button>
+                <button id="setup-next-btn" class="btn-primary">Next</button>
+                <button id="setup-finish-btn" class="btn-primary hidden">Finish</button>
             </div>
         </div>
     </div>
-    <div id="refix-analysis-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Refix Analysis</h3><button class="modal-close-btn text-brand-400 hover:text-white">&times;</button></div><div id="refix-analysis-body" class="p-6 overflow-y-auto custom-scrollbar"></div></div></div>
-    <div id="audit-log-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Audit Log</h3><button class="modal-close-btn text-brand-400 hover:text-white">&times;</button></div><div id="audit-log-body" class="p-6 overflow-y-auto custom-scrollbar"></div></div></div>
 
     <script src="script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('main-menu-btn');
+            const dropdown = document.getElementById('main-menu-dropdown');
+            if (btn && dropdown) {
+                btn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); });
+                document.addEventListener('click', (e) => { if (!btn.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden'); });
+            }
             document.querySelectorAll('.modal-close-btn').forEach(button => {
                 button.addEventListener('click', () => {
-                    button.closest('.fixed').classList.add('hidden');
+                    const modal = button.closest('.fixed');
+                    if (modal) modal.classList.add('hidden');
                 });
             });
         });
