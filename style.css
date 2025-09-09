@@ -255,3 +255,8 @@ body.light-theme #advance-settings-modal #category-points-tbody tr:nth-child(eve
 .action-btn:hover {
     background-color: var(--accent-hover);
 }
+.message-bubble .suggestions-container {
+    border-top: 1px solid var(--border-color);
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+}
