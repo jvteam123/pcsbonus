@@ -1,15 +1,15 @@
 const knowledgeBase = [
     // --- General & Basic Questions ---
     {
-        keywords: ["what is this", "what does this site do", "purpose"],
+        keywords: ["what", "this", "purpose", "about"],
         answer: "This is the PCS Bonus Calculator V2, a tool to calculate bonuses for tech projects based on various performance metrics."
     },
     {
-        keywords: ["how to use", "how does it work", "guide", "setup"],
+        keywords: ["how", "use", "work", "guide", "setup", "start"],
         answer: "You can use the guided setup from the menu to get started. Generally, you need to add your teams, paste your project data, set a bonus multiplier, and then click 'Calculate'."
     },
     {
-        keywords: ["hello", "hi"],
+        keywords: ["hello", "hi", "hey"],
         answer: "Hello! I'm the PCS Bonus Calculator assistant. How can I help you?"
     },
     {
@@ -19,7 +19,7 @@ const knowledgeBase = [
 
     // --- Calculation Logic & Formulas ---
     {
-        keywords: ["calculation", "logic", "source", "documentation"],
+        keywords: ["calculation", "logic", "source", "documentation", "formula"],
         answer: "The calculator's logic is based on the 'Phili IC Fixpoints App Documentation v1.0.' All formulas for points, quality, and bonuses are derived from this document."
     },
     {
@@ -37,7 +37,7 @@ const knowledgeBase = [
 
     // --- Points & Tasks ---
     {
-        keywords: ["points", "qc", "qc points"],
+        keywords: ["points", "qc"],
         answer: "By default, a QC task is worth 0.125 points. This can be changed in the 'Advance Settings' menu."
     },
     {
@@ -67,23 +67,23 @@ const knowledgeBase = [
         answer: "The calculator uses your browser's IndexedDB to store all project data, team settings, and other configurations. All data is stored locally on your computer and is not sent to any server."
     },
     {
-        keywords: ["clear data", "delete all"],
+        keywords: ["clear data", "delete all", "reset"],
         answer: "The 'Clear All Data' button in the main menu will delete the entire local database, including all saved projects and custom settings. This action cannot be undone."
     },
     {
-        keywords: ["drag", "drop", "files", "shapefile"],
+        keywords: ["drag", "drop", "files", "shapefile", "shp", "dbf"],
         answer: "You can drag and drop shapefile sets (.shp and .dbf files) into the data area. The tool will automatically parse them into the required text format."
     },
     {
-        keywords: ["calculate all", "calculate specific", "combine projects"],
+        keywords: ["calculate all", "calculate specific", "combine projects", "merge"],
         answer: "The 'Calculate All / Specific' button allows you to combine the data from multiple saved projects into a single calculation. You can either calculate all saved projects or check the 'Calculate Specific Projects' box to select multiple projects from the list."
     },
     {
-        keywords: ["teams", "manage teams"],
+        keywords: ["teams", "manage"],
         answer: "You can manage your teams from the main menu (Menu > Manage Teams). There you can add new teams, add or remove tech IDs, and save your changes."
     },
     {
-        keywords: ["theme", "dark mode", "light mode"],
+        keywords: ["theme", "dark mode", "light mode", "color"],
         answer: "You can switch between light and dark themes by clicking 'Toggle Theme' in the main menu. Your preference is saved locally."
     },
 
@@ -93,7 +93,7 @@ const knowledgeBase = [
         answer: "This tool is intended for personal and informational purposes only. The results generated are estimates and should be used as a general guideline. These figures are not a guarantee of actual compensation."
     },
     {
-        keywords: ["bug", "report bug", "contact"],
+        keywords: ["bug", "report", "contact", "error"],
         answer: "If you find a bug, you can report it by clicking 'Report a Bug' in the main menu, which will open a link to Microsoft Teams."
     }
 ];
