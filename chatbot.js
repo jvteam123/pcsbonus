@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isOpen = false;
     let consecutiveMisses = 0;
+    let currentTechIdContext = null; // --- NEW: Add memory for the last Tech ID ---
 
     // Toggle chatbot window
     chatbotBubble.addEventListener('click', () => {
@@ -53,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
     }
 
-    // --- NEW: Helper function to get a full summary of a tech's stats ---
+    // Helper function to get a full summary of a tech's stats
     function getTechStatSummary(techId) {
         if (typeof AppState === 'undefined' || !AppState.currentTechStats || Object.keys(AppState.currentTechStats).length === 0) {
             return { error: "No calculation has been run yet. Please calculate a project first." };
@@ -83,54 +84,47 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- MAJOR UPGRADE TO THE RESPONSE LOGIC ---
+    // --- MAJOR UPGRADE TO THE RESPONSE LOGIC WITH MEMORY ---
     function getBotResponse(userMessage) {
         const lowerCaseMessage = userMessage.toLowerCase();
         const techIdRegex = /(\d{4}[A-Z]{2})/;
         const potentialIdMatch = lowerCaseMessage.toUpperCase().match(techIdRegex);
 
-        // --- 1. Handle Questions About Calculated Stats ---
+        // --- NEW: Update context if a new Tech ID is mentioned ---
         if (potentialIdMatch) {
-            const techId = potentialIdMatch[0];
-            const summary = getTechStatSummary(techId);
+            currentTechIdContext = potentialIdMatch[0];
+        }
+        
+        // --- 1. Handle Questions About Calculated Stats (using context) ---
+        const metricKeywords = ['quality', 'point', 'task', 'refix', 'warning', 'payout', 'bonus', 'summary', 'all', 'everything', 'details'];
+        const isAskingForStat = metricKeywords.some(keyword => lowerCaseMessage.includes(keyword));
 
-            if (summary.error) {
-                addMessage('bot', summary.error);
-                return;
-            }
+        if (isAskingForStat) {
+            if (currentTechIdContext) {
+                const techId = currentTechIdContext;
+                const summary = getTechStatSummary(techId);
 
-            // A. Handle requests for a FULL summary
-            if (lowerCaseMessage.includes('summary') || lowerCaseMessage.includes('all') || lowerCaseMessage.includes('everything') || lowerCaseMessage.includes('details')) {
-                const fullSummary = `
-                    Here is the full summary for <b>${techId}</b>:<br>
-                    - <b>Points:</b> ${summary.points}<br>
-                    - <b>Fix Tasks:</b> ${summary.fixTasks}<br>
-                    - <b>Refix Tasks:</b> ${summary.refixTasks}<br>
-                    - <b>Warnings:</b> ${summary.warnings}<br>
-                    - <b>Fix Quality:</b> ${summary.quality}<br>
-                    - <b>Bonus Earned:</b> ${summary.bonusEarned}<br>
-                    - <b>Est. Payout:</b> ${summary.payout}
-                `;
-                addMessage('bot', fullSummary);
-                return;
-            }
-
-            // B. Handle requests for a SPECIFIC metric
-            const metrics = {
-                'quality': `Tech ${techId} has a <b>Fix Quality of ${summary.quality}</b>.`,
-                'point': `Tech ${techId} has <b>${summary.points} points</b>.`,
-                'task': `Tech ${techId} completed <b>${summary.fixTasks} primary fix tasks</b>.`,
-                'refix': `Tech ${techId} has <b>${summary.refixTasks} refix tasks</b>.`,
-                'warning': `Tech ${techId} has <b>${summary.warnings} warnings</b>.`,
-                'payout': `The calculated <b>payout for ${techId} is ${summary.payout}</b>.`,
-                'bonus': `Tech ${techId} has a <b>Bonus Earned % of ${summary.bonusEarned}</b>.`
-            };
-
-            for (const metric in metrics) {
-                if (lowerCaseMessage.includes(metric)) {
-                    addMessage('bot', metrics[metric]);
+                if (summary.error) {
+                    addMessage('bot', summary.error);
                     return;
                 }
+                
+                if (lowerCaseMessage.includes('summary') || lowerCaseMessage.includes('all') || lowerCaseMessage.includes('everything') || lowerCaseMessage.includes('details')) {
+                    const fullSummary = `Here is the full summary for <b>${techId}</b>:<br>- <b>Points:</b> ${summary.points}<br>- <b>Fix Tasks:</b> ${summary.fixTasks}<br>- <b>Refix Tasks:</b> ${summary.refixTasks}<br>- <b>Warnings:</b> ${summary.warnings}<br>- <b>Fix Quality:</b> ${summary.quality}<br>- <b>Bonus Earned:</b> ${summary.bonusEarned}<br>- <b>Est. Payout:</b> ${summary.payout}`;
+                    addMessage('bot', fullSummary);
+                    return;
+                }
+
+                const metrics = {'quality': `Tech ${techId} has a <b>Fix Quality of ${summary.quality}</b>.`, 'point': `Tech ${techId} has <b>${summary.points} points</b>.`, 'task': `Tech ${techId} completed <b>${summary.fixTasks} primary fix tasks</b>.`, 'refix': `Tech ${techId} has <b>${summary.refixTasks} refix tasks</b>.`, 'warning': `Tech ${techId} has <b>${summary.warnings} warnings</b>.`, 'payout': `The calculated <b>payout for ${techId} is ${summary.payout}</b>.`, 'bonus': `Tech ${techId} has a <b>Bonus Earned % of ${summary.bonusEarned}</b>.`};
+                for (const metric in metrics) {
+                    if (lowerCaseMessage.includes(metric)) {
+                        addMessage('bot', metrics[metric]);
+                        return;
+                    }
+                }
+            } else {
+                addMessage('bot', "Which Tech ID are you asking about?");
+                return;
             }
         }
 
@@ -145,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // --- 3. Fallback to General Knowledge Base ---
+        currentTechIdContext = null; // Reset context if the question is not about stats
         let bestMatch = { score: 0, answer: "I'm sorry, I don't know the answer to that." };
         knowledgeBase.forEach(item => {
             let score = 0;
