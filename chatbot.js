@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let consecutiveMisses = 0;
     let currentTechIdContext = null;
     let lastOfferedAction = null;
+    let lastUserMessage = ''; // --- NEW: Remember the last question ---
 
     // Toggle chatbot window
     chatbotBubble.addEventListener('click', () => {
@@ -64,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sender === 'user') {
             bubble.textContent = messageData;
             chatbotInput.value = '';
+            lastUserMessage = messageData; // --- NEW: Store the user's question ---
         } else {
             let messageText = typeof messageData === 'string' ? messageData : messageData.answer;
             bubble.innerHTML = messageText;
@@ -147,19 +149,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const techArray = Object.values(AppState.currentTechStats);
 
             if (lowerCaseMessage.includes('point')) {
-                const topTech = techArray.reduce((top, tech) => !top || tech.points > top.points ? tech : top, null);
-                addMessage('bot', `The tech with the most points is <b>${topTech.id}</b> with <b>${topTech.points.toFixed(2)}</b> points.`, 'summary');
+                addMessage('bot', `The tech with the most points is <b>${techArray.reduce((top, tech) => !top || tech.points > top.points ? tech : top, null).id}</b>.`, 'summary');
                 return;
             }
             if (lowerCaseMessage.includes('task')) {
-                const topTech = techArray.reduce((top, tech) => !top || tech.fixTasks > top.fixTasks ? tech : top, null);
-                addMessage('bot', `The tech with the most tasks is <b>${topTech.id}</b> with <b>${topTech.fixTasks}</b> tasks.`, 'summary');
+                addMessage('bot', `The tech with the most tasks is <b>${techArray.reduce((top, tech) => !top || tech.fixTasks > top.fixTasks ? tech : top, null).id}</b>.`, 'summary');
                 return;
             }
             if (lowerCaseMessage.includes('refix')) {
                 const topTech = techArray.reduce((top, tech) => !top || tech.refixTasks > top.refixTasks ? tech : top, null);
                 if (topTech && topTech.refixTasks > 0) {
-                    addMessage('bot', `The tech with the most refixes is <b>${topTech.id}</b> with <b>${topTech.refixTasks}</b> refixes.`, 'summary');
+                    addMessage('bot', `The tech with the most refixes is <b>${topTech.id}</b>.`, 'summary');
                 } else {
                     addMessage('bot', "Good news! No one has any refixes in this calculation.", 'summary');
                 }
@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const maxQuality = Math.max(...techArrayWithQuality.map(t => t.quality), 0);
                 const topTechs = techArrayWithQuality.filter(t => t.quality === maxQuality);
                 const topTechIds = topTechs.map(t => `<b>${t.id}</b>`).join(', ');
-                addMessage('bot', `The tech(s) with the best quality are ${topTechIds} with <b>${maxQuality.toFixed(2)}%</b>.`, 'summary');
+                addMessage('bot', `The tech(s) with the best quality are ${topTechIds}.`, 'summary');
                 return;
             }
         }
@@ -287,8 +287,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
         }
         
+        // --- NEW: Filter out the last question asked from the suggestions ---
+        const filteredSuggestions = suggestions.filter(q => q.toLowerCase() !== lastUserMessage.toLowerCase());
+
         let suggestionHTML = `${greeting}<div class='suggestions-container'>`;
-        suggestions.forEach(q => {
+        filteredSuggestions.forEach(q => {
             suggestionHTML += `<button class='suggestion-btn'>${q}</button>`;
         });
         suggestionHTML += "</div>";
