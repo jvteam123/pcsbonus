@@ -5,7 +5,13 @@ const AppState = {
     currentSort: { column: 'payout', direction: 'desc' },
     currentUserRole: 'Admin', // 'Admin' or 'User'
     auditLog: [],
-    refixAnalysisData: []
+    refixAnalysisData: [],
+    guidedSetup: {
+        currentStep: 1,
+        totalSteps: 4,
+        tourStep: 0,
+        tourElements: []
+    }
 };
 
 // --- CONSTANTS ---
@@ -458,17 +464,17 @@ const UI = {
         const teamTechs = AppState.teamSettings[teamName];
         if (!teamTechs) return;
         const currentProjectName = document.getElementById('results-title').textContent.replace('Bonus Payouts for: ', '');
-        const modalBody = this.generateTeamBreakdownHTML(teamName, teamTechs, AppState.currentTechStats, currentProjectName);
+        const modalBody = UI.generateTeamBreakdownHTML(teamName, teamTechs, AppState.currentTechStats, currentProjectName);
         document.getElementById('team-summary-modal-title').textContent = `Summary for ${teamName}`;
         document.getElementById('team-summary-modal-body').innerHTML = modalBody;
-        this.openModal('team-summary-modal');
+        UI.openModal('team-summary-modal');
     },
     openTechSummaryModal(techId) {
         const tech = AppState.currentTechStats[techId];
         if (!tech) return;
         document.getElementById('tech-summary-modal-title').textContent = `Summary for ${techId}`;
-        document.getElementById('tech-summary-modal-body').innerHTML = this.generateTechBreakdownHTML(tech);
-        this.openModal('tech-summary-modal');
+        document.getElementById('tech-summary-modal-body').innerHTML = UI.generateTechBreakdownHTML(tech);
+        UI.openModal('tech-summary-modal');
     },
     resetUIForNewCalculation() {
         ['#bonus-payout-section', '#tl-summary-card', '#quick-summary-section'].forEach(s => document.querySelector(s)?.classList.add('hidden'));
