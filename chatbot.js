@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isOpen = false;
     let consecutiveMisses = 0;
     let currentTechIdContext = null;
-    let lastOfferedAction = null;
     let conversationHistory = [];
 
     // Toggle chatbot window
@@ -23,18 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Handle user clicking on a suggestion or action button
+    // Handle user clicking on a suggestion button
     chatbotMessages.addEventListener('click', (e) => {
-        const target = e.target;
-        if (target.classList.contains('suggestion-btn')) {
-            const question = target.textContent;
+        if (e.target.classList.contains('suggestion-btn')) {
+            const question = e.target.textContent;
             addMessage('user', question);
             getBotResponse(question);
-        }
-        if (target.classList.contains('action-btn')) {
-            const actionType = target.dataset.actionType;
-            const actionValue = target.dataset.actionValue;
-            performAction(actionType, actionValue);
         }
     });
 
@@ -42,17 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const userMessage = chatbotInput.value.trim();
         addMessage('user', userMessage);
         getBotResponse(userMessage);
-    }
-
-    function performAction(type, value) {
-        if (type === 'open_modal' && typeof window.UI !== 'undefined') {
-            window.UI.openModal(value);
-        }
-        if (type === 'click_button') {
-            const button = document.getElementById(value);
-            if (button) button.click();
-        }
-        lastOfferedAction = null;
     }
 
     // Add a message to the chat window
@@ -70,25 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 conversationHistory.shift();
             }
         } else {
-            let messageText = typeof messageData === 'string' ? messageData : messageData.answer;
-            bubble.innerHTML = messageText;
-
-            if (typeof messageData.action !== 'undefined') {
-                const action = messageData.action;
-                lastOfferedAction = action;
-                
-                const actions = Array.isArray(action) ? action : [action];
-                actions.forEach(act => {
-                    const actionButton = document.createElement('button');
-                    actionButton.className = 'action-btn';
-                    actionButton.textContent = act.label;
-                    actionButton.dataset.actionType = act.type;
-                    actionButton.dataset.actionValue = act.value;
-                    bubble.appendChild(actionButton);
-                });
-            } else {
-                lastOfferedAction = null;
-            }
+            bubble.innerHTML = messageData;
         }
         
         messageElement.appendChild(bubble);
@@ -129,14 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function getBotResponse(userMessage) {
         const lowerCaseMessage = userMessage.toLowerCase();
         
-        // --- FIXED: Check for affirmative response to a remembered action FIRST ---
-        const affirmativeResponses = ['yes', 'yep', 'sure', 'ok', 'okay', 'do it', 'open it'];
-        if (lastOfferedAction && affirmativeResponses.includes(lowerCaseMessage)) {
-            const actionToPerform = Array.isArray(lastOfferedAction) ? lastOfferedAction[0] : lastOfferedAction;
-            performAction(actionToPerform.type, actionToPerform.value);
-            return;
-        }
-
         const techIdRegex = /(\d{4}[A-Z]{2})/;
         const potentialIdMatch = lowerCaseMessage.toUpperCase().match(techIdRegex);
         
@@ -231,12 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (bestMatch.score > 0) {
             consecutiveMisses = 0;
-            addMessage('bot', bestMatch, 'general');
+            addMessage('bot', bestMatch.answer, 'general');
         } else {
             consecutiveMisses++;
             if (consecutiveMisses >= 3) {
                 consecutiveMisses = 0;
-                addMessage('bot', { answer: getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:", 'initial') }, null);
+                addMessage('bot', getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:", 'initial'), null);
             } else {
                 addMessage('bot', bestMatch.answer, null);
             }
@@ -244,21 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleNoCalculationError() {
-        const projects = await DB.getAll('projects');
-        if (projects && projects.length > 0) {
-            addMessage('bot', {
-                answer: "No calculation has been run yet. Would you like me to calculate the selected project or all saved projects?",
-                action: [
-                    { label: "Calculate Selected", type: "click_button", value: "calculate-btn" },
-                    { label: "Calculate All", type: "click_button", value: "calculate-all-btn" }
-                ]
-            });
-        } else {
-            addMessage('bot', {
-                answer: "Sorry, no projects have been saved yet. Please add your project data in the 'Data & Projects' panel before I can calculate.",
-                action: { label: "Open Guided Setup", type: "open_modal", value: "guided-setup-modal" }
-            });
-        }
+        addMessage('bot', "You need to run a calculation first. Please use the main interface to calculate a project.", 'general');
     }
 
     function getSuggestionMessage(greeting, context = 'initial') {
@@ -273,10 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 suggestions = ["Who has the best quality?", "Who has the most tasks?", "Summary for 7249SS"];
                 break;
             case 'general':
-                suggestions = ["How do I use the calculator?", "What is a QC Penalty?", "Open Team Manager"];
+                suggestions = ["How do I use the calculator?", "What is a QC Penalty?", "How do I manage my teams?"];
                 break;
             default: // 'initial'
-                suggestions = ["Summary for 7249SS", "Who has the most points?", "How do I use the calculator?", "What is a QC Penalty?", "Open Team Manager", "Open Advance Settings"];
+                suggestions = ["Summary for 7249SS", "Who has the most points?", "How do I use the calculator?", "What is a QC Penalty?", "How do I manage my teams?"];
                 break;
         }
         
@@ -293,5 +235,5 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initial bot message with suggestions
     const initialMessage = getSuggestionMessage("Hello! I am the PCS Calculator assistant. Here are some things you can ask:", 'initial');
-    addMessage('bot', { answer: initialMessage }, null);
+    addMessage('bot', initialMessage, null);
 });
