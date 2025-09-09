@@ -212,3 +212,27 @@ body.light-theme #advance-settings-modal #category-points-tbody tr:nth-child(eve
     color: var(--text-color);
     border-bottom-left-radius: 0.25rem;
 }
+/* New Chatbot Suggestion Styles */
+.suggestions-container {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.suggestion-btn {
+    background-color: var(--brand-900);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+    font-size: 0.875rem;
+}
+
+.suggestion-btn:hover {
+    background-color: var(--brand-600);
+    border-color: var(--accent);
+}
