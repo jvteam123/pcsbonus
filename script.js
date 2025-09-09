@@ -638,7 +638,7 @@ const Calculator = {
         });
         
         if (project.useMultiplier && project.difficulty > 0) {
-            const multiplier = 1 + (project.difficulty * 0.1);
+            const multiplier = 1 + (project.difficulty * 0.1); 
             Object.values(techStats).forEach(stat => {
                 stat.points *= multiplier;
             });
@@ -829,8 +829,87 @@ const Handlers = {
             }
         });
 
-        // ... (All other original event listeners)
+        listen('manage-teams-btn', 'click', () => { UI.populateAdminTeamManagement(); UI.openModal('manage-teams-modal'); });
+        listen('advance-settings-btn', 'click', () => { this.populateAdvanceSettingsEditor(); UI.openModal('advance-settings-modal'); });
+        listen('toggle-theme-btn', 'click', () => { document.body.classList.toggle('light-theme'); localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark'); });
+        listen('save-advance-settings-btn', 'click', this.saveAdvanceSettings.bind(this));
+        listen('clear-data-btn', 'click', this.clearAllData.bind(this));
+
+        document.body.addEventListener('click', e => {
+            const techIcon = e.target.closest('.tech-summary-icon');
+            if (techIcon) UI.openTechSummaryModal(techIcon.dataset.techId);
+            const teamLabel = e.target.closest('.team-summary-trigger');
+            if (teamLabel) UI.openTeamSummaryModal(teamLabel.dataset.teamName);
+            const sortHeader = e.target.closest('.sortable-header');
+            if (sortHeader) {
+                const column = sortHeader.dataset.sort;
+                AppState.currentSort.direction = AppState.currentSort.column === column && AppState.currentSort.direction === 'desc' ? 'asc' : 'desc';
+                AppState.currentSort.column = column;
+                UI.applyFilters();
+            }
+        });
+        
+        listen('project-select', 'change', e => this.loadProjectIntoForm(e.target.value));
+        listen('delete-project-btn', 'click', () => { const id = document.getElementById('project-select').value; if(id) this.deleteProjectFromIndexedDB(id); });
+        listen('edit-data-btn', 'click', () => {
+            ['techData', 'project-name', 'is-ir-project-checkbox', 'gsd-value-select'].forEach(id => document.getElementById(id).disabled = false);
+            document.getElementById('techData').readOnly = false; document.getElementById('project-name').readOnly = false;
+            document.getElementById('edit-data-btn').classList.add('hidden');
+            document.getElementById('save-project-btn').disabled = false;
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        });
+        listen('cancel-edit-btn', 'click', () => this.loadProjectIntoForm(document.getElementById('project-select').value));
+        listen('save-project-btn', 'click', async e => {
+            const button = e.target;
+            UI.showLoading(button);
+            const name = document.getElementById('project-name').value.trim();
+            const data = document.getElementById('techData').value.trim();
+            if (!name || !data) {
+                alert("Project Name and Data are required.");
+                UI.hideLoading(button);
+                return;
+            }
+            const existingId = document.getElementById('project-select').value;
+            const projectId = existingId ? existingId : `${name.replace(/\W/g, '_').toLowerCase()}_${Date.now()}`;
+            const projectData = { id: projectId, name: name, rawData: data, isIRProject: document.getElementById('is-ir-project-checkbox').checked, gsdValue: document.getElementById('gsd-value-select').value };
+            await this.saveProjectToIndexedDB(projectData);
+            await this.fetchProjectListSummary();
+            document.getElementById('project-select').value = projectData.id;
+            await this.loadProjectIntoForm(projectData.id);
+            UI.hideLoading(button);
+        });
+        listen('calculate-btn', 'click', async e => {
+            const button = e.target; UI.showLoading(button);
+            const projectId = document.getElementById('project-select').value;
+            await this.runCalculation(false, projectId ? [projectId] : []);
+            UI.hideLoading(button);
+        });
+        listen('calculate-all-btn', 'click', async e => {
+            const button = e.target; UI.showLoading(button);
+            const selectEl = document.getElementById('project-select');
+            const isCustom = document.getElementById('customize-calc-all-cb').checked;
+            const allProjectIds = (await DB.getAll('projects')).map(p => p.id);
+            const selectedIds = Array.from(selectEl.selectedOptions).map(opt => opt.value);
+            const idsToRun = isCustom ? selectedIds : allProjectIds;
+            if (isCustom && idsToRun.length === 0) alert("Select projects from the list to calculate.");
+            else if (idsToRun.length > 0) await this.runCalculation(true, idsToRun);
+            UI.hideLoading(button);
+        });
+        listen('customize-calc-all-cb', 'change', e => {
+            const selectEl = document.getElementById('project-select');
+            const isChecked = e.target.checked;
+            selectEl.multiple = isChecked; selectEl.size = isChecked ? 6 : 1;
+            document.getElementById('calculate-btn').disabled = isChecked;
+        });
+        listen('search-tech-id', 'input', UI.applyFilters.bind(UI));
+        listen('team-filter-container', 'change', UI.applyFilters.bind(UI));
+        listen('leaderboard-sort-select', 'change', () => UI.applyFilters());
+        listen('add-team-btn', 'click', () => UI.addTeamCard());
+        listen('save-teams-btn', 'click', () => this.saveTeamSettings());
+        listen('drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.add('bg-brand-700'); });
+        listen('drop-zone', 'dragleave', e => e.target.closest('#drop-zone').classList.remove('bg-brand-700'));
+        listen('drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.remove('bg-brand-700'); this.handleDroppedFiles(e.dataTransfer.files); });
     }
 };
 
-document.addEventListener('DOMContentLoaded', Handlers.initializeApp);
+document.addEventListener('DOMContentLoaded', () => Handlers.initializeApp());
