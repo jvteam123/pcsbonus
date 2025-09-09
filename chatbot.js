@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isOpen = false;
     let consecutiveMisses = 0;
     let currentTechIdContext = null;
+    let lastOfferedAction = null; // --- NEW: Add short-term memory for actions ---
 
     // Toggle chatbot window
     chatbotBubble.addEventListener('click', () => {
@@ -32,9 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target.classList.contains('action-btn')) {
             const actionType = target.dataset.actionType;
             const actionValue = target.dataset.actionValue;
-            if (actionType === 'open_modal' && typeof window.UI !== 'undefined') {
-                window.UI.openModal(actionValue);
-            }
+            performAction(actionType, actionValue);
         }
     });
 
@@ -42,6 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const userMessage = chatbotInput.value.trim();
         addMessage('user', userMessage);
         getBotResponse(userMessage);
+    }
+
+    // --- NEW: Central function to perform actions ---
+    function performAction(type, value) {
+        if (type === 'open_modal' && typeof window.UI !== 'undefined') {
+            window.UI.openModal(value);
+        }
+        lastOfferedAction = null; // Clear memory after action is taken
     }
 
     // Add a message to the chat window
@@ -60,22 +67,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (typeof messageData.action !== 'undefined') {
                 const action = messageData.action;
+                lastOfferedAction = action; // --- NEW: Remember the action ---
                 const actionButton = document.createElement('button');
                 actionButton.className = 'action-btn';
                 actionButton.textContent = action.label;
                 actionButton.dataset.actionType = action.type;
                 actionButton.dataset.actionValue = action.value;
                 bubble.appendChild(actionButton);
+            } else {
+                lastOfferedAction = null; // Clear memory if no action is offered
             }
         }
         
         messageElement.appendChild(bubble);
         chatbotMessages.appendChild(messageElement);
 
-        // --- NEW: Show next actions menu ---
         if (sender === 'bot' && showNextActions) {
             const nextActionsMenu = getSuggestionMessage("What would you like to do next?");
-            // Use a slight delay to make it feel more natural
             setTimeout(() => {
                 const menuElement = document.createElement('div');
                 menuElement.className = 'chatbot-message bot';
@@ -88,15 +96,11 @@ document.addEventListener('DOMContentLoaded', () => {
         chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
     }
 
-    // Helper function to get a full summary of a tech's stats
     function getTechStatSummary(techId) {
-        if (typeof AppState === 'undefined' || !AppState.currentTechStats || Object.keys(AppState.currentTechStats).length === 0) {
-            return { error: "No calculation has been run yet. Please calculate a project first." };
-        }
+        // ... (This function remains the same as the previous version)
+        if (typeof AppState === 'undefined' || !AppState.currentTechStats || Object.keys(AppState.currentTechStats).length === 0) { return { error: "No calculation has been run yet. Please calculate a project first." }; }
         const techData = AppState.currentTechStats[techId];
-        if (!techData) {
-            return { error: `I couldn't find any results for Tech ID ${techId} in the current calculation.` };
-        }
+        if (!techData) { return { error: `I couldn't find any results for Tech ID ${techId} in the current calculation.` }; }
         const bonusMultiplier = parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1;
         const denominator = techData.fixTasks + techData.refixTasks + techData.warnings.length;
         const quality = denominator > 0 ? (techData.fixTasks / denominator) * 100 : 0;
@@ -109,6 +113,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Main Response Logic ---
     function getBotResponse(userMessage) {
         const lowerCaseMessage = userMessage.toLowerCase();
+        
+        // --- NEW: Check for affirmative response to a remembered action ---
+        const affirmativeResponses = ['yes', 'yep', 'sure', 'ok', 'okay', 'do it', 'open it'];
+        if (lastOfferedAction && affirmativeResponses.includes(lowerCaseMessage)) {
+            performAction(lastOfferedAction.type, lastOfferedAction.value);
+            return;
+        }
+
         const techIdRegex = /(\d{4}[A-Z]{2})/;
         const potentialIdMatch = lowerCaseMessage.toUpperCase().match(techIdRegex);
         if (potentialIdMatch) currentTechIdContext = potentialIdMatch[0];
@@ -211,12 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getSuggestionMessage(greeting) {
-        const suggestions = ["Summary for 7249SS", "Who has the most points?", "How do I use the calculator?", "What is a QC Penalty?", "Open Team Manager", "Open Advance Settings"];
-        
+        const suggestions = [ "Summary for 7249SS", "Who has the most points?", "How do I use the calculator?", "What is a QC Penalty?", "Open Team Manager", "Open Advance Settings" ];
         let suggestionHTML = `${greeting}<div class='suggestions-container'>`;
-        suggestions.forEach(q => {
-            suggestionHTML += `<button class='suggestion-btn'>${q}</button>`;
-        });
+        suggestions.forEach(q => { suggestionHTML += `<button class='suggestion-btn'>${q}</button>`; });
         suggestionHTML += "</div>";
         return suggestionHTML;
     }
