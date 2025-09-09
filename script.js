@@ -2,7 +2,11 @@
 const AppState = {
     db: null, teamSettings: {}, bonusTiers: [], calculationSettings: {},
     countingSettings: {}, currentTechStats: {}, lastUsedGsdValue: '3in',
-    currentSort: { column: 'payout', direction: 'desc' }
+    currentSort: { column: 'payout', direction: 'desc' },
+    guidedSetup: {
+        currentStep: 1,
+        totalSteps: 4,
+    }
 };
 
 // --- CONSTANTS ---
@@ -185,8 +189,8 @@ const UI = {
         container.innerHTML = '';
         Object.entries(AppState.teamSettings).forEach(([teamName, techIds]) => this.addTeamCard(teamName, techIds));
     },
-    addTeamCard(teamName = '', techIds = []) {
-        const container = document.getElementById('team-list-container');
+    addTeamCard(teamName = '', techIds = [], targetContainerId = 'team-list-container') {
+        const container = document.getElementById(targetContainerId);
         const card = document.createElement('div');
         card.className = 'team-card p-4 rounded-lg bg-brand-900/50 border border-brand-700';
         card.innerHTML = `<div class="flex justify-between items-center mb-3"><input type="text" class="team-name-input input-field text-lg font-bold w-full" value="${teamName}" placeholder="Team Name"><button class="delete-team-btn control-btn-icon-danger ml-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button></div><div class="team-tech-list mb-3"></div><div class="flex gap-2"><input type="text" class="add-tech-input input-field w-full" placeholder="Add Tech ID"><button class="add-tech-btn btn-secondary">Add</button></div>`;
@@ -622,6 +626,12 @@ const Handlers = {
         Handlers.setupEventListeners();
         document.body.classList.toggle('light-theme', localStorage.getItem('theme') === 'light');
         await Promise.all([ Handlers.fetchProjectListSummary(), Handlers.loadTeamSettings(), Handlers.loadBonusTiers(), Handlers.loadCalculationSettings(), Handlers.loadCountingSettings() ]);
+        
+        const hasBeenSetup = await DB.get('settings', 'hasBeenSetup');
+        if (!hasBeenSetup) {
+            this.startGuidedSetup();
+        }
+
         UI.setPanelHeights();
         window.addEventListener('resize', UI.setPanelHeights);
     },
@@ -700,9 +710,9 @@ const Handlers = {
         UI.populateTeamFilters();
         UI.populateAdminTeamManagement();
     },
-    async saveTeamSettings() {
+    async saveTeamSettings(containerId = 'team-list-container') {
         const newSettings = {};
-        document.querySelectorAll('#team-list-container .team-card').forEach(div => {
+        document.querySelectorAll(`#${containerId} .team-card`).forEach(div => {
             const teamName = div.querySelector('.team-name-input').value.trim();
             if (teamName) newSettings[teamName] = Array.from(div.querySelectorAll('.tech-tag')).map(tag => tag.dataset.techId);
         });
@@ -716,7 +726,6 @@ const Handlers = {
         try {
             const compressed = pako.deflate(new TextEncoder().encode(projectData.rawData));
             
-            // Chunked base64 encoding
             let binary = '';
             const len = compressed.byteLength;
             for (let i = 0; i < len; i++) {
@@ -808,7 +817,6 @@ const Handlers = {
             }
         }
         if (allFeatures.length > 0) {
-            // 1. Collect all unique property keys from all features.
             const allKeys = new Set();
             allFeatures.forEach(feature => {
                 if (feature.properties) {
@@ -816,11 +824,7 @@ const Handlers = {
                 }
             });
             const headers = Array.from(allKeys);
-
-            // 2. Use that complete set of keys as the header.
             let tsv = headers.join('\t') + '\n';
-
-            // 3. For each feature, provide a value for each header key.
             allFeatures.forEach(feature => {
                 const row = headers.map(header => {
                     return feature.properties ? (feature.properties[header] ?? '') : '';
@@ -842,28 +846,11 @@ const Handlers = {
             const req = indexedDB.deleteDatabase('BonusCalculatorDB');
             req.onsuccess = async () => {
                 alert("All data has been cleared. The application will now reset.");
-                // Reset the in-memory state
-                AppState.db = null;
-                AppState.teamSettings = {};
-                AppState.bonusTiers = [];
-                AppState.calculationSettings = {};
-                AppState.countingSettings = {};
-                AppState.currentTechStats = {};
-                // Re-initialize the application from scratch
-                await Handlers.initializeApp();
-                // Reset the UI to its initial state
-                UI.resetUIForNewCalculation();
-                document.getElementById('project-select').innerHTML = '<option value="">Select a project...</option>';
-                document.getElementById('leaderboard-body').innerHTML = '<tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr>';
-                document.getElementById('tech-results-tbody').innerHTML = '';
-
+                localStorage.removeItem('theme'); // Also clear theme
+                window.location.reload();
             };
-            req.onerror = () => {
-                alert("Error clearing data. Please close all other tabs with this application open and try again.");
-            };
-            req.onblocked = () => {
-                alert("Could not clear data. Please close all other tabs with this application open and try again.");
-            };
+            req.onerror = () => alert("Error clearing data. Please close all other tabs with this application open and try again.");
+            req.onblocked = () => alert("Could not clear data. Please close all other tabs with this application open and try again.");
         }
     },
     resetAdvanceSettingsToDefaults() {
@@ -875,9 +862,63 @@ const Handlers = {
             UI.showNotification("Settings have been reset to defaults.");
         }
     },
+    // --- Guided Setup Functions ---
+    startGuidedSetup() {
+        AppState.guidedSetup.currentStep = 1;
+        this.updateGuidedSetupView();
+        
+        // Populate teams
+        const teamContainer = document.getElementById('setup-team-list');
+        teamContainer.innerHTML = '';
+        Object.entries(AppState.teamSettings).forEach(([teamName, techIds]) => UI.addTeamCard(teamName, techIds, 'setup-team-list'));
+
+        // Populate bonus tiers
+        const bonusContainer = document.getElementById('setup-bonus-tier-list');
+        // Clear old entries except header
+        bonusContainer.querySelectorAll('.tier-row-display').forEach(row => row.remove());
+        AppState.bonusTiers.forEach(tier => {
+            const row = document.createElement('div');
+            row.className = 'tier-row-display grid grid-cols-2 gap-4 items-center text-sm';
+            row.innerHTML = `<span>${tier.quality}%</span><span>${(tier.bonus * 100).toFixed(0)}%</span>`;
+            bonusContainer.appendChild(row);
+        });
+
+        UI.openModal('guided-setup-modal');
+    },
+    updateGuidedSetupView() {
+        const { currentStep, totalSteps } = AppState.guidedSetup;
+        // Update step indicators
+        const indicatorContainer = document.getElementById('setup-step-indicator');
+        indicatorContainer.innerHTML = '';
+        for (let i = 1; i <= totalSteps; i++) {
+            const item = document.createElement('div');
+            item.className = 'step-indicator-item';
+            if (i < currentStep) item.classList.add('completed');
+            if (i === currentStep) item.classList.add('active');
+            item.textContent = i;
+            indicatorContainer.appendChild(item);
+        }
+        
+        // Show current step content
+        document.querySelectorAll('.setup-step').forEach(step => step.classList.remove('active'));
+        document.querySelector(`.setup-step[data-step="${currentStep}"]`).classList.add('active');
+
+        // Update button visibility
+        document.getElementById('setup-prev-btn').classList.toggle('hidden', currentStep === 1);
+        document.getElementById('setup-next-btn').classList.toggle('hidden', currentStep === totalSteps);
+        document.getElementById('setup-finish-btn').classList.toggle('hidden', currentStep !== totalSteps);
+    },
+    async finishGuidedSetup() {
+        // Save teams from setup
+        await this.saveTeamSettings('setup-team-list');
+        await DB.put('settings', { id: 'hasBeenSetup', value: true });
+        UI.closeModal('guided-setup-modal');
+        UI.showNotification("Setup complete. Welcome!");
+    },
+    // --- End Guided Setup Functions ---
     setupEventListeners() {
         const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
-        listen('merge-fixpoints-btn', 'click', () => { UI.resetMergeModal(); UI.openModal('merge-fixpoints-modal'); });
+        listen('guided-setup-btn', 'click', this.startGuidedSetup.bind(this));
         listen('manage-teams-btn', 'click', () => { UI.populateAdminTeamManagement(); UI.openModal('manage-teams-modal'); });
         listen('advance-settings-btn', 'click', () => { this.populateAdvanceSettingsEditor(); UI.openModal('advance-settings-modal'); });
         listen('toggle-theme-btn', 'click', () => { document.body.classList.toggle('light-theme'); localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark'); });
@@ -885,6 +926,13 @@ const Handlers = {
         listen('important-info-btn', 'click', () => UI.openModal('important-info-modal'));
         listen('bug-report-btn', 'click', () => window.open("https://teams.microsoft.com/l/chat/48:notes/conversations?context=%7B%22contextType%22%3A%22chat%22%7D", "_blank"));
         listen('clear-data-btn', 'click', this.clearAllData);
+
+        // Guided setup listeners
+        listen('setup-next-btn', 'click', () => { AppState.guidedSetup.currentStep++; this.updateGuidedSetupView(); });
+        listen('setup-prev-btn', 'click', () => { AppState.guidedSetup.currentStep--; this.updateGuidedSetupView(); });
+        listen('setup-finish-btn', 'click', this.finishGuidedSetup.bind(this));
+        listen('setup-add-team-btn', 'click', () => UI.addTeamCard('', [], 'setup-team-list'));
+        
         document.body.addEventListener('click', e => {
             const techIcon = e.target.closest('.tech-summary-icon');
             if (techIcon) UI.openTechSummaryModal(techIcon.dataset.techId);
@@ -899,7 +947,6 @@ const Handlers = {
             }
         });
         
-        // This needs to be delegated since the button is added dynamically
         document.body.addEventListener('click', (e) => {
             if (e.target && e.target.id === 'reset-defaults-btn') {
                 this.resetAdvanceSettingsToDefaults();
@@ -929,13 +976,7 @@ const Handlers = {
             }
             const existingId = document.getElementById('project-select').value;
             const projectId = existingId ? existingId : `${name.replace(/\W/g, '_').toLowerCase()}_${Date.now()}`;
-            const projectData = {
-                id: projectId,
-                name: name,
-                rawData: data,
-                isIRProject: document.getElementById('is-ir-project-checkbox').checked,
-                gsdValue: document.getElementById('gsd-value-select').value
-            };
+            const projectData = { id: projectId, name: name, rawData: data, isIRProject: document.getElementById('is-ir-project-checkbox').checked, gsdValue: document.getElementById('gsd-value-select').value };
             await this.saveProjectToIndexedDB(projectData);
             await this.fetchProjectListSummary();
             document.getElementById('project-select').value = projectData.id;
@@ -961,7 +1002,7 @@ const Handlers = {
                         projBreakdown.points += stat.points; projBreakdown.fixTasks += stat.fixTasks; projBreakdown.refixTasks += stat.refixTasks; projBreakdown.warnings += stat.warnings.length;
                     }
                 }
-            } else { // Single project / pasted data
+            } else {
                 const project = projectIds.length > 0 ? await this.fetchFullProjectData(projectIds[0]) : null;
                 const data = project ? project.rawData : document.getElementById('techData').value.trim();
                 const name = project ? project.name : 'Pasted Data';
@@ -1007,7 +1048,7 @@ const Handlers = {
         listen('refresh-teams-btn', 'click', this.loadTeamSettings);
         listen('leaderboard-sort-select', 'change', () => UI.applyFilters());
         listen('add-team-btn', 'click', () => UI.addTeamCard());
-        listen('save-teams-btn', 'click', this.saveTeamSettings);
+        listen('save-teams-btn', 'click', () => this.saveTeamSettings());
         listen('drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.add('bg-brand-700'); });
         listen('drop-zone', 'dragleave', e => e.target.closest('#drop-zone').classList.remove('bg-brand-700'));
         listen('drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.remove('bg-brand-700'); this.handleDroppedFiles(e.dataTransfer.files); });
