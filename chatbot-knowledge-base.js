@@ -30,7 +30,11 @@ const knowledgeBase = [
         answer: "You can customize all calculation logic, including points and bonus tiers, in the Advance Settings. Would you like to open it?",
         action: { label: "Open Advance Settings", type: "open_modal", value: "advance-settings-modal" }
     },
-
+    // --- NEW: Quick Summary ---
+    {
+        keywords: ["quick summary", "summary card", "top performers", "leader"],
+        answer: "The Quick Summary panel shows the top performers for key metrics like points, tasks, quality, and refixes after a calculation is run. You can ask me 'who has the most points?' to get the details."
+    },
     // --- Core Calculation Logic ---
     {
         keywords: ["calculation", "logic", "source", "documentation", "formula"],
