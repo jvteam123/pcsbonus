@@ -40,10 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function addMessage(sender, message) {
         const messageElement = document.createElement('div');
         messageElement.className = `chatbot-message ${sender}`;
-        // Using textContent to prevent HTML injection from user input
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        bubble.innerHTML = message; // Use innerHTML only for bot messages with suggestions
+        bubble.innerHTML = message; // Use innerHTML for bot messages with suggestions
         
         if(sender === 'user') {
             bubble.textContent = message;
@@ -81,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
             consecutiveMisses++;
             if (consecutiveMisses >= 3) {
                 consecutiveMisses = 0;
-                botResponse = getSuggestionMessage();
+                botResponse = getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:");
             } else {
                 botResponse = bestMatch.answer;
             }
@@ -92,17 +91,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
     }
 
-    function getSuggestionMessage() {
+    function getSuggestionMessage(greeting) {
         // A curated list of good example questions from the knowledge base
         const suggestions = [
             "How is quality calculated?",
             "What is a refix?",
             "How do I use the calculator?",
             "What are the points for a QC task?",
-            "Can I combine projects?"
+            "Who is the developer?"
         ];
         
-        let suggestionHTML = "I'm having trouble understanding. Maybe you can try one of these questions:<div class='suggestions-container'>";
+        let suggestionHTML = `${greeting}<div class='suggestions-container'>`;
         suggestions.forEach(q => {
             suggestionHTML += `<button class='suggestion-btn'>${q}</button>`;
         });
@@ -111,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return suggestionHTML;
     }
     
-    // Initial bot message
-    addMessage('bot', 'Hello! I am the PCS Calculator assistant. Ask me a question to get started.');
+    // Initial bot message with suggestions
+    const initialMessage = getSuggestionMessage("Hello! I am the PCS Calculator assistant. Here are some questions you can ask:");
+    addMessage('bot', initialMessage);
 });
