@@ -5,37 +5,30 @@ const techNameDatabase = {
 
 // --- General Knowledge Base ---
 const knowledgeBase = [
-    // --- Custom Personal Questions ---
     {
         keywords: ["developer", "renzku", "creator", "who made"],
         answer: "Renzku is the developer of this application."
     },
     {
-        keywords: ["jeave", "babaydor", "who is jeave?", "who is jeave"],
+        keywords: ["jeave", "babaydor", "who is jeave", "who is jeave?"],
         answer: "jeave is babaydor"
     },
-    // --- General & How-To ---
     {
         keywords: ["how", "use", "work", "guide", "setup", "start", "tutorial"],
-        answer: "You can use the guided setup for a walkthrough. Generally: 1. Add your project data. 2. Enter a bonus multiplier. 3. Click 'Calculate'.",
-        action: { label: "Start Guided Setup", type: "open_modal", value: "guided-setup-modal" }
+        answer: "You can use the guided setup for a walkthrough (Menu > Guided Setup). Generally: 1. Add your project data. 2. Enter a bonus multiplier. 3. Click 'Calculate'."
     },
     {
         keywords: ["teams", "manage"],
-        answer: "You can add/edit teams and their members in the Team Manager. Would you like to open it?",
-        action: { label: "Open Team Manager", type: "open_modal", value: "manage-teams-modal" }
+        answer: "You can add/edit teams and their members in the Team Manager, which you can find in the main menu (Menu > Manage Teams)."
     },
     {
         keywords: ["settings", "advance", "customize", "edit logic"],
-        answer: "You can customize all calculation logic, including points and bonus tiers, in the Advance Settings. Would you like to open it?",
-        action: { label: "Open Advance Settings", type: "open_modal", value: "advance-settings-modal" }
+        answer: "You can customize all calculation logic, including points and bonus tiers, in the Advance Settings panel (Menu > Advance Settings)."
     },
-    // --- NEW: Quick Summary ---
     {
         keywords: ["quick summary", "summary card", "top performers", "leader"],
         answer: "The Quick Summary panel shows the top performers for key metrics like points, tasks, quality, and refixes after a calculation is run. You can ask me 'who has the most points?' to get the details."
     },
-    // --- Core Calculation Logic ---
     {
         keywords: ["calculation", "logic", "source", "documentation", "formula"],
         answer: "The calculator's logic is based on the 'Phili IC Fixpoints App Documentation v1.0.' You can customize all formulas in 'Advance Settings'."
@@ -46,20 +39,16 @@ const knowledgeBase = [
     },
     {
         keywords: ["refix", "what is a refix"],
-        answer: "A 'refix' is an error that counts against a tech's quality. By default, it's triggered by the label 'i' in columns like 'rv1_label' and 'rv2_label'. You can see the full list of triggers in Advance Settings.",
-        action: { label: "Open Advance Settings", type: "open_modal", value: "advance-settings-modal" }
+        answer: "A 'refix' is an error that counts against a tech's quality. By default, it's triggered by the label 'i' in columns like 'rv1_label' and 'rv2_label'. You can see the full list of triggers in Advance Settings."
     },
     {
         keywords: ["warning", "what is a warning"],
-        answer: "A 'warning' also counts against a tech's quality. By default, it's triggered by labels like 'b', 'c', 'd', 'e', 'f', 'g', or 'i' in the warning columns ('r1_warn', etc.). You can see the full list in Advance Settings.",
-        action: { label: "Open Advance Settings", type: "open_modal", value: "advance-settings-modal" }
+        answer: "A 'warning' also counts against a tech's quality. By default, it's triggered by labels like 'b', 'c', 'd', 'e', 'f', 'g', or 'i' in the warning columns ('r1_warn', etc.). You can see the full list in Advance Settings."
     },
     {
         keywords: ["qc penalty", "transfer"],
         answer: "A 'QC Penalty' occurs if a QC tech misses an error. The points for that QC task are then subtracted from the QC tech and transferred to the i3qa tech who found the error."
     },
-    
-    // --- Data & Features ---
     {
         keywords: ["data", "save", "store", "local", "where"],
         answer: "All project data, teams, and settings are stored locally in your browser's IndexedDB. Nothing is uploaded to a server."
