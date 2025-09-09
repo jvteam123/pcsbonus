@@ -236,3 +236,22 @@ body.light-theme #advance-settings-modal #category-points-tbody tr:nth-child(eve
     background-color: var(--brand-600);
     border-color: var(--accent);
 }
+/* New Chatbot Action Button Styles */
+.action-btn {
+    display: block;
+    width: 100%;
+    margin-top: 0.75rem;
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    text-align: center;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.action-btn:hover {
+    background-color: var(--accent-hover);
+}
