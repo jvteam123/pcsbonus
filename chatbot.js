@@ -109,11 +109,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getSuggestionMessage(greeting) {
-        // --- NEW & IMPROVED SUGGESTIONS ---
+        // --- SUGGESTION LIST WITH THE NEW ADDITION ---
         const suggestions = [
             "How do I use the calculator?",
             "How is quality calculated?",
             "What files can I drop here?",
+            "Who is 7249SS?",
             "Can I combine multiple projects?",
             "What is an IR project?",
             "How do I edit a saved project?"
