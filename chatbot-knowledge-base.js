@@ -16,6 +16,14 @@ const knowledgeBase = [
         keywords: ["bye", "goodbye", "thanks", "thank you"],
         answer: "You're welcome! Feel free to ask if you have more questions."
     },
+    {
+        keywords: ["developer", "renzku", "creator", "who made"],
+        answer: "Renzku is the developer of this application."
+    },
+    {
+        keywords: ["jeave", "babaydor", "who is jeave"],
+        answer: "jeave is babaydor"
+    },
 
     // --- Core Calculation Logic ---
     {
