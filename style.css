@@ -159,3 +159,56 @@ body.light-theme #advance-settings-modal #category-points-tbody tr:nth-child(eve
 .spotlight-tooltip-arrow { position: absolute; width: 0; height: 0; border-style: solid; }
 .spotlight-tooltip.bottom .spotlight-tooltip-arrow { top: -10px; left: 50%; transform: translateX(-50%); border-width: 0 10px 10px 10px; border-color: transparent transparent var(--border-color) transparent; }
 .spotlight-tooltip.top .spotlight-tooltip-arrow { bottom: -10px; left: 50%; transform: translateX(-50%); border-width: 10px 10px 0 10px; border-color: var(--border-color) transparent transparent transparent; }
+
+/* Chatbot Styles */
+#chatbot-container {
+    transition: all 0.3s ease;
+}
+
+#chatbot-window {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(20px);
+    opacity: 0;
+}
+
+#chatbot-window.hidden {
+    display: none;
+}
+
+#chatbot-window:not(.hidden) {
+    display: flex;
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.chatbot-message {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.chatbot-message.user {
+    align-items: flex-end;
+}
+
+.chatbot-message.bot {
+    align-items: flex-start;
+}
+
+.chatbot-message .message-bubble {
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    max-width: 80%;
+}
+
+.chatbot-message.user .message-bubble {
+    background-color: var(--accent);
+    color: white;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.chatbot-message.bot .message-bubble {
+    background-color: var(--brand-700);
+    color: var(--text-color);
+    border-bottom-left-radius: 0.25rem;
+}
