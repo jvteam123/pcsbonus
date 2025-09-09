@@ -133,7 +133,6 @@ const UI = {
             return { ...tech, quality, payout, bonusEarned };
         });
 
-        // Outlier detection
         const payouts = techArray.map(t => t.payout).sort((a,b) => a - b);
         const top10Percentile = payouts[Math.floor(payouts.length * 0.9)];
         const bottom10Percentile = payouts[Math.floor(payouts.length * 0.1)];
@@ -508,7 +507,7 @@ const Calculator = {
         return baseStat;
     },
     parseRawData(data, project) {
-        AppState.refixAnalysisData = []; // Reset analysis data for each run
+        AppState.refixAnalysisData = [];
         const techStats = {};
         const lines = data.split('\n').filter(line => line.trim());
         if (lines.length < 1) return null;
@@ -605,7 +604,7 @@ const Calculator = {
                     if (fixTechId && techStats[fixTechId]) techStats[fixTechId].warnings.push({});
                 }
             });
-
+            
             for (let i = 1; i <= 4; i++) {
                 const rvLabelCol = `rv${i}_label`;
                 const rvIdCol = `rv${i}_id`;
@@ -630,7 +629,7 @@ const Calculator = {
                     }
                 }
             }
-            
+
             const fix4Id = get('fix4_id')?.trim().toUpperCase();
             if (fix4Id && techStats[fix4Id]) {
                 const cat = parseInt(get('rv3_cat'));
@@ -639,7 +638,7 @@ const Calculator = {
         });
         
         if (project.useMultiplier && project.difficulty > 0) {
-            const multiplier = 1 + (project.difficulty * 0.1); 
+            const multiplier = 1 + (project.difficulty * 0.1);
             Object.values(techStats).forEach(stat => {
                 stat.points *= multiplier;
             });
@@ -656,15 +655,15 @@ const Handlers = {
     async initializeApp() {
         await DB.open();
         await Promise.all([
-            Handlers.loadTeamSettings(),
-            Handlers.loadBonusTiers(),
-            Handlers.loadCalculationSettings(),
-            Handlers.loadCountingSettings(),
-            Handlers.loadAuditLog(),
-            Handlers.fetchProjectListSummary()
+            this.loadTeamSettings(),
+            this.loadBonusTiers(),
+            this.loadCalculationSettings(),
+            this.loadCountingSettings(),
+            this.loadAuditLog(),
+            this.fetchProjectListSummary()
         ]);
         
-        Handlers.setupEventListeners();
+        this.setupEventListeners();
         document.body.classList.toggle('light-theme', localStorage.getItem('theme') === 'light');
         UI.initDashboardLayout();
         UI.updateUserRoleDisplay();
@@ -678,6 +677,24 @@ const Handlers = {
         window.addEventListener('resize', UI.setPanelHeights);
     },
     
+    async loadTeamSettings() {
+        const teamsData = await DB.get('teams', 'teams');
+        AppState.teamSettings = (teamsData && Object.keys(teamsData.settings).length > 0) ? teamsData.settings : CONSTANTS.DEFAULT_TEAMS;
+        UI.populateTeamFilters();
+        UI.populateAdminTeamManagement();
+    },
+    async loadBonusTiers() {
+        const saved = await DB.get('bonusTiers', 'customTiers');
+        AppState.bonusTiers = (saved && saved.tiers.length > 0) ? saved.tiers : CONSTANTS.DEFAULT_BONUS_TIERS;
+    },
+    async loadCalculationSettings() {
+        const saved = await DB.get('calculationSettings', 'customSettings');
+        AppState.calculationSettings = saved ? saved.settings : JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CALCULATION_SETTINGS));
+    },
+    async loadCountingSettings() {
+        const saved = await DB.get('countingSettings', 'customCounting');
+        AppState.countingSettings = saved ? { ...CONSTANTS.DEFAULT_COUNTING_SETTINGS, ...saved.settings, triggers: { ...CONSTANTS.DEFAULT_COUNTING_SETTINGS.triggers, ...saved.settings.triggers } } : JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_COUNTING_SETTINGS));
+    },
     async loadAuditLog() {
         const logData = await DB.get('settings', 'auditLog');
         AppState.auditLog = logData ? logData.log : [];
@@ -780,7 +797,7 @@ const Handlers = {
         });
         listen('save-project-settings-btn', 'click', async () => {
              const projectId = document.getElementById('project-select').value;
-             const difficulty = Array.from(document.querySelectorAll('#project-difficulty-selector .star')).filter(s => s.innerHTML === '★').length;
+             const difficulty = Array.from(document.querySelectorAll('#project-difficulty-selector .star')).filter(s => s.innerHTML.includes('9733')).length;
              const useMultiplier = document.getElementById('use-difficulty-multiplier').checked;
              const project = await this.fetchFullProjectData(projectId);
              project.difficulty = difficulty;
@@ -812,7 +829,7 @@ const Handlers = {
             }
         });
 
-        // ... (The rest of the original event listeners go here, unchanged)
+        // ... (All other original event listeners)
     }
 };
 
