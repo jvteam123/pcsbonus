@@ -107,12 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof AppState === 'undefined' || !AppState.currentTechStats || Object.keys(AppState.currentTechStats).length === 0) {
             return { error: "no_calculation" };
         }
-
         const techData = AppState.currentTechStats[techId];
         if (!techData) {
             return { error: `I couldn't find any results for Tech ID ${techId} in the current calculation.` };
         }
-
         const bonusMultiplier = parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1;
         const denominator = techData.fixTasks + techData.refixTasks + techData.warnings.length;
         const quality = denominator > 0 ? (techData.fixTasks / denominator) * 100 : 0;
@@ -245,9 +243,10 @@ document.addEventListener('DOMContentLoaded', () => {
             consecutiveMisses++;
             if (consecutiveMisses >= 3) {
                 consecutiveMisses = 0;
-                addMessage('bot', { answer: getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:", 'initial') });
+                // --- FIXED: Do not show follow-up suggestions for this message ---
+                addMessage('bot', { answer: getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:", 'initial') }, null);
             } else {
-                addMessage('bot', bestMatch.answer);
+                addMessage('bot', bestMatch.answer, null); // Don't show suggestions on a simple "I don't know"
             }
         }
     }
@@ -265,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             addMessage('bot', {
                 answer: "Sorry, no projects have been saved yet. Please add your project data in the 'Data & Projects' panel before I can calculate.",
-                action: { label: "Go to Data Panel", type: "open_modal", value: "guided-setup-modal" } // Open guided setup to help
+                action: { label: "Open Guided Setup", type: "open_modal", value: "guided-setup-modal" }
             });
         }
     }
