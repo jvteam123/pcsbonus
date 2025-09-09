@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isOpen = false;
     let consecutiveMisses = 0;
     let currentTechIdContext = null;
+    let lastOfferedAction = null;
     let conversationHistory = [];
 
     // Toggle chatbot window
@@ -22,12 +23,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Handle user clicking on a suggestion button
+    // Handle user clicking on a suggestion or action button
     chatbotMessages.addEventListener('click', (e) => {
-        if (e.target.classList.contains('suggestion-btn')) {
-            const question = e.target.textContent;
+        const target = e.target;
+        if (target.classList.contains('suggestion-btn')) {
+            const question = target.textContent;
             addMessage('user', question);
             getBotResponse(question);
+        }
+        if (target.classList.contains('action-btn')) {
+            const actionType = target.dataset.actionType;
+            const actionValue = target.dataset.actionValue;
+            performAction(actionType, actionValue);
         }
     });
 
@@ -35,6 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const userMessage = chatbotInput.value.trim();
         addMessage('user', userMessage);
         getBotResponse(userMessage);
+    }
+
+    function performAction(type, value) {
+        if (type === 'open_modal' && typeof window.UI !== 'undefined') {
+            window.UI.openModal(value);
+        }
+        if (type === 'click_button') {
+            const button = document.getElementById(value);
+            if (button) button.click();
+        }
+        lastOfferedAction = null;
     }
 
     // Add a message to the chat window
@@ -52,7 +70,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 conversationHistory.shift();
             }
         } else {
-            bubble.innerHTML = messageData;
+            let messageText = typeof messageData === 'string' ? messageData : messageData.answer;
+            bubble.innerHTML = messageText;
+
+            if (typeof messageData.action !== 'undefined') {
+                const action = messageData.action;
+                lastOfferedAction = action;
+                
+                const actions = Array.isArray(action) ? action : [action];
+                actions.forEach(act => {
+                    const actionButton = document.createElement('button');
+                    actionButton.className = 'action-btn';
+                    actionButton.textContent = act.label;
+                    actionButton.dataset.actionType = act.type;
+                    actionButton.dataset.actionValue = act.value;
+                    bubble.appendChild(actionButton);
+                });
+            } else {
+                lastOfferedAction = null;
+            }
         }
         
         messageElement.appendChild(bubble);
@@ -93,6 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function getBotResponse(userMessage) {
         const lowerCaseMessage = userMessage.toLowerCase();
         
+        const affirmativeResponses = ['yes', 'yep', 'sure', 'ok', 'okay', 'do it', 'open it'];
+        if (lastOfferedAction && affirmativeResponses.includes(lowerCaseMessage)) {
+            const actionToPerform = Array.isArray(lastOfferedAction) ? lastOfferedAction[0] : lastOfferedAction;
+            performAction(actionToPerform.type, actionToPerform.value);
+            return;
+        }
+
         const techIdRegex = /(\d{4}[A-Z]{2})/;
         const potentialIdMatch = lowerCaseMessage.toUpperCase().match(techIdRegex);
         
@@ -192,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             consecutiveMisses++;
             if (consecutiveMisses >= 3) {
                 consecutiveMisses = 0;
-                addMessage('bot', getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:", 'initial'), null);
+                addMessage('bot', { answer: getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:", 'initial') }, null);
             } else {
                 addMessage('bot', bestMatch.answer, null);
             }
