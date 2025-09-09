@@ -43,7 +43,7 @@ const CONSTANTS = {
         taskColumns: { qc: ['qc1_id', 'qc2_id', 'qc3_id'], i3qa: ['i3qa_id'], rv1: ['rv1_id'], rv2: ['rv2_id'] },
         triggers: {
             refix: { labels: ['i'], columns: ['rv1_label', 'rv2_label', 'rv3_label'] },
-            miss: { labels: ['m', 'c','f', 'a'], columns: ['i3qa_label', 'rv1_label', 'rv2_label', 'rv3_label'] },
+            miss: { labels: ['m', 'c'], columns: ['i3qa_label', 'rv1_label', 'rv2_label', 'rv3_label'] },
             warning: { labels: ['b', 'c', 'd', 'e', 'f', 'g', 'i'], columns: ['r1_warn', 'r2_warn', 'r3_warn', 'r4_warn'] },
             qcPenalty: { labels: ['m', 'e'], columns: ['i3qa_label'] }
         }
@@ -808,10 +808,26 @@ const Handlers = {
             }
         }
         if (allFeatures.length > 0) {
-            const properties = allFeatures.map(f => f.properties);
-            const headers = Object.keys(properties[0]);
+            // 1. Collect all unique property keys from all features.
+            const allKeys = new Set();
+            allFeatures.forEach(feature => {
+                if (feature.properties) {
+                    Object.keys(feature.properties).forEach(key => allKeys.add(key));
+                }
+            });
+            const headers = Array.from(allKeys);
+
+            // 2. Use that complete set of keys as the header.
             let tsv = headers.join('\t') + '\n';
-            properties.forEach(row => { tsv += headers.map(h => row[h] ?? '').join('\t') + '\n'; });
+
+            // 3. For each feature, provide a value for each header key.
+            allFeatures.forEach(feature => {
+                const row = headers.map(header => {
+                    return feature.properties ? (feature.properties[header] ?? '') : '';
+                });
+                tsv += row.join('\t') + '\n';
+            });
+
             document.getElementById('techData').value = tsv;
             UI.showNotification(`${count} shapefile set(s) processed.`);
         } else {
