@@ -11,7 +11,7 @@ const knowledgeBase = [
         answer: "Renzku is the developer of this application."
     },
     {
-        keywords: ["jeave", "babaydor", "who is jeave"],
+        keywords: ["jeave", "babaydor", "who is jeave?", "who is jeave"],
         answer: "jeave is babaydor"
     },
     // --- General & How-To ---
