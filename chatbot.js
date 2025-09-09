@@ -164,12 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getSuggestionMessage(greeting) {
+        // --- UPDATED SUGGESTION LIST ---
         const suggestions = [
             "Summary for 7249SS",
             "What is the quality of 7236LE?",
             "How many points does 4472JS have?",
             "Who is the developer?",
             "How do I use the calculator?",
+            "What is a QC Penalty?",
             "Can I combine multiple projects?"
         ];
         
