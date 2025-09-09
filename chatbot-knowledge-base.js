@@ -10,7 +10,7 @@ const knowledgeBase = [
         answer: "Renzku is the developer of this application."
     },
     {
-        keywords: ["serge", "taga leyte", "mamuhiay", "manok"],
+        keywords: ["serge", "taga leyte", "mamuhiay", "7249SS"],
         answer: "Serge is taga leyte mamuhiay ug manok! ."
     },
     {
