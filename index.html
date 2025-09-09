@@ -44,7 +44,7 @@
                     <span>Menu</span>
                 </button>
                 <div id="main-menu-dropdown" class="absolute right-0 mt-2 w-56 bg-brand-800 border border-brand-700 rounded-md shadow-lg z-20 hidden">
-                    <a href="#" id="merge-fixpoints-btn" class="dropdown-item">Merge Partials FP</a>
+                    <a href="#" id="guided-setup-btn" class="dropdown-item">Guided Setup</a>
                     <a href="#" id="manage-teams-btn" class="dropdown-item">Manage Teams</a>
                     <a href="#" id="advance-settings-btn" class="dropdown-item">Advance Settings</a>
                     <a href="#" id="toggle-theme-btn" class="dropdown-item">Toggle Theme</a>
@@ -150,6 +150,50 @@
     <div id="important-info-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Important Information</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar space-y-4" id="important-info-body"><div class="info-section"><h4 class="info-title">Calculation Logic</h4><p class="info-text">This calculator is based on the formulas and tables provided in the "Phili IC Fixpoints App Documentation v1.0." The logic employed in all calculations is designed to be transparent and accurate according to this official documentation.</p></div><div class="info-section"><h4 class="info-title">Disclaimer and Intended Use</h4><p class="info-text">This tool is intended for personal and informational purposes only. The results generated are estimates and should be used as a general guideline. These figures are not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
     <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="tech-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
     <div id="team-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="team-summary-modal-title" class="text-lg font-semibold text-white">Team Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+
+    <div id="guided-setup-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                <h3 class="text-lg font-semibold text-white">Guided Setup</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <div id="setup-step-indicator" class="flex justify-center items-center gap-4 mb-6"></div>
+                
+                <div id="setup-steps-container">
+                    <div class="setup-step" data-step="1">
+                        <h4 class="text-xl font-bold text-center mb-2">Welcome to the PCS Bonus Calculator!</h4>
+                        <p class="text-center text-brand-400 max-w-2xl mx-auto">This guided setup will help you configure the calculator for the first time. We'll set up your teams and review the default calculation settings. You can change these settings any time from the main menu.</p>
+                    </div>
+                    <div class="setup-step" data-step="2">
+                        <h4 class="text-xl font-bold mb-4">Step 1: Configure Your Teams</h4>
+                        <p class="text-brand-400 mb-4">Add your teams and assign Tech IDs to them. The default teams are provided as an example.</p>
+                        <div id="setup-team-list" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar p-2"></div>
+                        <button id="setup-add-team-btn" class="btn-secondary mt-4">Add New Team</button>
+                    </div>
+                    <div class="setup-step" data-step="3">
+                        <h4 class="text-xl font-bold mb-4">Step 2: Review Bonus Tiers</h4>
+                        <p class="text-brand-400 mb-4">These are the default bonus tiers based on quality percentage. You can adjust them now or later via "Advance Settings".</p>
+                        <div id="setup-bonus-tier-list" class="space-y-2 max-h-96 overflow-y-auto custom-scrollbar p-2">
+                            <div class="grid grid-cols-2 gap-4 font-semibold text-brand-400 pb-2 border-b border-brand-600">
+                                <span>Minimum Quality %</span>
+                                <span>Bonus Earned %</span>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="setup-step" data-step="4">
+                        <h4 class="text-xl font-bold text-center mb-2">Setup Complete!</h4>
+                        <p class="text-center text-brand-400 max-w-2xl mx-auto">You're all set! You can now start pasting data or loading projects to calculate bonuses. Remember, you can always revisit these settings from the "Manage Teams" and "Advance Settings" options in the main menu.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-brand-700 flex justify-end items-center gap-2">
+                <button id="setup-prev-btn" class="btn-secondary">Previous</button>
+                <button id="setup-next-btn" class="btn-primary">Next</button>
+                <button id="setup-finish-btn" class="btn-primary hidden">Finish</button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
     <script>
