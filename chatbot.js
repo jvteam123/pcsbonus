@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isOpen = false;
     let consecutiveMisses = 0;
     let currentTechIdContext = null;
-    let lastOfferedAction = null; // --- NEW: Add short-term memory for actions ---
+    let lastOfferedAction = null;
 
     // Toggle chatbot window
     chatbotBubble.addEventListener('click', () => {
@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
         getBotResponse(userMessage);
     }
 
-    // --- NEW: Central function to perform actions ---
     function performAction(type, value) {
         if (type === 'open_modal' && typeof window.UI !== 'undefined') {
             window.UI.openModal(value);
@@ -52,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Add a message to the chat window
-    function addMessage(sender, messageData, showNextActions = false) {
+    function addMessage(sender, messageData, nextActionContext = null) {
         const messageElement = document.createElement('div');
         messageElement.className = `chatbot-message ${sender}`;
         const bubble = document.createElement('div');
@@ -67,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (typeof messageData.action !== 'undefined') {
                 const action = messageData.action;
-                lastOfferedAction = action; // --- NEW: Remember the action ---
+                lastOfferedAction = action;
                 const actionButton = document.createElement('button');
                 actionButton.className = 'action-btn';
                 actionButton.textContent = action.label;
@@ -75,15 +74,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 actionButton.dataset.actionValue = action.value;
                 bubble.appendChild(actionButton);
             } else {
-                lastOfferedAction = null; // Clear memory if no action is offered
+                lastOfferedAction = null;
             }
         }
         
         messageElement.appendChild(bubble);
         chatbotMessages.appendChild(messageElement);
 
-        if (sender === 'bot' && showNextActions) {
-            const nextActionsMenu = getSuggestionMessage("What would you like to do next?");
+        if (sender === 'bot' && nextActionContext) {
+            const nextActionsMenu = getSuggestionMessage("What would you like to do next?", nextActionContext);
             setTimeout(() => {
                 const menuElement = document.createElement('div');
                 menuElement.className = 'chatbot-message bot';
@@ -97,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getTechStatSummary(techId) {
-        // ... (This function remains the same as the previous version)
         if (typeof AppState === 'undefined' || !AppState.currentTechStats || Object.keys(AppState.currentTechStats).length === 0) { return { error: "No calculation has been run yet. Please calculate a project first." }; }
         const techData = AppState.currentTechStats[techId];
         if (!techData) { return { error: `I couldn't find any results for Tech ID ${techId} in the current calculation.` }; }
@@ -113,46 +111,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Main Response Logic ---
     function getBotResponse(userMessage) {
         const lowerCaseMessage = userMessage.toLowerCase();
-        
-        // --- NEW: Check for affirmative response to a remembered action ---
         const affirmativeResponses = ['yes', 'yep', 'sure', 'ok', 'okay', 'do it', 'open it'];
-        if (lastOfferedAction && affirmativeResponses.includes(lowerCaseMessage)) {
-            performAction(lastOfferedAction.type, lastOfferedAction.value);
-            return;
-        }
+        if (lastOfferedAction && affirmativeResponses.includes(lowerCaseMessage)) { performAction(lastOfferedAction.type, lastOfferedAction.value); return; }
 
         const techIdRegex = /(\d{4}[A-Z]{2})/;
         const potentialIdMatch = lowerCaseMessage.toUpperCase().match(techIdRegex);
         if (potentialIdMatch) currentTechIdContext = potentialIdMatch[0];
 
-        // --- 1. Handle Quick Summary / Top Performer Questions ---
+        // --- 1. Quick Summary / Top Performer Questions ---
         const summaryKeywords = ["who", "top", "best", "most", "leader"];
         const isAskingForSummaryLeader = summaryKeywords.some(keyword => lowerCaseMessage.includes(keyword));
 
         if (isAskingForSummaryLeader) {
              if (typeof AppState === 'undefined' || !AppState.currentTechStats || Object.keys(AppState.currentTechStats).length === 0) {
-                addMessage('bot', "You need to run a calculation first before I can find the top performers.", true);
-                return;
+                addMessage('bot', "You need to run a calculation first before I can find the top performers.", 'general'); return;
             }
             const techArray = Object.values(AppState.currentTechStats);
-
             if (lowerCaseMessage.includes('point')) {
                 const topTech = techArray.reduce((top, tech) => !top || tech.points > top.points ? tech : top, null);
-                addMessage('bot', `The tech with the most points is <b>${topTech.id}</b> with <b>${topTech.points.toFixed(2)}</b> points.`, true);
-                return;
+                addMessage('bot', `The tech with the most points is <b>${topTech.id}</b> with <b>${topTech.points.toFixed(2)}</b> points.`, 'summary'); return;
             }
             if (lowerCaseMessage.includes('task')) {
                 const topTech = techArray.reduce((top, tech) => !top || tech.fixTasks > top.fixTasks ? tech : top, null);
-                addMessage('bot', `The tech with the most tasks is <b>${topTech.id}</b> with <b>${topTech.fixTasks}</b> tasks.`, true);
-                return;
+                addMessage('bot', `The tech with the most tasks is <b>${topTech.id}</b> with <b>${topTech.fixTasks}</b> tasks.`, 'summary'); return;
             }
             if (lowerCaseMessage.includes('refix')) {
                 const topTech = techArray.reduce((top, tech) => !top || tech.refixTasks > top.refixTasks ? tech : top, null);
-                if (topTech && topTech.refixTasks > 0) {
-                    addMessage('bot', `The tech with the most refixes is <b>${topTech.id}</b> with <b>${topTech.refixTasks}</b> refixes.`, true);
-                } else {
-                    addMessage('bot', "Good news! No one has any refixes in this calculation.", true);
-                }
+                if (topTech && topTech.refixTasks > 0) { addMessage('bot', `The tech with the most refixes is <b>${topTech.id}</b> with <b>${topTech.refixTasks}</b> refixes.`, 'summary'); }
+                else { addMessage('bot', "Good news! No one has any refixes in this calculation.", 'summary'); }
                 return;
             }
             if (lowerCaseMessage.includes('quality')) {
@@ -164,12 +150,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const maxQuality = Math.max(...techArrayWithQuality.map(t => t.quality), 0);
                 const topTechs = techArrayWithQuality.filter(t => t.quality === maxQuality);
                 const topTechIds = topTechs.map(t => `<b>${t.id}</b>`).join(', ');
-                addMessage('bot', `The tech(s) with the best quality are ${topTechIds} with <b>${maxQuality.toFixed(2)}%</b>.`, true);
-                return;
+                addMessage('bot', `The tech(s) with the best quality are ${topTechIds} with <b>${maxQuality.toFixed(2)}%</b>.`, 'summary'); return;
             }
         }
         
-        // --- 2. Handle Specific Tech Stat Questions (using context) ---
+        // --- 2. Specific Tech Stat Questions (using context) ---
         const metricKeywords = ['quality', 'point', 'task', 'refix', 'warning', 'payout', 'bonus', 'summary', 'all', 'everything', 'details'];
         const isAskingForSpecificStat = metricKeywords.some(keyword => lowerCaseMessage.includes(keyword));
 
@@ -177,24 +162,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentTechIdContext) {
                 const techId = currentTechIdContext;
                 const summary = getTechStatSummary(techId);
-                if (summary.error) { addMessage('bot', summary.error, true); return; }
+                if (summary.error) { addMessage('bot', summary.error, 'general'); return; }
 
                 if (lowerCaseMessage.includes('summary') || lowerCaseMessage.includes('all') || lowerCaseMessage.includes('everything') || lowerCaseMessage.includes('details')) {
                     const fullSummary = `Here is the full summary for <b>${techId}</b>:<br>- <b>Points:</b> ${summary.points}<br>- <b>Fix Tasks:</b> ${summary.fixTasks}<br>- <b>Refix Tasks:</b> ${summary.refixTasks}<br>- <b>Warnings:</b> ${summary.warnings}<br>- <b>Fix Quality:</b> ${summary.quality}<br>- <b>Bonus Earned:</b> ${summary.bonusEarned}<br>- <b>Est. Payout:</b> ${summary.payout}`;
-                    addMessage('bot', fullSummary, true); return;
+                    addMessage('bot', fullSummary, 'stats'); return;
                 }
                 const metrics = {'quality': `Tech ${techId} has a <b>Fix Quality of ${summary.quality}</b>.`, 'point': `Tech ${techId} has <b>${summary.points} points</b>.`, 'task': `Tech ${techId} completed <b>${summary.fixTasks} primary fix tasks</b>.`, 'refix': `Tech ${techId} has <b>${summary.refixTasks} refix tasks</b>.`, 'warning': `Tech ${techId} has <b>${summary.warnings} warnings</b>.`, 'payout': `The calculated <b>payout for ${techId} is ${summary.payout}</b>.`, 'bonus': `Tech ${techId} has a <b>Bonus Earned % of ${summary.bonusEarned}</b>.`};
                 for (const metric in metrics) {
-                    if (lowerCaseMessage.includes(metric)) { addMessage('bot', metrics[metric], true); return; }
+                    if (lowerCaseMessage.includes(metric)) { addMessage('bot', metrics[metric], 'stats'); return; }
                 }
-            } else { addMessage('bot', "Which Tech ID are you asking about? For example: 'What is the quality of 7249SS?'", true); return; }
+            } else { addMessage('bot', "Which Tech ID are you asking about? For example: 'What is the quality of 7249SS?'", 'general'); return; }
         }
 
-        // --- 3. Handle Tech Name Lookups ---
+        // --- 3. Tech Name Lookups ---
         if (potentialIdMatch) {
             const foundId = potentialIdMatch[0];
             if (techNameDatabase[foundId]) {
-                addMessage('bot', `Tech ID ${foundId} belongs to ${techNameDatabase[foundId]}.`, true);
+                addMessage('bot', `Tech ID ${foundId} belongs to ${techNameDatabase[foundId]}.`, 'stats');
                 consecutiveMisses = 0; return;
             }
         }
@@ -210,20 +195,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (bestMatch.score > 0) {
             consecutiveMisses = 0;
-            addMessage('bot', bestMatch, true);
+            addMessage('bot', bestMatch, 'general');
         } else {
             consecutiveMisses++;
             if (consecutiveMisses >= 3) {
                 consecutiveMisses = 0;
-                addMessage('bot', { answer: getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:") });
+                addMessage('bot', { answer: getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:", 'initial') });
             } else {
                 addMessage('bot', bestMatch.answer);
             }
         }
     }
 
-    function getSuggestionMessage(greeting) {
-        const suggestions = [ "Summary for 7249SS", "Who has the most points?", "How do I use the calculator?", "What is a QC Penalty?", "Open Team Manager", "Open Advance Settings" ];
+    function getSuggestionMessage(greeting, context = 'initial') {
+        let suggestions = [];
+        const techIdExample = currentTechIdContext || "7249SS";
+
+        switch (context) {
+            case 'stats':
+                suggestions = [`Summary for ${techIdExample}`, `What is the quality of ${techIdExample}?`, `Payout for ${techIdExample}`];
+                break;
+            case 'summary':
+                suggestions = ["Who has the best quality?", "Who has the most tasks?", "Summary for 7249SS"];
+                break;
+            case 'general':
+                suggestions = ["How do I use the calculator?", "What is a QC Penalty?", "Open Team Manager"];
+                break;
+            default: // 'initial'
+                suggestions = ["Summary for 7249SS", "Who has the most points?", "How do I use the calculator?", "What is a QC Penalty?", "Open Team Manager", "Open Advance Settings"];
+                break;
+        }
+        
         let suggestionHTML = `${greeting}<div class='suggestions-container'>`;
         suggestions.forEach(q => { suggestionHTML += `<button class='suggestion-btn'>${q}</button>`; });
         suggestionHTML += "</div>";
@@ -231,6 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Initial bot message with suggestions
-    const initialMessage = getSuggestionMessage("Hello! I am the PCS Calculator assistant. Here are some things you can ask:");
-    addMessage('bot', { answer: initialMessage });
+    const initialMessage = getSuggestionMessage("Hello! I am the PCS Calculator assistant. Here are some things you can ask:", 'initial');
+    addMessage('bot', { answer: initialMessage }, null);
 });
