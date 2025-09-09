@@ -6,6 +6,8 @@ const AppState = {
     guidedSetup: {
         currentStep: 1,
         totalSteps: 4,
+        tourStep: 0,
+        tourElements: []
     }
 };
 
@@ -408,7 +410,6 @@ const UI = {
         
         const qcPoints = tech.qcTasks * AppState.calculationSettings.points.qc;
         const i3qaPoints = tech.i3qaTasks * AppState.calculationSettings.points.i3qa;
-        // Simplified for RV points as there can be combo and non-combo
         const rvPoints = tech.pointsBreakdown.rv;
 
         const categoryBreakdownHTML = hasCategoryData ? `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4"><h4 class="font-semibold text-base text-white mb-2">Primary Fix Points</h4><div class="space-y-2">${summaryCategoryItems}<div class="summary-item summary-total">Total from Categories:<span class="font-mono">${totalCategoryPoints.toFixed(2)} pts</span></div></div></div>` : '';
@@ -846,7 +847,7 @@ const Handlers = {
             const req = indexedDB.deleteDatabase('BonusCalculatorDB');
             req.onsuccess = async () => {
                 alert("All data has been cleared. The application will now reset.");
-                localStorage.removeItem('theme'); // Also clear theme
+                localStorage.removeItem('theme');
                 window.location.reload();
             };
             req.onerror = () => alert("Error clearing data. Please close all other tabs with this application open and try again.");
@@ -867,27 +868,14 @@ const Handlers = {
         AppState.guidedSetup.currentStep = 1;
         this.updateGuidedSetupView();
         
-        // Populate teams
         const teamContainer = document.getElementById('setup-team-list');
         teamContainer.innerHTML = '';
         Object.entries(AppState.teamSettings).forEach(([teamName, techIds]) => UI.addTeamCard(teamName, techIds, 'setup-team-list'));
-
-        // Populate bonus tiers
-        const bonusContainer = document.getElementById('setup-bonus-tier-list');
-        // Clear old entries except header
-        bonusContainer.querySelectorAll('.tier-row-display').forEach(row => row.remove());
-        AppState.bonusTiers.forEach(tier => {
-            const row = document.createElement('div');
-            row.className = 'tier-row-display grid grid-cols-2 gap-4 items-center text-sm';
-            row.innerHTML = `<span>${tier.quality}%</span><span>${(tier.bonus * 100).toFixed(0)}%</span>`;
-            bonusContainer.appendChild(row);
-        });
 
         UI.openModal('guided-setup-modal');
     },
     updateGuidedSetupView() {
         const { currentStep, totalSteps } = AppState.guidedSetup;
-        // Update step indicators
         const indicatorContainer = document.getElementById('setup-step-indicator');
         indicatorContainer.innerHTML = '';
         for (let i = 1; i <= totalSteps; i++) {
@@ -899,17 +887,68 @@ const Handlers = {
             indicatorContainer.appendChild(item);
         }
         
-        // Show current step content
         document.querySelectorAll('.setup-step').forEach(step => step.classList.remove('active'));
         document.querySelector(`.setup-step[data-step="${currentStep}"]`).classList.add('active');
 
-        // Update button visibility
         document.getElementById('setup-prev-btn').classList.toggle('hidden', currentStep === 1);
         document.getElementById('setup-next-btn').classList.toggle('hidden', currentStep === totalSteps);
         document.getElementById('setup-finish-btn').classList.toggle('hidden', currentStep !== totalSteps);
+
+        // Special handling for interactive tour step
+        if (currentStep === 3) {
+            UI.closeModal('guided-setup-modal');
+            this.startInteractiveTour();
+        }
+    },
+    startInteractiveTour() {
+        AppState.guidedSetup.tourElements = [
+            { id: 'drop-zone', text: 'First, paste your raw data here, or drag and drop your shapefiles onto this area.' },
+            { id: 'bonusMultiplierDirect', text: 'Next, enter the bonus multiplier for this calculation.' },
+            { id: 'calculate-btn', text: 'Finally, click here to calculate the bonus payouts. The results will appear at the bottom of the page.' }
+        ];
+        AppState.guidedSetup.tourStep = 0;
+        this.runTourStep();
+    },
+    runTourStep() {
+        const { tourStep, tourElements } = AppState.guidedSetup;
+        this.clearSpotlight();
+        if (tourStep >= tourElements.length) {
+            AppState.guidedSetup.currentStep = 4; // Move to final step
+            this.updateGuidedSetupView();
+            UI.openModal('guided-setup-modal');
+            return;
+        }
+        const { id, text } = tourElements[tourStep];
+        const element = document.getElementById(id);
+        this.spotlightElement(element, text);
+    },
+    spotlightElement(element, text) {
+        const overlay = document.getElementById('spotlight-overlay');
+        overlay.classList.remove('hidden');
+        element.classList.add('spotlight');
+
+        const tooltip = document.createElement('div');
+        tooltip.id = 'spotlight-tooltip';
+        tooltip.className = 'spotlight-tooltip bottom';
+        tooltip.innerHTML = `${text}<div class="flex justify-end mt-4 gap-2"><button id="tour-next-btn" class="btn-primary">Next</button></div>`;
+        
+        document.body.appendChild(tooltip);
+        
+        const rect = element.getBoundingClientRect();
+        tooltip.style.left = `${rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2)}px`;
+        tooltip.style.top = `${rect.bottom + 10}px`;
+        
+        document.getElementById('tour-next-btn').onclick = () => {
+            AppState.guidedSetup.tourStep++;
+            this.runTourStep();
+        };
+    },
+    clearSpotlight() {
+        document.getElementById('spotlight-overlay').classList.add('hidden');
+        document.querySelector('.spotlight')?.classList.remove('spotlight');
+        document.getElementById('spotlight-tooltip')?.remove();
     },
     async finishGuidedSetup() {
-        // Save teams from setup
         await this.saveTeamSettings('setup-team-list');
         await DB.put('settings', { id: 'hasBeenSetup', value: true });
         UI.closeModal('guided-setup-modal');
@@ -927,7 +966,6 @@ const Handlers = {
         listen('bug-report-btn', 'click', () => window.open("https://teams.microsoft.com/l/chat/48:notes/conversations?context=%7B%22contextType%22%3A%22chat%22%7D", "_blank"));
         listen('clear-data-btn', 'click', this.clearAllData);
 
-        // Guided setup listeners
         listen('setup-next-btn', 'click', () => { AppState.guidedSetup.currentStep++; this.updateGuidedSetupView(); });
         listen('setup-prev-btn', 'click', () => { AppState.guidedSetup.currentStep--; this.updateGuidedSetupView(); });
         listen('setup-finish-btn', 'click', this.finishGuidedSetup.bind(this));
