@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let consecutiveMisses = 0;
     let currentTechIdContext = null;
     let lastOfferedAction = null;
-    let conversationHistory = []; // --- NEW: Track a history of questions ---
+    let conversationHistory = [];
 
     // Toggle chatbot window
     chatbotBubble.addEventListener('click', () => {
@@ -65,10 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sender === 'user') {
             bubble.textContent = messageData;
             chatbotInput.value = '';
-            // --- NEW: Add the user's question to the history ---
             conversationHistory.push(messageData.toLowerCase());
             if (conversationHistory.length > 5) {
-                conversationHistory.shift(); // Keep the history from growing too large
+                conversationHistory.shift();
             }
         } else {
             let messageText = typeof messageData === 'string' ? messageData : messageData.answer;
@@ -280,13 +279,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
         }
         
-        // --- NEW: Filter out any suggestions that are in the recent conversation history ---
         const filteredSuggestions = suggestions.filter(q => !conversationHistory.includes(q.toLowerCase()));
-        
         let suggestionHTML = `${greeting}<div class='suggestions-container'>`;
-        filteredSuggestions.forEach(q => {
-            suggestionHTML += `<button class='suggestion-btn'>${q}</button>`;
-        });
+        if (filteredSuggestions.length > 0) {
+            filteredSuggestions.forEach(q => {
+                suggestionHTML += `<button class='suggestion-btn'>${q}</button>`;
+            });
+        }
         suggestionHTML += "</div>";
         return suggestionHTML;
     }
