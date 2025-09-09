@@ -488,6 +488,93 @@ const UI = {
     },
     showLoading(button) { button.disabled = true; const loader = document.createElement('span'); loader.className = 'loader'; button.prepend(loader); },
     hideLoading(button) { button.disabled = false; button.querySelector('.loader')?.remove(); },
+    initDashboardLayout() {
+        const dashboard = document.getElementById('main-dashboard');
+        const savedLayout = localStorage.getItem('dashboardLayout');
+        if (savedLayout) {
+            const panelOrder = JSON.parse(savedLayout);
+            panelOrder.forEach(panelId => {
+                const panel = document.getElementById(panelId);
+                if(panel) dashboard.appendChild(panel);
+            });
+        }
+        new Sortable(dashboard, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            handle: '.panel-header',
+            onEnd: (evt) => {
+                const panelOrder = Array.from(dashboard.children).map(child => child.id);
+                localStorage.setItem('dashboardLayout', JSON.stringify(panelOrder));
+                Handlers.logAction("Dashboard layout changed.");
+            },
+        });
+    },
+    updateUserRoleDisplay() {
+        const display = document.getElementById('user-role-display');
+        display.textContent = AppState.currentUserRole;
+        display.className = `text-sm font-semibold px-3 py-1 rounded-full ${AppState.currentUserRole.toLowerCase()}`;
+        
+        const isAdmin = AppState.currentUserRole === 'Admin';
+        document.querySelectorAll('#advance-settings-btn, #manage-teams-btn, #clear-data-btn, #audit-log-btn, #backup-data-btn, #restore-data-btn').forEach(el => {
+            el.style.display = isAdmin ? 'block' : 'none';
+        });
+    },
+    populateProjectSettingsModal(project) {
+        const selector = document.getElementById('project-difficulty-selector');
+        selector.innerHTML = '';
+        const difficulty = project.difficulty || 0;
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElement('span');
+            star.className = 'star';
+            star.dataset.value = i;
+            star.innerHTML = i <= difficulty ? '&#9733;' : '&#9734;';
+            selector.appendChild(star);
+        }
+        document.getElementById('use-difficulty-multiplier').checked = project.useMultiplier || false;
+    },
+    populateRefixAnalysisModal() {
+        const container = document.getElementById('refix-analysis-body');
+        if (AppState.refixAnalysisData.length === 0) {
+            container.innerHTML = '<p class="text-brand-400">No refix data to analyze from the last calculation.</p>';
+            return;
+        }
+        const rows = AppState.refixAnalysisData.map(item => `
+            <tr>
+                <td class="p-2">${item.qcTech}</td>
+                <td class="p-2">${item.fixTech}</td>
+                <td class="p-2">${item.agreed ? 'Yes' : 'No'}</td>
+                <td class="p-2 font-mono">${item.reasonNote}</td>
+            </tr>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="table-container text-sm">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="p-2 text-left">QC Tech (Incorrect)</th>
+                            <th class="p-2 text-left">Fix Tech</th>
+                            <th class="p-2 text-left">Tech Agreed?</th>
+                            <th class="p-2 text-left">Reasoning Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+    },
+    populateAuditLogModal() {
+        const container = document.getElementById('audit-log-body');
+        if (AppState.auditLog.length === 0) {
+            container.innerHTML = '<p class="text-brand-400">The audit log is empty.</p>';
+            return;
+        }
+        container.innerHTML = AppState.auditLog.map(entry => `
+            <div class="audit-log-entry flex items-center">
+                <span class="audit-timestamp">${new Date(entry.timestamp).toLocaleString()}</span>
+                <span class="flex-grow">${entry.action}</span>
+            </div>
+        `).join('');
+    }
 };
 
 // --- CALCULATION MODULE ---
@@ -638,7 +725,7 @@ const Calculator = {
         });
         
         if (project.useMultiplier && project.difficulty > 0) {
-            const multiplier = 1 + (project.difficulty * 0.1); 
+            const multiplier = 1 + (project.difficulty * 0.1);
             Object.values(techStats).forEach(stat => {
                 stat.points *= multiplier;
             });
@@ -773,10 +860,11 @@ const Handlers = {
     },
     
     setupEventListeners() {
-        const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
+        const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler.bind(this));
+
         listen('refix-analysis-btn', 'click', () => { UI.populateRefixAnalysisModal(); UI.openModal('refix-analysis-modal'); });
         listen('audit-log-btn', 'click', () => { UI.populateAuditLogModal(); UI.openModal('audit-log-modal'); });
-        listen('backup-data-btn', 'click', this.backupData.bind(this));
+        listen('backup-data-btn', 'click', this.backupData);
         listen('restore-data-btn', 'click', () => document.getElementById('restore-file-input').click());
         listen('restore-file-input', 'change', (e) => this.restoreData(e.target.files[0]));
         listen('project-settings-btn', 'click', async () => {
@@ -830,10 +918,10 @@ const Handlers = {
         });
 
         listen('manage-teams-btn', 'click', () => { UI.populateAdminTeamManagement(); UI.openModal('manage-teams-modal'); });
-        listen('advance-settings-btn', 'click', () => { this.populateAdvanceSettingsEditor(); UI.openModal('advance-settings-modal'); });
+        listen('advance-settings-btn', 'click', this.populateAdvanceSettingsEditor);
         listen('toggle-theme-btn', 'click', () => { document.body.classList.toggle('light-theme'); localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark'); });
-        listen('save-advance-settings-btn', 'click', this.saveAdvanceSettings.bind(this));
-        listen('clear-data-btn', 'click', this.clearAllData.bind(this));
+        listen('save-advance-settings-btn', 'click', this.saveAdvanceSettings);
+        listen('clear-data-btn', 'click', this.clearAllData);
 
         document.body.addEventListener('click', e => {
             const techIcon = e.target.closest('.tech-summary-icon');
@@ -898,14 +986,15 @@ const Handlers = {
         listen('customize-calc-all-cb', 'change', e => {
             const selectEl = document.getElementById('project-select');
             const isChecked = e.target.checked;
-            selectEl.multiple = isChecked; selectEl.size = isChecked ? 6 : 1;
+            selectEl.multiple = isChecked;
+            selectEl.size = isChecked ? 6 : 1;
             document.getElementById('calculate-btn').disabled = isChecked;
         });
         listen('search-tech-id', 'input', UI.applyFilters.bind(UI));
         listen('team-filter-container', 'change', UI.applyFilters.bind(UI));
         listen('leaderboard-sort-select', 'change', () => UI.applyFilters());
         listen('add-team-btn', 'click', () => UI.addTeamCard());
-        listen('save-teams-btn', 'click', () => this.saveTeamSettings());
+        listen('save-teams-btn', 'click', this.saveTeamSettings);
         listen('drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.add('bg-brand-700'); });
         listen('drop-zone', 'dragleave', e => e.target.closest('#drop-zone').classList.remove('bg-brand-700'));
         listen('drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.remove('bg-brand-700'); this.handleDroppedFiles(e.dataTransfer.files); });
