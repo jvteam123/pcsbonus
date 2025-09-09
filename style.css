@@ -149,26 +149,13 @@ body.light-theme #advance-settings-modal #category-points-tbody tr:nth-child(eve
 .setup-step { display: none; }
 .setup-step.active { display: block; animation: fadeIn 0.5s; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.step-indicator-item { display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 9999px; border: 2px solid var(--border-color); color: var(--text-muted-color); font-weight: 600; transition: all 0.3s ease; }
+.step-indicator-item.active { border-color: var(--accent); background-color: var(--accent); color: #FFFFFF; }
+.step-indicator-item.completed { border-color: var(--status-green); background-color: var(--status-green); color: #FFFFFF; }
 
-.step-indicator-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 9999px;
-    border: 2px solid var(--border-color);
-    color: var(--text-muted-color);
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-.step-indicator-item.active {
-    border-color: var(--accent);
-    background-color: var(--accent);
-    color: #FFFFFF;
-}
-.step-indicator-item.completed {
-    border-color: var(--status-green);
-    background-color: var(--status-green);
-    color: #FFFFFF;
-}
+#spotlight-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.7); z-index: 9998; }
+.spotlight { box-shadow: 0 0 0 9999px rgba(0,0,0,0.7); z-index: 9999; position: relative; border-radius: 0.5rem; }
+.spotlight-tooltip { position: fixed; background-color: var(--panel-bg); color: var(--text-color); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); z-index: 10000; max-width: 300px; box-shadow: var(--shadow); }
+.spotlight-tooltip-arrow { position: absolute; width: 0; height: 0; border-style: solid; }
+.spotlight-tooltip.bottom .spotlight-tooltip-arrow { top: -10px; left: 50%; transform: translateX(-50%); border-width: 0 10px 10px 10px; border-color: transparent transparent var(--border-color) transparent; }
+.spotlight-tooltip.top .spotlight-tooltip-arrow { bottom: -10px; left: 50%; transform: translateX(-50%); border-width: 10px 10px 0 10px; border-color: var(--border-color) transparent transparent transparent; }
