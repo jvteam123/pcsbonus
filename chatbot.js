@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messageElement.className = `chatbot-message ${sender}`;
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        bubble.innerHTML = message; // Use innerHTML for bot messages with suggestions
+        bubble.innerHTML = message;
         
         if(sender === 'user') {
             bubble.textContent = message;
@@ -55,8 +55,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Get a response from the bot
     function getBotResponse(userMessage) {
+        const upperCaseMessage = userMessage.toUpperCase();
+        
+        // --- NEW: Tech ID Search Logic ---
+        // First, check if the message contains a potential Tech ID (e.g., "7236LE")
+        const techIdRegex = /\d{4}[A-Z]{2}/;
+        const potentialIdMatch = upperCaseMessage.match(techIdRegex);
+        
+        if (potentialIdMatch) {
+            const foundId = potentialIdMatch[0];
+            if (techNameDatabase[foundId]) {
+                const name = techNameDatabase[foundId];
+                addMessage('bot', `Tech ID ${foundId} belongs to ${name}.`);
+                consecutiveMisses = 0;
+                return; // Stop here if we found a name
+            }
+        }
+        
+        // --- Existing Keyword Search Logic ---
         const lowerCaseMessage = userMessage.toLowerCase();
-        let bestMatch = { score: 0, answer: "I'm sorry, I don't understand that. Can you ask in a different way?" };
+        let bestMatch = { score: 0, answer: "I'm sorry, I don't know the answer to that. Please try asking in a different way." };
 
         knowledgeBase.forEach(item => {
             let score = 0;
@@ -92,12 +110,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getSuggestionMessage(greeting) {
-        // A curated list of good example questions from the knowledge base
         const suggestions = [
             "How is quality calculated?",
             "What is a refix?",
             "How do I use the calculator?",
-            "What are the points for a QC task?",
+            "Who is 7236LE?",
             "Who is the developer?"
         ];
         
