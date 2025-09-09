@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatbotMessages = document.getElementById('chatbot-messages');
 
     let isOpen = false;
+    let consecutiveMisses = 0;
 
     // Toggle chatbot window
     chatbotBubble.addEventListener('click', () => {
@@ -12,21 +13,43 @@ document.addEventListener('DOMContentLoaded', () => {
         chatbotWindow.classList.toggle('hidden');
     });
 
-    // Handle user input
+    // Handle user input via Enter key
     chatbotInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && chatbotInput.value.trim() !== '') {
-            const userMessage = chatbotInput.value.trim();
-            addMessage('user', userMessage);
-            chatbotInput.value = '';
-            getBotResponse(userMessage);
+            handleUserInput();
         }
     });
+
+    // Handle user clicking on a suggestion
+    chatbotMessages.addEventListener('click', (e) => {
+        if (e.target.classList.contains('suggestion-btn')) {
+            const question = e.target.textContent;
+            addMessage('user', question);
+            getBotResponse(question);
+        }
+    });
+
+    function handleUserInput() {
+        const userMessage = chatbotInput.value.trim();
+        addMessage('user', userMessage);
+        chatbotInput.value = '';
+        getBotResponse(userMessage);
+    }
 
     // Add a message to the chat window
     function addMessage(sender, message) {
         const messageElement = document.createElement('div');
         messageElement.className = `chatbot-message ${sender}`;
-        messageElement.innerHTML = `<div class="message-bubble">${message}</div>`;
+        // Using textContent to prevent HTML injection from user input
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        bubble.innerHTML = message; // Use innerHTML only for bot messages with suggestions
+        
+        if(sender === 'user') {
+            bubble.textContent = message;
+        }
+
+        messageElement.appendChild(bubble);
         chatbotMessages.appendChild(messageElement);
         chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
     }
@@ -49,9 +72,43 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        let botResponse;
+
+        if (bestMatch.score > 0) {
+            consecutiveMisses = 0;
+            botResponse = bestMatch.answer;
+        } else {
+            consecutiveMisses++;
+            if (consecutiveMisses >= 3) {
+                consecutiveMisses = 0;
+                botResponse = getSuggestionMessage();
+            } else {
+                botResponse = bestMatch.answer;
+            }
+        }
+
         setTimeout(() => {
-            addMessage('bot', bestMatch.answer);
+            addMessage('bot', botResponse);
         }, 500);
+    }
+
+    function getSuggestionMessage() {
+        // A curated list of good example questions from the knowledge base
+        const suggestions = [
+            "How is quality calculated?",
+            "What is a refix?",
+            "How do I use the calculator?",
+            "What are the points for a QC task?",
+            "Can I combine projects?"
+        ];
+        
+        let suggestionHTML = "I'm having trouble understanding. Maybe you can try one of these questions:<div class='suggestions-container'>";
+        suggestions.forEach(q => {
+            suggestionHTML += `<button class='suggestion-btn'>${q}</button>`;
+        });
+        suggestionHTML += "</div>";
+        
+        return suggestionHTML;
     }
     
     // Initial bot message
