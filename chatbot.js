@@ -53,26 +53,71 @@ document.addEventListener('DOMContentLoaded', () => {
         chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
     }
 
-    // Get a response from the bot
+    // --- MAJOR UPGRADE TO THE RESPONSE LOGIC ---
     function getBotResponse(userMessage) {
-        const upperCaseMessage = userMessage.toUpperCase();
+        const lowerCaseMessage = userMessage.toLowerCase();
         
-        // --- Tech ID Search Logic ---
-        const techIdRegex = /\d{4}[A-Z]{2}/;
-        const potentialIdMatch = upperCaseMessage.match(techIdRegex);
-        
+        // --- 1. NEW: Check for questions about calculated stats ---
+        const techIdRegex = /(\d{4}[A-Z]{2})/;
+        const potentialIdMatch = lowerCaseMessage.toUpperCase().match(techIdRegex);
+
+        if (potentialIdMatch) {
+            const techId = potentialIdMatch[0];
+            
+            // Check if there are any results to query
+            if (typeof AppState === 'undefined' || !AppState.currentTechStats || Object.keys(AppState.currentTechStats).length === 0) {
+                addMessage('bot', "I can't answer that yet. Please run a calculation first, and then I can look up the results for you.");
+                return;
+            }
+
+            const techData = AppState.currentTechStats[techId];
+            if (!techData) {
+                addMessage('bot', `I couldn't find any results for Tech ID ${techId} in the current calculation.`);
+                return;
+            }
+
+            // Determine what metric the user is asking for
+            if (lowerCaseMessage.includes('quality')) {
+                const denominator = techData.fixTasks + techData.refixTasks + techData.warnings.length;
+                const quality = denominator > 0 ? (techData.fixTasks / denominator) * 100 : 0;
+                addMessage('bot', `Tech ${techId} has a <b>Fix Quality of ${quality.toFixed(2)}%</b>.`);
+                return;
+            }
+            if (lowerCaseMessage.includes('point')) {
+                addMessage('bot', `Tech ${techId} has <b>${techData.points.toFixed(3)} points</b>.`);
+                return;
+            }
+            if (lowerCaseMessage.includes('task')) {
+                addMessage('bot', `Tech ${techId} completed <b>${techData.fixTasks} primary fix tasks</b>.`);
+                return;
+            }
+            if (lowerCaseMessage.includes('refix')) {
+                addMessage('bot', `Tech ${techId} has <b>${techData.refixTasks} refix tasks</b>.`);
+                return;
+            }
+            if (lowerCaseMessage.includes('payout')) {
+                const bonusMultiplier = parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1;
+                const denominator = techData.fixTasks + techData.refixTasks + techData.warnings.length;
+                const quality = denominator > 0 ? (techData.fixTasks / denominator) * 100 : 0;
+                const qualityModifier = Calculator.calculateQualityModifier(quality);
+                const payout = techData.points * bonusMultiplier * qualityModifier;
+                addMessage('bot', `The calculated <b>payout for ${techId} is ${payout.toFixed(2)}</b> (based on the current bonus multiplier).`);
+                return;
+            }
+        }
+
+        // --- 2. Check for Tech Name questions (from previous update) ---
         if (potentialIdMatch) {
             const foundId = potentialIdMatch[0];
             if (techNameDatabase[foundId]) {
                 const name = techNameDatabase[foundId];
                 addMessage('bot', `Tech ID ${foundId} belongs to ${name}.`);
                 consecutiveMisses = 0;
-                return; 
+                return;
             }
         }
         
-        // --- Existing Keyword Search Logic ---
-        const lowerCaseMessage = userMessage.toLowerCase();
+        // --- 3. Fallback to General Knowledge Base ---
         let bestMatch = { score: 0, answer: "I'm sorry, I don't know the answer to that. Please try asking in a different way." };
 
         knowledgeBase.forEach(item => {
@@ -109,10 +154,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getSuggestionMessage(greeting) {
-        // --- SUGGESTION LIST WITH THE NEW ADDITION ---
         const suggestions = [
+            "What is the quality of 7249SS?",
             "How do I use the calculator?",
-            "How is quality calculated?",
             "What files can I drop here?",
             "Who is 7249SS?",
             "Can I combine multiple projects?",
