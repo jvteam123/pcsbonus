@@ -56,7 +56,6 @@ const CONSTANTS = {
     }
 };
 
-// --- DATABASE MODULE ---
 const DB = {
     async open() {
         return new Promise((resolve, reject) => {
@@ -104,7 +103,6 @@ const DB = {
     }
 };
 
-// --- UI MODULE ---
 const UI = {
     setPanelHeights() {
         const dataPanel = document.getElementById('data-projects-panel');
@@ -195,7 +193,7 @@ const UI = {
         const container = document.getElementById(targetContainerId);
         const card = document.createElement('div');
         card.className = 'team-card p-4 rounded-lg bg-brand-900/50 border border-brand-700';
-        card.innerHTML = `<div class="flex justify-between items-center mb-3"><input type="text" class="team-name-input input-field text-lg font-bold w-full" value="${teamName}" placeholder="Team Name"><button class="delete-team-btn control-btn-icon-danger ml-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1 -1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1 -1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0 -1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button></div><div class="team-tech-list mb-3"></div><div class="flex gap-2"><input type="text" class="add-tech-input input-field w-full" placeholder="Add Tech ID"><button class="add-tech-btn btn-secondary">Add</button></div>`;
+        card.innerHTML = `<div class="flex justify-between items-center mb-3"><input type="text" class="team-name-input input-field text-lg font-bold w-full" value="${teamName}" placeholder="Team Name"><button class="delete-team-btn control-btn-icon-danger ml-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button></div><div class="team-tech-list mb-3"></div><div class="flex gap-2"><input type="text" class="add-tech-input input-field w-full" placeholder="Add Tech ID"><button class="add-tech-btn btn-secondary">Add</button></div>`;
         container.appendChild(card);
         const techList = card.querySelector('.team-tech-list');
         techIds.forEach(id => this.addTechTag(techList, id));
@@ -487,7 +485,6 @@ const UI = {
     hideLoading(button) { button.disabled = false; button.querySelector('.loader')?.remove(); }
 };
 
-// --- CALCULATION MODULE ---
 const Calculator = {
     createNewTechStat(isCombined = false, projectName = null) {
         const categoryCounts = {};
@@ -620,7 +617,6 @@ const Calculator = {
     }
 };
 
-// --- EVENT HANDLERS AND HELPERS ---
 const Handlers = {
     async initializeApp() {
         await DB.open();
@@ -635,7 +631,7 @@ const Handlers = {
 
         UI.setPanelHeights();
         window.addEventListener('resize', UI.setPanelHeights);
-        window.UI = UI; // Expose UI module to the global scope for the chatbot
+        window.UI = UI; 
     },
     async loadBonusTiers() {
         const saved = await DB.get('bonusTiers', 'customTiers');
@@ -727,7 +723,6 @@ const Handlers = {
     async saveProjectToIndexedDB(projectData) {
         try {
             const compressed = pako.deflate(new TextEncoder().encode(projectData.rawData));
-            
             let binary = '';
             const len = compressed.byteLength;
             for (let i = 0; i < len; i++) {
@@ -864,7 +859,6 @@ const Handlers = {
             UI.showNotification("Settings have been reset to defaults.");
         }
     },
-    // --- Guided Setup Functions ---
     startGuidedSetup() {
         AppState.guidedSetup.currentStep = 1;
         this.updateGuidedSetupView();
@@ -895,7 +889,6 @@ const Handlers = {
         document.getElementById('setup-next-btn').classList.toggle('hidden', currentStep === totalSteps);
         document.getElementById('setup-finish-btn').classList.toggle('hidden', currentStep !== totalSteps);
 
-        // Special handling for interactive tour step
         if (currentStep === 3) {
             UI.closeModal('guided-setup-modal');
             this.startInteractiveTour();
@@ -914,7 +907,7 @@ const Handlers = {
         const { tourStep, tourElements } = AppState.guidedSetup;
         this.clearSpotlight();
         if (tourStep >= tourElements.length) {
-            AppState.guidedSetup.currentStep = 4; // Move to final step
+            AppState.guidedSetup.currentStep = 4;
             this.updateGuidedSetupView();
             UI.openModal('guided-setup-modal');
             return;
@@ -955,7 +948,6 @@ const Handlers = {
         UI.closeModal('guided-setup-modal');
         UI.showNotification("Setup complete. Welcome!");
     },
-    // --- End Guided Setup Functions ---
     setupEventListeners() {
         const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
         listen('guided-setup-btn', 'click', this.startGuidedSetup.bind(this));
