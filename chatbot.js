@@ -124,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function getBotResponse(userMessage) {
         const lowerCaseMessage = userMessage.toLowerCase();
         
+        // --- FIXED: Check for affirmative response to a remembered action FIRST ---
         const affirmativeResponses = ['yes', 'yep', 'sure', 'ok', 'okay', 'do it', 'open it'];
         if (lastOfferedAction && affirmativeResponses.includes(lowerCaseMessage)) {
             const actionToPerform = Array.isArray(lastOfferedAction) ? lastOfferedAction[0] : lastOfferedAction;
@@ -243,10 +244,9 @@ document.addEventListener('DOMContentLoaded', () => {
             consecutiveMisses++;
             if (consecutiveMisses >= 3) {
                 consecutiveMisses = 0;
-                // --- FIXED: Do not show follow-up suggestions for this message ---
                 addMessage('bot', { answer: getSuggestionMessage("I'm having trouble understanding. Maybe you can try one of these questions:", 'initial') }, null);
             } else {
-                addMessage('bot', bestMatch.answer, null); // Don't show suggestions on a simple "I don't know"
+                addMessage('bot', bestMatch.answer, null);
             }
         }
     }
