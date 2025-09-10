@@ -11,6 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://unpkg.com/shapefile@0.6.6/dist/shapefile.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     
    <link rel="stylesheet" href="style.css?v=1.1">
     <script>
@@ -21,343 +22,315 @@
                     colors: {
                         'brand-900': '#1F1D2B', 'brand-800': '#252836', 'brand-700': '#393C49',
                         'brand-600': '#4F5B6A', 'brand-400': '#ABBBC2', 'brand-300': '#FFFFFF',
-                        'accent': '#6C5ECF', 'accent-hover': '#584BAF', 'status-red': '#FF7CA3',
-                        'status-orange': '#FFB572', 'status-green': '#50D1AA',
+                        'accent': { 'DEFAULT': '#6C5ECF', 'hover': '#584BAF' },
+                        'status-red': '#FF7CA3', 'status-green': '#50D1AA', 'status-orange': '#FFB572',
+                        'status-yellow': '#FDC57B',
                     }
                 }
             }
         }
     </script>
-
 </head>
-<body class="dark-theme bg-brand-900 text-text-color font-[Poppins]">
-    <div id="loading-overlay" class="fixed inset-0 flex items-center justify-center bg-brand-900/90 z-[99] hidden">
-        <svg class="animate-spin h-10 w-10 text-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
+<body class="bg-brand-900 text-brand-300 font-sans antialiased">
+
+    <div id="spotlight-overlay" class="hidden"></div>
+
+    <div id="update-notification" class="hidden fixed top-5 right-5 bg-accent text-white py-2 px-4 rounded-lg shadow-lg z-50 transition-all duration-300">
+        Notification message.
     </div>
-    
-    <div class="p-6 md:p-10 flex flex-col md:flex-row gap-6 lg:gap-10 h-screen overflow-hidden">
-        <div class="bg-panel-bg p-4 md:p-6 rounded-2xl shadow-xl flex flex-col w-full md:w-auto h-full overflow-hidden">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calculator"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M8 6h8"/><path d="M8 10h8"/><path d="M12 14h4"/><path d="M12 18h4"/><path d="M8 18v-4"/></svg>
-                    </div>
+
+    <div class="w-full max-w-screen-2xl mx-auto p-4 md:p-6">
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-xl md:text-2xl font-bold text-white">PCS Bonus Calculator V2</h1>
+            <div class="relative" id="main-menu-container">
+                <button id="main-menu-btn" class="menu-btn" aria-label="Main Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                    <span>Menu</span>
+                </button>
+                <div id="main-menu-dropdown" class="absolute right-0 mt-2 w-56 bg-brand-800 border border-brand-700 rounded-md shadow-lg z-20 hidden">
+                    <a href="#" id="guided-setup-btn" class="dropdown-item">Guided Setup</a>
+                    <a href="#" id="manage-teams-btn" class="dropdown-item">Manage Teams</a>
+                    <a href="#" id="advance-settings-btn" class="dropdown-item">Advance Settings</a>
+                    <a href="#" id="toggle-theme-btn" class="dropdown-item">Toggle Theme</a>
+                    <div class="border-t border-brand-700 my-1"></div>
+                    <a href="#" id="important-info-btn" class="dropdown-item">Important Information</a>
+                    <a href="#" id="bug-report-btn" class="dropdown-item">Report a Bug</a>
+                    <div class="border-t border-brand-700 my-1"></div>
+                    <a href="#" id="clear-data-btn" class="dropdown-item text-red-400 hover:bg-red-500/20">Clear All Data</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
+            
+            <div id="data-projects-panel" class="dashboard-panel flex flex-col">
+                <div class="panel-header"><h2 class="panel-title">Data & Projects</h2></div>
+                <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
                     <div>
-                        <h1 class="text-xl md:text-2xl font-semibold text-text-color leading-tight">PCS Bonus Calc</h1>
-                        <p class="text-xs text-text-muted-color">v2.0 Beta</p>
+                        <div class="flex items-center gap-2">
+                            <select id="project-select" class="input-field w-full"><option value="">Select a project...</option></select>
+                            <span id="project-ir-badge" class="project-info-badge hidden"></span>
+                            <div id="project-loading-spinner" class="hidden"><div class="pulsing-spinner"></div></div>
+                            <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+                            <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
+                            <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
+                        </div>
                     </div>
-                </div>
-                <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg text-text-color hover:bg-brand-700 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-                </button>
-            </div>
-            <nav class="flex-grow">
-                <ul class="space-y-2">
-                    <li><a href="#data-projects" class="nav-link active" data-panel="data-projects"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-open"><path d="M6 14a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v3"/><path d="M22 13v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h.4"/><path d="M2 13h20"/></svg><span>Data & Projects</span></a></li>
-                    <li><a href="#leaderboard" class="nav-link" data-panel="leaderboard"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M12 17.25V22"/><path d="M5 22v-4.77L8.29 14M19 22v-4.77L15.71 14"/><path d="M12.83 2.17a2 2 0 0 0-1.66 0L10 2.5l-2 1.5V2l-1 1-1 3.5c3.33 1.5 6.67 1.5 10 0L16 6l-1-3.5-1 1.5v-1.5z"/></svg><span>Leaderboard</span></a></li>
-                    <li><a href="#summary" class="nav-link" data-panel="summary"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span>TL Summary</span></a></li>
-                </ul>
-            </nav>
-            <div class="mt-auto">
-                <div class="relative group">
-                    <button id="menu-btn" class="nav-link w-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-                        <span>Menu</span>
+                    <div id="drop-zone" class="drop-zone tour-step" data-tour-hint="Drag and drop your .zip file here. The calculator can import .dbf or .csv files contained within.">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+                        <p class="text-brand-400">Drag & Drop Project ZIP file here</p>
+                    </div>
+                    <div class="border-t border-brand-700 py-4">
+                        <label for="bonusMultiplierDirect" class="block text-sm font-medium text-brand-300 mb-2">Bonus Multiplier (Override)</label>
+                        <input type="number" id="bonusMultiplierDirect" value="1.0" min="0" step="0.01" class="input-field w-full">
+                    </div>
+                    <div class="p-4 border border-brand-700 rounded-lg flex items-center justify-between">
+                        <label for="customize-calc-all-cb" class="text-sm font-medium text-brand-300">
+                            Calculate All Projects
+                        </label>
+                        <input type="checkbox" id="customize-calc-all-cb" class="h-4 w-4 text-accent rounded bg-brand-700 border-brand-600 focus:ring-accent">
+                    </div>
+                    <button id="calculate-btn" class="btn-primary w-full tour-step" data-tour-hint="Click here to run the calculation for the selected project.">
+                        Calculate Project
                     </button>
-                    <div id="menu-dropdown" class="absolute bottom-full left-0 mb-2 w-full bg-panel-bg border border-border-color rounded-xl shadow-xl z-20 hidden overflow-hidden">
-                        <ul class="py-2">
-                            <li><a href="#" id="guided-setup-btn" class="block px-4 py-2 text-sm text-text-color hover:bg-brand-700 transition-colors duration-200">Guided Setup</a></li>
-                            <li><a href="#" id="manage-teams-btn" class="block px-4 py-2 text-sm text-text-color hover:bg-brand-700 transition-colors duration-200">Manage Teams</a></li>
-                            <li><a href="#" id="advanced-settings-btn" class="block px-4 py-2 text-sm text-text-color hover:bg-brand-700 transition-colors duration-200">Advanced Settings</a></li>
-                            <li><a href="#" id="clear-data-btn" class="block px-4 py-2 text-sm text-status-red hover:bg-brand-700 transition-colors duration-200">Clear All Data</a></li>
-                            <li><a href="https://teams.microsoft.com/l/chat/0/0?users=renzku.c@example.com&topicName=PCS%20Bonus%20Calc%20V2%20Feedback" target="_blank" class="block px-4 py-2 text-sm text-text-color hover:bg-brand-700 transition-colors duration-200">Report a Bug</a></li>
-                            <li><a href="#" id="export-projects-btn" class="block px-4 py-2 text-sm text-text-color hover:bg-brand-700 transition-colors duration-200">Export Projects</a></li>
-                            <li><a href="#" id="import-projects-btn" class="block px-4 py-2 text-sm text-text-color hover:bg-brand-700 transition-colors duration-200">Import Projects</a></li>
-                        </ul>
-                    </div>
+                    <button id="merge-projects-btn" class="btn-secondary w-full hidden" data-tour-hint="Click to combine the selected projects into a single report.">
+                        Merge Selected Projects
+                    </button>
                 </div>
-                <button id="theme-toggle" class="nav-link w-full mt-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon-star"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/><path d="M20.45 20.45 18.2 18.2"/><path d="M6.61 6.61 4.36 4.36"/><path d="M13.5 2.5l-.75 2.5-.75-2.5-.75-2.5.75-2.5.75 2.5.75 2.5z"/></svg>
-                    <span>Toggle Theme</span>
-                </button>
             </div>
-        </div>
 
-        <main class="flex-grow flex flex-col gap-6 md:gap-10 h-full overflow-hidden">
-            <div id="content-area" class="flex-grow overflow-hidden flex flex-col">
-                <div id="data-projects-panel" class="h-full w-full overflow-hidden flex flex-col relative panel-content">
-                    <div class="flex-grow flex flex-col gap-6 md:flex-row md:items-start overflow-hidden">
-                        <div class="bg-panel-bg p-4 md:p-6 rounded-2xl shadow-xl w-full md:w-2/3 h-full flex flex-col overflow-hidden">
-                            <h2 class="text-xl md:text-2xl font-semibold mb-4 text-text-color">Data & Projects</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                                <div class="bg-summary-item-bg p-4 rounded-xl flex flex-col items-center">
-                                    <span class="text-xs text-text-muted-color">Total Projects</span>
-                                    <span id="total-projects" class="text-2xl font-bold text-summary-total-text">0</span>
-                                </div>
-                                <div class="bg-summary-item-bg p-4 rounded-xl flex flex-col items-center">
-                                    <span class="text-xs text-text-muted-color">Total Techs</span>
-                                    <span id="total-techs" class="text-2xl font-bold text-summary-total-text">0</span>
-                                </div>
-                                <div class="bg-summary-item-bg p-4 rounded-xl flex flex-col items-center">
-                                    <span class="text-xs text-text-muted-color">Total Tasks</span>
-                                    <span id="total-tasks" class="text-2xl font-bold text-summary-total-text">0</span>
-                                </div>
-                            </div>
-                            <div id="drop-zone" class="border-2 border-dashed border-border-color rounded-xl p-6 text-center text-text-muted-color mb-4 transition-colors duration-200 cursor-pointer">
-                                Drag & drop your `combined_all.csv` file here, or click to upload
-                                <input type="file" id="file-input" class="hidden" accept=".csv">
-                            </div>
-                            <div class="text-center text-sm text-text-muted-color mb-4">
-                                <span class="font-bold text-text-color">Pro-Tip:</span> you can also drag and drop `.shp` + `.dbf` files to upload them automatically.
-                            </div>
-                            <div class="flex-grow overflow-y-auto custom-scrollbar">
-                                <div class="flex items-center justify-between sticky top-0 bg-panel-bg py-2 z-10">
-                                    <h3 class="font-semibold text-lg text-text-color">Projects List</h3>
-                                    <div class="flex items-center gap-2">
-                                        <label for="customize-calc-all-cb" class="text-sm text-text-muted-color">Specific Projects</label>
-                                        <input type="checkbox" id="customize-calc-all-cb" class="form-checkbox h-4 w-4 rounded-md text-accent focus:ring-accent-hover bg-brand-700 border-border-color">
-                                    </div>
-                                </div>
-                                <select id="project-select" multiple size="1" class="w-full mt-2 bg-brand-900 border border-border-color rounded-md p-2 text-sm text-text-color custom-scrollbar focus:ring-accent focus:border-accent">
-                                    </select>
+            <div id="leaderboard-panel" class="dashboard-panel hidden lg:flex flex-col">
+                <div class="panel-header flex items-center justify-between">
+                    <h2 class="panel-title">Leaderboard</h2>
+                    <select id="leaderboard-sort-select" class="input-field w-auto text-sm py-1">
+                        <option value="points">Points</option>
+                        <option value="fixTasks">Tasks</option>
+                        <option value="payout">Payout</option>
+                    </select>
+                </div>
+                <div class="p-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
+                    <div class="table-container">
+                        <table id="leaderboard-table" class="min-w-full hidden">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Tech ID</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-tbody"></tbody>
+                        </table>
+                        <div id="leaderboard-placeholder" class="text-center p-4">
+                            <p class="text-brand-400 text-sm">Calculate a project to view the leaderboard.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lg:col-span-2 space-y-6 lg:order-last">
+                <div id="quick-summary-section" class="dashboard-panel hidden">
+                    <div class="panel-header"><h2 class="panel-title">Quick Summary</h2></div>
+                    <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4" id="quick-summary-container"></div>
+                </div>
+
+                <div id="bonus-payout-section" class="dashboard-panel flex flex-col tour-step" data-tour-hint="Your calculation results will appear here. You can sort by different columns and search for specific techs.">
+                    <div class="panel-header flex items-center justify-between">
+                        <h2 class="panel-title">Bonus Payout</h2>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="search-tech-id" class="input-field w-24 md:w-36 text-sm py-1" placeholder="Search Tech ID">
+                            <div id="team-filter-container" class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-brand-300">Filter by Team:</span>
+                                <button id="refresh-teams-btn" title="Refresh Teams" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
                             </div>
                         </div>
-                        <div class="bg-panel-bg p-4 md:p-6 rounded-2xl shadow-xl w-full md:w-1/3 flex flex-col gap-4 overflow-y-auto">
-                            <h2 class="text-xl md:text-2xl font-semibold text-text-color">Calculation</h2>
-                            <div class="space-y-4">
-                                <div>
-                                    <label for="bonusMultiplierDirect" class="block text-sm font-medium text-text-muted-color">Bonus Multiplier</label>
-                                    <input type="number" id="bonusMultiplierDirect" value="1" step="0.1" class="mt-1 block w-full bg-input-bg border-border-color rounded-md shadow-sm p-2 text-text-color focus:ring-accent focus:border-accent sm:text-sm">
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label for="payoutType" class="text-sm font-medium text-text-muted-color">Payout Type</label>
-                                    <select id="payoutType" class="bg-input-bg border-border-color rounded-md shadow-sm p-2 text-text-color focus:ring-accent focus:border-accent sm:text-sm">
-                                        <option value="per_task">Per Task</option>
-                                        <option value="per_point">Per Point</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button id="calculate-btn" class="w-full bg-accent text-white py-3 rounded-xl font-semibold shadow-md hover:bg-accent-hover transition-colors duration-200">
-                                Calculate
-                            </button>
-                            <div id="results-area" class="overflow-y-auto custom-scrollbar flex-grow">
-                                <h3 class="font-semibold text-lg text-text-color mb-2">Results</h3>
-                                <div id="results-table-container">
-                                    </div>
-                            </div>
+                    </div>
+                    <div class="p-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
+                        <div class="table-container">
+                            <table class="min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable-header" data-sort="id">Tech ID</th>
+                                        <th class="sortable-header" data-sort="points">Points</th>
+                                        <th class="sortable-header" data-sort="fixTasks">Fix</th>
+                                        <th class="sortable-header" data-sort="refixTasks">Refix</th>
+                                        <th class="sortable-header" data-sort="quality">Quality</th>
+                                        <th class="sortable-header" data-sort="bonusEarned">Bonus</th>
+                                        <th class="sortable-header" data-sort="payout">Payout</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tech-results-tbody">
+                                    <tr><td class="text-center text-brand-400" colspan="8">Calculate a project to see results.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <div id="leaderboard-panel" class="h-full w-full overflow-hidden flex flex-col relative panel-content hidden">
-                    <div class="bg-panel-bg p-4 md:p-6 rounded-2xl shadow-xl h-full flex flex-col overflow-hidden">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl md:text-2xl font-semibold text-text-color">Leaderboard</h2>
-                            <div class="flex gap-2 items-center">
-                                <span class="text-text-muted-color text-sm">Sort By:</span>
-                                <select id="leaderboard-sort-select" class="bg-input-bg border-border-color rounded-md p-2 text-text-color text-sm">
-                                    <option value="payout_desc">Payout (High to Low)</option>
-                                    <option value="payout_asc">Payout (Low to High)</option>
-                                    <option value="points_desc">Points (High to Low)</option>
-                                    <option value="points_asc">Points (Low to High)</option>
-                                    <option value="quality_desc">Quality (High to Low)</option>
-                                    <option value="quality_asc">Quality (Low to High)</option>
-                                    <option value="fixTasks_desc">Fix Tasks (High to Low)</option>
-                                    <option value="fixTasks_asc">Fix Tasks (Low to High)</option>
-                                    <option value="warnings_desc">Warnings (High to Low)</option>
-                                    <option value="warnings_asc">Warnings (Low to High)</option>
-                                </select>
-                            </div>
+                <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col">
+                    <div class="panel-header"><h2 class="panel-title">TL Summary</h2></div>
+                    <div class="p-4 space-y-4 flex flex-col min-h-0">
+                        <div><h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3><div id="team-quality-container" class="space-y-2"></div></div>
+                        <div class="border-t border-brand-700 pt-4 mt-4 flex flex-col min-h-0 flex-grow">
+                            <h3 class="text-lg font-semibold text-white mb-2 flex-shrink-0">Workload Per Team</h3>
+                            <div class="flex-grow overflow-y-auto custom-scrollbar" id="team-workload-container"></div>
                         </div>
-                        <div class="overflow-y-auto custom-scrollbar flex-grow">
-                            <div class="min-w-full">
-                                <table class="w-full text-sm text-left text-text-color">
-                                    <thead class="text-xs text-text-muted-color uppercase bg-brand-800 sticky top-0">
-                                        <tr>
-                                            <th scope="col" class="py-3 px-2">Rank</th>
-                                            <th scope="col" class="py-3 px-2">Tech ID</th>
-                                            <th scope="col" class="py-3 px-2">Points</th>
-                                            <th scope="col" class="py-3 px-2">Quality</th>
-                                            <th scope="col" class="py-3 px-2">Fix Tasks</th>
-                                            <th scope="col" class="py-3 px-2">Refix Tasks</th>
-                                            <th scope="col" class="py-3 px-2">Warnings</th>
-                                            <th scope="col" class="py-3 px-2">Est. Payout</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="leaderboard-table-body" class="divide-y divide-border-color">
-                                        </tbody>
-                                </table>
-                            </div>
+                        <div class="border-t border-brand-700 pt-4 mt-4 flex flex-col min-h-0 flex-grow">
+                             <h3 class="text-lg font-semibold text-white mb-2 flex-shrink-0">Fix4 Breakdown</h3>
+                            <div class="flex-grow overflow-y-auto custom-scrollbar" id="tl-fix4-breakdown"></div>
                         </div>
-                    </div>
-                </div>
-
-                <div id="summary-panel" class="h-full w-full overflow-hidden flex flex-col relative panel-content hidden">
-                    <div class="bg-panel-bg p-4 md:p-6 rounded-2xl shadow-xl h-full flex flex-col overflow-hidden">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl md:text-2xl font-semibold text-text-color">TL Summary</h2>
-                            <div class="relative w-64">
-                                <input type="text" id="search-tech-id" placeholder="Search by Tech ID..." class="w-full bg-input-bg border-border-color rounded-md p-2 text-sm text-text-color focus:ring-accent focus:border-accent">
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-text-muted-color" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div id="tech-summary-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto custom-scrollbar flex-grow">
-                            </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="guided-setup-modal" class="modal hidden">
-        <div class="modal-content w-full max-w-lg">
+    <div id="guided-setup-modal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Guided Setup</h3>
-                <button class="modal-close-btn">&times;</button>
+                <button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
             </div>
-            <div class="modal-body p-6">
-                <div id="setup-step-1" class="setup-step" data-step="1">
-                    <p class="text-sm text-text-muted-color mb-4">Welcome to the PCS Bonus Calculator! This guide will walk you through the basic steps to get started.</p>
-                    <p class="text-sm text-text-muted-color mb-4">You can drop your combined `csv` file or `shp` and `dbf` files in the Data & Projects panel to upload your data.</p>
+            <div class="modal-body">
+                <div class="setup-step" data-step="1">
+                    <h4 class="text-xl font-bold mb-4">Step 1: Set Up Your Teams</h4>
+                    <p class="text-brand-400 mb-4">Add your team names and tech IDs to enable team-based filtering and summaries on the dashboard.</p>
+                    <div id="setup-team-list-container" class="space-y-4"></div>
+                    <button id="setup-add-team-btn" class="btn-secondary mt-4">Add New Team</button>
+                    <div class="border-t border-brand-700 my-4"></div>
+                    <button id="setup-save-teams-btn" class="btn-primary w-full">Save Teams</button>
                 </div>
-                <div id="setup-step-2" class="setup-step hidden" data-step="2">
-                    <p class="text-sm text-text-muted-color mb-4">Once your project is loaded, you can customize your Bonus Multiplier and Payout Type. The default is 'Per Task' with a multiplier of 1.</p>
-                    <p class="text-sm text-text-muted-color mb-4">Ready to calculate? Click the "Calculate" button below the settings.</p>
-                </div>
-                <div id="setup-step-3" class="setup-step hidden" data-step="3">
-                    <p class="text-sm text-text-muted-color mb-4">The results are now displayed in the "Results" section. You can see a quick summary of each tech's points and estimated payout.</p>
-                    <p class="text-sm text-text-muted-color mb-4">To see the full details, go to the Leaderboard or TL Summary panels using the menu on the left.</p>
-                </div>
-                <div id="setup-step-4" class="setup-step hidden" data-step="4">
-                    <p class="text-sm text-text-muted-color mb-4 font-semibold">That's it! You are ready to start calculating.</p>
-                    <p class="text-xs text-text-muted-color">For more advanced features, check out Manage Teams and Advanced Settings in the main menu.</p>
-                </div>
-                <div class="flex justify-between mt-6">
-                    <button id="setup-prev-btn" class="bg-brand-700 text-text-color py-2 px-4 rounded-xl text-sm hover:bg-brand-600 transition-colors duration-200" disabled>Previous</button>
-                    <button id="setup-next-btn" class="bg-accent text-white py-2 px-4 rounded-xl text-sm hover:bg-accent-hover transition-colors duration-200">Next</button>
-                </div>
+            </div>
+            <div class="modal-footer justify-end">
+                <button id="setup-start-tour-btn" class="btn-secondary mr-2">Start Tour</button>
+                <button id="setup-next-step-btn" class="btn-primary" disabled>Next Step</button>
             </div>
         </div>
     </div>
     
-    <div id="teams-modal" class="modal hidden">
-        <div class="modal-content w-full max-w-3xl">
+    <div id="teams-admin-modal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Manage Teams</h3>
-                <button class="modal-close-btn">&times;</button>
+                <button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
             </div>
-            <div class="modal-body p-6 flex flex-col h-[70vh] overflow-hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <button id="add-team-btn" class="bg-accent text-white py-2 px-4 rounded-xl text-sm hover:bg-accent-hover transition-colors duration-200 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="16" x2="22" y1="11" y2="11"/></svg>
-                        Add New Team
-                    </button>
-                    <div class="flex gap-2">
-                        <button id="refresh-teams-btn" class="bg-brand-700 text-text-color py-2 px-4 rounded-xl text-sm hover:bg-brand-600 transition-colors duration-200 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw"><path d="M3 12a9 9 0 1 0 9-9.5V3"/><path d="M3 3l.7 2.7.3.3"/></svg>
-                            Reset to Default
-                        </button>
-                        <button id="save-teams-btn" class="bg-accent text-white py-2 px-4 rounded-xl text-sm hover:bg-accent-hover transition-colors duration-200 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                            Save Changes
-                        </button>
-                    </div>
-                </div>
-                <div id="teams-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto custom-scrollbar flex-grow">
-                    </div>
+            <div class="modal-body">
+                <div id="team-list-container" class="space-y-4"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="add-team-btn" class="btn-secondary">Add New Team</button>
+                <button id="save-teams-btn" class="btn-primary">Save Changes</button>
             </div>
         </div>
     </div>
 
-    <div id="settings-modal" class="modal hidden">
-        <div class="modal-content w-full max-w-xl">
+    <div id="settings-modal" class="modal">
+        <div class="modal-content w-full max-w-4xl">
             <div class="modal-header">
                 <h3 class="modal-title">Advanced Settings</h3>
-                <button class="modal-close-btn">&times;</button>
+                <button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
             </div>
-            <div class="modal-body p-6 flex flex-col gap-4">
-                <div>
-                    <h4 class="text-lg font-semibold text-text-color mb-2">Points Configuration</h4>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="pointPerFix" class="block text-sm font-medium text-text-muted-color">Points per Fix Task</label>
-                            <input type="number" id="pointPerFix" class="mt-1 block w-full bg-input-bg border-border-color rounded-md shadow-sm p-2 text-text-color focus:ring-accent focus:border-accent sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="pointPerRefix" class="block text-sm font-medium text-text-muted-color">Points per Refix</label>
-                            <input type="number" id="pointPerRefix" class="mt-1 block w-full bg-input-bg border-border-color rounded-md shadow-sm p-2 text-text-color focus:ring-accent focus:border-accent sm:text-sm">
+            <div class="modal-body flex-grow overflow-y-auto custom-scrollbar">
+                <div class="flex mb-4 border-b border-brand-700">
+                    <button class="tab-btn active" data-tab="calculation">Calculation Settings</button>
+                    <button class="tab-btn" data-tab="tiers">Bonus Tiers</button>
+                </div>
+                <div id="calculation-tab-content" class="tab-content active space-y-4">
+                    <div class="p-4 rounded-lg bg-brand-900/50 border border-brand-700">
+                         <h4 class="text-base font-semibold text-white mb-3">IR Modifier</h4>
+                        <label for="ir-modifier-input" class="block text-sm font-medium text-brand-300 mb-2">Modifier Value</label>
+                        <input type="number" id="ir-modifier-input" value="1.5" step="0.01" class="input-field w-full">
+                    </div>
+                    <div class="p-4 rounded-lg bg-brand-900/50 border border-brand-700">
+                        <h4 class="text-base font-semibold text-white mb-3">Points Per Task Type</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">QC</label><input type="number" class="input-field w-full points-input" data-type="qc" step="0.001"></div>
+                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">I3QA</label><input type="number" class="input-field w-full points-input" data-type="i3qa" step="0.001"></div>
+                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">RV1</label><input type="number" class="input-field w-full points-input" data-type="rv1" step="0.001"></div>
+                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">RV1 Combo</label><input type="number" class="input-field w-full points-input" data-type="rv1_combo" step="0.001"></div>
+                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">RV2</label><input type="number" class="input-field w-full points-input" data-type="rv2" step="0.001"></div>
                         </div>
                     </div>
+                    <div class="p-4 rounded-lg bg-brand-900/50 border border-brand-700">
+                        <h4 class="text-base font-semibold text-white mb-3">Category Values</h4>
+                        <table class="min-w-full text-sm">
+                            <thead><tr><th>Category</th><th>3in</th><th>4in</th><th>6in</th><th>9in</th></tr></thead>
+                            <tbody id="category-values-tbody"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="text-lg font-semibold text-text-color mb-2">Bonus Tiers</h4>
-                    <div id="bonus-tiers-container" class="space-y-4">
-                        </div>
-                    <button id="add-tier-btn" class="mt-4 w-full bg-brand-700 text-text-color py-2 rounded-xl text-sm hover:bg-brand-600 transition-colors duration-200">Add Bonus Tier</button>
+                <div id="tiers-tab-content" class="tab-content hidden space-y-4">
+                    <div id="bonus-tiers-table-container">
+                        <table class="min-w-full text-sm">
+                            <thead><tr><th>Quality %</th><th>Bonus Multiplier</th></tr></thead>
+                            <tbody id="bonus-tiers-tbody"></tbody>
+                        </table>
+                    </div>
+                    <button id="add-bonus-tier-btn" class="btn-secondary w-full">Add Tier</button>
                 </div>
-                <div>
-                    <h4 class="text-lg font-semibold text-text-color mb-2">GSD Mapping</h4>
-                    <label for="gsdMapping" class="block text-sm font-medium text-text-muted-color">GSD to Points Mapping</label>
-                    <select id="gsdMapping" class="mt-1 block w-full bg-input-bg border-border-color rounded-md shadow-sm p-2 text-text-color focus:ring-accent focus:border-accent sm:text-sm">
-                        </select>
-                </div>
-                <div class="flex justify-between items-center mt-4">
-                    <button id="reset-settings-btn" class="bg-brand-700 text-text-color py-2 px-4 rounded-xl text-sm hover:bg-brand-600 transition-colors duration-200">Reset to Default</button>
-                    <button id="save-settings-btn" class="bg-accent text-white py-2 px-4 rounded-xl text-sm hover:bg-accent-hover transition-colors duration-200">Save Changes</button>
-                </div>
+            </div>
+            <div class="modal-footer justify-end">
+                <button id="save-calculation-settings-btn" class="btn-primary">Save Changes</button>
+                <button id="save-bonus-tiers-btn" class="btn-primary hidden">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="important-info-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 class="modal-title">Important Information</h3><button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div>
+            <div class="modal-body">
+                <p class="text-brand-400">This tool is a proof-of-concept for the new PCS Bonus System. It is designed to assist with personal bonus estimation. The features and calculations are based on information and formulas provided internally.</p>
+                <div class="border-t border-brand-700 my-4"></div>
+                <h4 class="text-lg font-semibold text-white mb-2">Key Features:</h4>
+                <ul class="list-disc list-inside text-brand-400 space-y-2">
+                    <li>Supports parsing of standard PCS project files (.dbf and .csv).</li>
+                    <li>Automatic bonus calculation based on quality tiers.</li>
+                    <li>User-configurable bonus tiers and calculation values.</li>
+                    <li>Team management for filtering and summaries.</li>
+                </ul>
+                <div class="border-t border-brand-700 my-4"></div>
+                <h4 class="text-lg font-semibold text-white mb-2">Disclaimers:</h4>
+                <p class="text-brand-400">This is an estimated calculation for informational purposes only. It is not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p>
+            </div>
+            <div class="modal-footer text-right">
+                <button class="modal-close-btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tech-summary-modal" class="modal">
+        <div class="modal-content w-full max-w-3xl">
+            <div class="modal-header">
+                <h3 class="modal-title">Tech Summary</h3>
+                <button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+            </div>
+            <div class="modal-body modal-content-container p-0"></div>
+            <div class="modal-footer justify-end">
+                <button class="modal-close-btn btn-secondary">Close</button>
             </div>
         </div>
     </div>
 
     <div id="chatbot-container" class="fixed bottom-5 right-5 z-50">
-        <div id="chatbot-bubble" class="w-16 h-16 bg-accent rounded-full flex items-center justify-center cursor-pointer shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="white" viewBox="0 0 16 16">
-                <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15Z"/>
-            </svg>
+    <div id="chatbot-bubble" class="w-16 h-16 bg-accent rounded-full flex items-center justify-center cursor-pointer shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="white" viewBox="0 0 16 16">
+            <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15zm0-1c3.719 0 6.643-2.504 7-5.421a.5.5 0 0 1 1 .5c-.068.746-.188 1.546-.382 2.274-.298 1.18-.846 2.155-1.588 2.875A8.995 8.995 0 0 1 8 14z"/>
+        </svg>
+    </div>
+    <div id="chatbot-window" class="hidden fixed bottom-24 right-5 w-80 h-96 bg-brand-800 border border-brand-700 rounded-lg shadow-xl flex flex-col z-40">
+        <div class="bg-brand-700 text-white font-bold p-3 rounded-t-lg">PCS Assistant</div>
+        <div id="chatbot-messages" class="flex-grow overflow-y-auto p-3 custom-scrollbar"></div>
+        <div class="p-3 border-t border-brand-700 flex">
+            <input type="text" id="chatbot-input" placeholder="Ask a question..." class="input-field flex-grow mr-2">
+            <button id="chatbot-send-btn" class="btn-primary px-3 py-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.5.5 0 0 1-.921.073l-2.618-4.225L2.832 9.43a.5.5 0 0 1-.028-.028L.146 6.166a.5.5 0 0 1 .54-.11L15.854.146zM8.146 4.981 12.56 1.542 12.331 6.007c-.131 1.488-.951 2.859-2.227 3.659L7.481 12.384 8.146 4.981z"/></svg></button>
         </div>
-        <div id="chatbot-window" class="hidden absolute bottom-20 right-0 w-80 h-96 bg-panel-bg rounded-2xl shadow-xl flex flex-col overflow-hidden transition-all duration-300">
-            <div class="p-4 bg-brand-700 text-white font-semibold flex items-center justify-between">
-                <span>PCS Chatbot</span>
-                <button id="chatbot-close-btn" class="text-white hover:text-gray-200 transition-colors duration-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                </button>
-            </div>
-            <div id="chatbot-messages" class="flex-grow p-4 overflow-y-auto custom-scrollbar space-y-4 text-sm">
-                </div>
-            <div class="p-4 border-t border-border-color">
-                <input type="text" id="chatbot-input" placeholder="Ask a question..." class="w-full bg-input-bg rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent text-text-color">
-            </div>
-        </div>
+    </div>
     </div>
     
-    <div id="update-modal" class="modal fixed inset-0 flex items-center justify-center z-[99] hidden">
-        <div class="modal-content w-full max-w-lg text-center p-8">
-            <div class="modal-header justify-center mb-6">
-                <h3 class="modal-title text-2xl font-bold">New Update Available!</h3>
-            </div>
-            <div class="modal-body">
-                <p class="text-text-color mb-4">Version 2.1 introduces new chatbot features and core application improvements.</p>
-                <p class="text-text-muted-color mb-6 text-sm">To get the best experience, we recommend resetting your settings to the new defaults.</p>
-                <div class="flex flex-col sm:flex-row justify-center gap-4">
-                    <button id="update-reset-btn" class="w-full sm:w-auto bg-accent text-white py-3 px-6 rounded-xl font-semibold hover:bg-accent-hover transition-colors duration-200">
-                        Reset Settings & Update
-                    </button>
-                    <button id="update-dismiss-btn" class="w-full sm:w-auto bg-brand-700 text-text-color py-3 px-6 rounded-xl font-semibold hover:bg-brand-600 transition-colors duration-200">
-                        No Thanks
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <script src="script.js?v=1.1"></script>
+    <script src="chatbot-knowledge-base.js?v=1.1"></script>
+    <script src="chatbot.js?v=1.1"></script>
 
-    <script src="script.js"></script>
-    <script src="chatbot-knowledge-base.js"></script>
-    <script src="chatbot.js"></script>
 </body>
 </html>
