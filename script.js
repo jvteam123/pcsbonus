@@ -1086,4 +1086,4 @@ const Handlers = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', Handlers.initializeApp);
+document.addEventListener('DOMContentLoaded', Handlers.initializeApp.bind(Handlers));
