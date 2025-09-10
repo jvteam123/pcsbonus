@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const question = target.textContent;
             addMessage('user', question);
             getBotResponse(question);
+            chatbotInput.value = ''; // Clear input field after click
         }
         if (target.classList.contains('action-btn')) {
             const actionType = target.dataset.actionType;
@@ -73,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let messageText = typeof messageData === 'string' ? messageData : messageData.answer;
             bubble.innerHTML = messageText;
 
+            // Check for and display a single action button
             if (typeof messageData.action !== 'undefined') {
                 const action = messageData.action;
                 lastOfferedAction = action;
@@ -89,25 +91,28 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 lastOfferedAction = null;
             }
+
+            // Check for and display follow-up suggestions
+            if (messageData.followUp && Array.isArray(messageData.followUp)) {
+                const followUpContainer = document.createElement('div');
+                followUpContainer.className = 'suggestions-container';
+                messageData.followUp.forEach(followUpText => {
+                    const followUpButton = document.createElement('button');
+                    followUpButton.className = 'suggestion-btn';
+                    followUpButton.textContent = followUpText;
+                    followUpContainer.appendChild(followUpButton);
+                });
+                bubble.appendChild(followUpContainer);
+            }
         }
         
         messageElement.appendChild(bubble);
         chatbotMessages.appendChild(messageElement);
-
-        if (sender === 'bot' && nextActionContext && conversationDepth < 2) {
-            const nextActionsMenu = getSuggestionMessage("What would you like to do next?", nextActionContext);
-            setTimeout(() => {
-                const menuElement = document.createElement('div');
-                menuElement.className = 'chatbot-message bot';
-                menuElement.innerHTML = `<div class="message-bubble">${nextActionsMenu}</div>`;
-                chatbotMessages.appendChild(menuElement);
-                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-            }, 700);
-        }
         
         chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
     }
-
+    
+    // The rest of your chatbot.js code remains the same as before
     function getTechStatSummary(techId) {
         if (typeof AppState === 'undefined' || !AppState.currentTechStats || Object.keys(AppState.currentTechStats).length === 0) {
             return { error: "no_calculation" };
