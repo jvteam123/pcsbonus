@@ -19,7 +19,7 @@ const CONSTANTS = {
         "Team 123": ["7244AA", "7240HH", "7247JA", "4232JD", "4475JT", "4472JS", "4426KV", "7236LE", "7039NO", "7231NR", "7249SS", "7314VP"],
         "Team 63": ["7089RR", "7102JD", "7161KA", "7159MC", "7168JS", "7158JD", "7167AD", "7040JP", "7178MD", "7092RN", "7170WS"],
         "Team 115": ["4297RQ", "7086LP", "7087LA", "7088MA", "7099SS", "7171AL", "7166CR", "7311JT", "7174MC", "7173ES", "7090JA", "7175JP", "7165GR", "7176CC", "7044AM", "7095KA", "7042NB", "4474HS", "7234CS", "4421AT", "4477PT", "7245SC", "7246AJ", "7247JA", "7251JD", "7241DM", "7248AA", "7233JP", "4435AC", "4135RC", "7242FV", "7315CR", "2274JD", "7243JC"],
-        "Team 111": ["4488MD", "7037HP", "4489EA", "7091HA", "7103RE", "7179KB", "7043RP", "7093MG", "7084LQ", "7036RB", "4481JV", "7240HH", "4478JV", "7316NT", "7096AV", "7092RN", "7310DR", "4476JR", "7239EO", "4492CP", "7099SS", "7237ML", "4475JT", "7231NR", "7313MB"]
+        "Team 111": ["4488MD", "7037HP", "4489EA", "7091HA", "7103RE", "7043RP", "7093MG", "7084LQ", "7036RB", "4481JV", "7240HH", "4478JV", "7316NT", "7096AV", "7092RN", "7310DR", "4476JR", "7239EO", "4492CP", "7099SS", "7237ML", "4475JT", "7231NR", "7313MB"]
     },
     DEFAULT_BONUS_TIERS: [
         { min: 90, max: 100, multiplier: 1.5, display: "90% - 100%" },
@@ -51,7 +51,7 @@ const CONSTANTS = {
 // --- IndexedDB ---
 const DB = {
     name: 'BonusCalculatorDB',
-    version: 1,
+    version: 4, // Updated version to resolve the error
     stores: ['appState'],
     async open() {
         return new Promise((resolve, reject) => {
@@ -203,14 +203,14 @@ const UI = {
     applyFilters() {
         const searchTerm = document.getElementById('search-tech-id')?.value.toLowerCase();
         const teamFilter = document.querySelector('input[name="team-filter"]:checked')?.value;
-        
+
         const allCards = this.elements.summaryGrid.querySelectorAll('[data-tech-id]');
         allCards.forEach(card => {
             const techId = card.dataset.techId.toLowerCase();
             const team = this.findTechTeam(techId.toUpperCase());
             const matchesSearch = techId.includes(searchTerm);
             const matchesTeam = teamFilter === 'all' || team === teamFilter;
-            
+
             card.classList.toggle('hidden', !(matchesSearch && matchesTeam));
         });
 
@@ -274,19 +274,19 @@ const UI = {
         const totalProjects = AppState.calculationSettings.techData ? Object.keys(AppState.calculationSettings.techData).length : 0;
         const allTechs = new Set();
         const allTasks = new Set();
-    
+
         if (AppState.calculationSettings.techData) {
             Object.values(AppState.calculationSettings.techData).forEach(project => {
                 Object.keys(project.techStats).forEach(techId => allTechs.add(techId));
                 Object.values(project.techStats).forEach(tech => allTasks.add(tech.fixTasks));
             });
         }
-        
+
         document.getElementById('total-projects').textContent = totalProjects;
         document.getElementById('total-techs').textContent = allTechs.size;
         document.getElementById('total-tasks').textContent = Array.from(allTasks).reduce((acc, tasks) => acc + tasks, 0);
     },
-    
+
     // UI Helpers
     showNotification(message, type = 'success') {
         const notification = document.createElement('div');
@@ -330,7 +330,7 @@ const Calculator = {
     calculateQualityModifier(tech) {
         const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
         const quality = denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0;
-        
+
         let bonusMultiplier = 1;
         for (const tier of AppState.bonusTiers) {
             if (quality >= tier.min && quality <= tier.max) {
@@ -452,7 +452,7 @@ async function runCalculation(isCustom = false, idsToRun = []) {
             });
         }
     });
-    
+
     // Calculate payout
     Object.values(combinedTechStats).forEach(tech => {
         const qualityModifier = Calculator.calculateQualityModifier(tech);
@@ -549,7 +549,7 @@ function saveSettings() {
     AppState.calculationSettings.bonusMultiplierDirect = parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1;
     AppState.calculationSettings.countingSettings.pointPerFix = parseFloat(document.getElementById('pointPerFix').value) || 1;
     AppState.calculationSettings.countingSettings.pointPerRefix = parseFloat(document.getElementById('pointPerRefix').value) || 0;
-    
+
     const tierInputs = document.querySelectorAll('.bonus-tier-item');
     AppState.bonusTiers = [];
     tierInputs.forEach(item => {
@@ -607,7 +607,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     UI.updateTotalsDisplay();
     UI.applyFilters();
     handleUpdateNotification();
-    
+
     // Panel navigation
     UI.elements.navLinks.forEach(link => {
         link.addEventListener('click', e => {
@@ -704,7 +704,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     listen('drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.add('bg-brand-700'); });
     listen('drop-zone', 'dragleave', e => e.target.closest('#drop-zone').classList.remove('bg-brand-700'));
     listen('drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.remove('bg-brand-700'); handleFile(e.dataTransfer.files[0]); });
-    
+
     // Modal close logic
     document.querySelectorAll('.modal-close-btn').forEach(button => {
         button.addEventListener('click', () => {
