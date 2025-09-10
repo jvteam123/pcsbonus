@@ -11,7 +11,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://unpkg.com/shapefile@0.6.6/dist/shapefile.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     
    <link rel="stylesheet" href="style.css?v=1.1">
     <script>
@@ -75,262 +74,154 @@
                             <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
                             <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
                         </div>
+                        <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
+                            <textarea id="techData" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <input type="text" id="project-name" class="input-field" placeholder="Project Name">
+                            <div class="flex items-center gap-2"><input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="is-ir-project-checkbox" class="text-sm font-medium text-accent">IR Project</label></div>
+                            <select id="gsd-value-select" class="input-field text-sm"><option value="3in">3in GSD</option><option value="4in">4in GSD</option><option value="6in">6in GSD</option><option value="9in">9in GSD</option></select>
+                            <div class="flex items-center gap-2"><button id="save-project-btn" class="btn-primary w-full">Save Project</button><button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel</button></div>
+                        </div>
                     </div>
-                    <div id="drop-zone" class="drop-zone tour-step" data-tour-hint="Drag and drop your .zip file here. The calculator can import .dbf or .csv files contained within.">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
-                        <p class="text-brand-400">Drag & Drop Project ZIP file here</p>
-                    </div>
-                    <div class="border-t border-brand-700 py-4">
-                        <label for="bonusMultiplierDirect" class="block text-sm font-medium text-brand-300 mb-2">Bonus Multiplier (Override)</label>
-                        <input type="number" id="bonusMultiplierDirect" value="1.0" min="0" step="0.01" class="input-field w-full">
-                    </div>
-                    <div class="p-4 border border-brand-700 rounded-lg flex items-center justify-between">
-                        <label for="customize-calc-all-cb" class="text-sm font-medium text-brand-300">
-                            Calculate All Projects
-                        </label>
-                        <input type="checkbox" id="customize-calc-all-cb" class="h-4 w-4 text-accent rounded bg-brand-700 border-brand-600 focus:ring-accent">
-                    </div>
-                    <button id="calculate-btn" class="btn-primary w-full tour-step" data-tour-hint="Click here to run the calculation for the selected project.">
-                        Calculate Project
-                    </button>
-                    <button id="merge-projects-btn" class="btn-secondary w-full hidden" data-tour-hint="Click to combine the selected projects into a single report.">
-                        Merge Selected Projects
-                    </button>
-                </div>
-            </div>
-
-            <div id="leaderboard-panel" class="dashboard-panel hidden lg:flex flex-col">
-                <div class="panel-header flex items-center justify-between">
-                    <h2 class="panel-title">Leaderboard</h2>
-                    <select id="leaderboard-sort-select" class="input-field w-auto text-sm py-1">
-                        <option value="points">Points</option>
-                        <option value="fixTasks">Tasks</option>
-                        <option value="payout">Payout</option>
-                    </select>
-                </div>
-                <div class="p-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
-                    <div class="table-container">
-                        <table id="leaderboard-table" class="min-w-full hidden">
-                            <thead>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Tech ID</th>
-                                    <th>Score</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaderboard-tbody"></tbody>
-                        </table>
-                        <div id="leaderboard-placeholder" class="text-center p-4">
-                            <p class="text-brand-400 text-sm">Calculate a project to view the leaderboard.</p>
+                    
+                    <div class="border-t border-brand-700 pt-4 mt-4 space-y-4">
+                        <input type="number" id="bonusMultiplierDirect" class="input-field w-full" placeholder="Bonus Multiplier (e.g., 9)">
+                        <div class="space-y-3">
+                            <button id="calculate-btn" class="btn-primary w-full text-base">Calculate</button>
+                            <div class="flex items-center"><input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="customize-calc-all-cb" class="ml-2 text-sm">Calculate Specific Projects</label></div>
+                            <button id="calculate-all-btn" class="btn-primary w-full">Calculate All / Specific</button>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="lg:col-span-2 space-y-6 lg:order-last">
-                <div id="quick-summary-section" class="dashboard-panel hidden">
-                    <div class="panel-header"><h2 class="panel-title">Quick Summary</h2></div>
-                    <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4" id="quick-summary-container"></div>
-                </div>
-
-                <div id="bonus-payout-section" class="dashboard-panel flex flex-col tour-step" data-tour-hint="Your calculation results will appear here. You can sort by different columns and search for specific techs.">
-                    <div class="panel-header flex items-center justify-between">
-                        <h2 class="panel-title">Bonus Payout</h2>
-                        <div class="flex items-center space-x-2">
-                            <input type="text" id="search-tech-id" class="input-field w-24 md:w-36 text-sm py-1" placeholder="Search Tech ID">
-                            <div id="team-filter-container" class="flex items-center gap-2">
-                                <span class="text-sm font-medium text-brand-300">Filter by Team:</span>
-                                <button id="refresh-teams-btn" title="Refresh Teams" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
-                            </div>
-                        </div>
+            <div id="leaderboard-panel" class="dashboard-panel flex flex-col">
+                <div class="panel-header"><h2 class="panel-title">Leaderboard</h2></div>
+                <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-white sr-only">Leaderboard</h3>
+                        <select id="leaderboard-sort-select" class="input-field text-xs py-1 w-full"><option value="fixQuality">Sort by: Quality</option><option value="totalPoints">Sort by: Points</option><option value="fixTasks">Sort by: Tasks</option></select>
                     </div>
-                    <div class="p-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
-                        <div class="table-container">
-                            <table class="min-w-full">
-                                <thead>
-                                    <tr>
-                                        <th class="sortable-header" data-sort="id">Tech ID</th>
-                                        <th class="sortable-header" data-sort="points">Points</th>
-                                        <th class="sortable-header" data-sort="fixTasks">Fix</th>
-                                        <th class="sortable-header" data-sort="refixTasks">Refix</th>
-                                        <th class="sortable-header" data-sort="quality">Quality</th>
-                                        <th class="sortable-header" data-sort="bonusEarned">Bonus</th>
-                                        <th class="sortable-header" data-sort="payout">Payout</th>
-                                        <th>Details</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tech-results-tbody">
-                                    <tr><td class="text-center text-brand-400" colspan="8">Calculate a project to see results.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="table-container text-sm"><table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr><th class="p-2 text-left">Rank</th><th class="p-2 text-left">Tech</th><th id="leaderboard-metric-header" class="p-2 text-left">Value</th></tr></thead><tbody id="leaderboard-body"><tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr></tbody></table></div>
                 </div>
+            </div>
 
-                <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col">
-                    <div class="panel-header"><h2 class="panel-title">TL Summary</h2></div>
-                    <div class="p-4 space-y-4 flex flex-col min-h-0">
-                        <div><h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3><div id="team-quality-container" class="space-y-2"></div></div>
-                        <div class="border-t border-brand-700 pt-4 mt-4 flex flex-col min-h-0 flex-grow">
-                            <h3 class="text-lg font-semibold text-white mb-2 flex-shrink-0">Workload Per Team</h3>
-                            <div class="flex-grow overflow-y-auto custom-scrollbar" id="team-workload-container"></div>
-                        </div>
-                        <div class="border-t border-brand-700 pt-4 mt-4 flex flex-col min-h-0 flex-grow">
-                             <h3 class="text-lg font-semibold text-white mb-2 flex-shrink-0">Fix4 Breakdown</h3>
-                            <div class="flex-grow overflow-y-auto custom-scrollbar" id="tl-fix4-breakdown"></div>
-                        </div>
+            <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col">
+                <div class="panel-header"><h2 class="panel-title">TL Summary</h2></div>
+                <div class="p-4 space-y-4 flex flex-col min-h-0">
+                    <div><h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3><div id="team-quality-container" class="space-y-2"></div></div>
+                    <div class="border-t border-brand-700 pt-4 mt-4 flex flex-col min-h-0 flex-grow">
+                        <h3 class="text-lg font-semibold text-white mb-2 flex-shrink-0">Fix4 Breakdown</h3>
+                        <div id="fix4-breakdown-container" class="space-y-4 overflow-y-auto custom-scrollbar flex-grow"></div>
                     </div>
                 </div>
             </div>
         </main>
-    </div>
+        
+        <section id="quick-summary-section" class="mt-6 dashboard-panel hidden">
+            <div class="panel-header"><h2 class="panel-title">Quick Summary</h2></div>
+            <div id="quick-summary-container" class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        </section>
 
-    <div id="guided-setup-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Guided Setup</h3>
-                <button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
-            </div>
-            <div class="modal-body">
-                <div class="setup-step" data-step="1">
-                    <h4 class="text-xl font-bold mb-4">Step 1: Set Up Your Teams</h4>
-                    <p class="text-brand-400 mb-4">Add your team names and tech IDs to enable team-based filtering and summaries on the dashboard.</p>
-                    <div id="setup-team-list-container" class="space-y-4"></div>
-                    <button id="setup-add-team-btn" class="btn-secondary mt-4">Add New Team</button>
-                    <div class="border-t border-brand-700 my-4"></div>
-                    <button id="setup-save-teams-btn" class="btn-primary w-full">Save Teams</button>
+        <section id="bonus-payout-section" class="mt-6 dashboard-panel hidden">
+            <div class="panel-header"><h2 id="results-title" class="panel-title">Bonus Payouts</h2></div>
+            <div class="p-4 space-y-4 panel-content-flex">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <input type="text" id="search-tech-id" class="input-field w-full md:w-1/3" placeholder="Search Tech ID...">
+                    <div id="team-filter-container" class="flex flex-wrap gap-x-4 gap-y-2 items-center"><span class="text-sm font-medium text-brand-300">Filter by Team:</span><button id="refresh-teams-btn" title="Refresh Team List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button></div>
+                </div>
+                <div class="table-container max-h-[500px] custom-scrollbar border border-brand-700 rounded-md">
+                    <table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr>
+                        <th class="p-2 text-left sortable-header" data-sort="id">Tech ID</th>
+                        <th class="p-2 text-left sortable-header" data-sort="points">Points</th>
+                        <th class="p-2 text-left sortable-header" data-sort="fixTasks">Tasks</th>
+                        <th class="p-2 text-left sortable-header" data-sort="refixTasks">Refix</th>
+                        <th class="p-2 text-left sortable-header" data-sort="quality">Quality</th>
+                        <th class="p-2 text-left sortable-header" data-sort="bonusEarned">Bonus Earned %</th>
+                        <th class="p-2 text-left sortable-header" data-sort="payout">Payout</th>
+                        <th class="p-2 text-center">Details</th>
+                    </tr></thead><tbody id="tech-results-tbody"></tbody></table>
                 </div>
             </div>
-            <div class="modal-footer justify-end">
-                <button id="setup-start-tour-btn" class="btn-secondary mr-2">Start Tour</button>
-                <button id="setup-next-step-btn" class="btn-primary" disabled>Next Step</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="teams-admin-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Manage Teams</h3>
-                <button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
-            </div>
-            <div class="modal-body">
-                <div id="team-list-container" class="space-y-4"></div>
-            </div>
-            <div class="modal-footer">
-                <button id="add-team-btn" class="btn-secondary">Add New Team</button>
-                <button id="save-teams-btn" class="btn-primary">Save Changes</button>
-            </div>
-        </div>
+        </section>
     </div>
 
-    <div id="settings-modal" class="modal">
-        <div class="modal-content w-full max-w-4xl">
-            <div class="modal-header">
-                <h3 class="modal-title">Advanced Settings</h3>
-                <button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
-            </div>
-            <div class="modal-body flex-grow overflow-y-auto custom-scrollbar">
-                <div class="flex mb-4 border-b border-brand-700">
-                    <button class="tab-btn active" data-tab="calculation">Calculation Settings</button>
-                    <button class="tab-btn" data-tab="tiers">Bonus Tiers</button>
-                </div>
-                <div id="calculation-tab-content" class="tab-content active space-y-4">
-                    <div class="p-4 rounded-lg bg-brand-900/50 border border-brand-700">
-                         <h4 class="text-base font-semibold text-white mb-3">IR Modifier</h4>
-                        <label for="ir-modifier-input" class="block text-sm font-medium text-brand-300 mb-2">Modifier Value</label>
-                        <input type="number" id="ir-modifier-input" value="1.5" step="0.01" class="input-field w-full">
-                    </div>
-                    <div class="p-4 rounded-lg bg-brand-900/50 border border-brand-700">
-                        <h4 class="text-base font-semibold text-white mb-3">Points Per Task Type</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">QC</label><input type="number" class="input-field w-full points-input" data-type="qc" step="0.001"></div>
-                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">I3QA</label><input type="number" class="input-field w-full points-input" data-type="i3qa" step="0.001"></div>
-                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">RV1</label><input type="number" class="input-field w-full points-input" data-type="rv1" step="0.001"></div>
-                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">RV1 Combo</label><input type="number" class="input-field w-full points-input" data-type="rv1_combo" step="0.001"></div>
-                            <div class="space-y-2"><label class="block text-sm font-medium text-brand-300">RV2</label><input type="number" class="input-field w-full points-input" data-type="rv2" step="0.001"></div>
-                        </div>
-                    </div>
-                    <div class="p-4 rounded-lg bg-brand-900/50 border border-brand-700">
-                        <h4 class="text-base font-semibold text-white mb-3">Category Values</h4>
-                        <table class="min-w-full text-sm">
-                            <thead><tr><th>Category</th><th>3in</th><th>4in</th><th>6in</th><th>9in</th></tr></thead>
-                            <tbody id="category-values-tbody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="tiers-tab-content" class="tab-content hidden space-y-4">
-                    <div id="bonus-tiers-table-container">
-                        <table class="min-w-full text-sm">
-                            <thead><tr><th>Quality %</th><th>Bonus Multiplier</th></tr></thead>
-                            <tbody id="bonus-tiers-tbody"></tbody>
-                        </table>
-                    </div>
-                    <button id="add-bonus-tier-btn" class="btn-secondary w-full">Add Tier</button>
-                </div>
-            </div>
-            <div class="modal-footer justify-end">
-                <button id="save-calculation-settings-btn" class="btn-primary">Save Changes</button>
-                <button id="save-bonus-tiers-btn" class="btn-primary hidden">Save Changes</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="important-info-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header"><h3 class="modal-title">Important Information</h3><button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div>
-            <div class="modal-body">
-                <p class="text-brand-400">This tool is a proof-of-concept for the new PCS Bonus System. It is designed to assist with personal bonus estimation. The features and calculations are based on information and formulas provided internally.</p>
-                <div class="border-t border-brand-700 my-4"></div>
-                <h4 class="text-lg font-semibold text-white mb-2">Key Features:</h4>
-                <ul class="list-disc list-inside text-brand-400 space-y-2">
-                    <li>Supports parsing of standard PCS project files (.dbf and .csv).</li>
-                    <li>Automatic bonus calculation based on quality tiers.</li>
-                    <li>User-configurable bonus tiers and calculation values.</li>
-                    <li>Team management for filtering and summaries.</li>
-                </ul>
-                <div class="border-t border-brand-700 my-4"></div>
-                <h4 class="text-lg font-semibold text-white mb-2">Disclaimers:</h4>
-                <p class="text-brand-400">This is an estimated calculation for informational purposes only. It is not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p>
-            </div>
-            <div class="modal-footer text-right">
-                <button class="modal-close-btn btn-secondary">Close</button>
-            </div>
-        </div>
-    </div>
+    <div id="merge-fixpoints-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Merge Partials FP</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar"><div id="merge-drop-zone" class="p-10 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors"><p class="text-brand-400">Drag & drop shapefiles (.shp, .dbf) here</p></div><div id="merge-file-list" class="mt-4 text-sm"></div><div id="merge-options" class="hidden mt-4 space-y-3"><input type="text" id="merge-project-name" class="input-field w-full" placeholder="Enter Project Name"><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4"><div class="flex items-center"><input id="merge-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="merge-is-ir-checkbox" class="ml-2 block text-sm font-medium text-accent whitespace-nowrap">IR Project</label></div><div class="flex items-center w-full"><label for="merge-gsd-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label><select id="merge-gsd-select" class="input-field w-full text-sm py-1"><option value="3in">3in</option><option value="4in">4in</option><option value="6in">6in</option><option value="9in">9in</option></select></div></div></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="merge-save-btn" class="btn-primary" disabled>Save Project</button></div></div></div>
+    <div id="manage-teams-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Manage Teams</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-list-container" class="p-6 overflow-y-auto custom-scrollbar space-y-4"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button id="add-team-btn" class="btn-secondary">Add New Team</button><div class="space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-teams-btn" class="btn-primary">Save Changes</button></div></div></div></div>
+    <div id="advance-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Advance Settings</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="advance-settings-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button id="reset-defaults-btn" class="btn-secondary">Reset Defaults</button><div class="space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-advance-settings-btn" class="btn-primary">Save Changes</button></div></div></div></div>
+    <div id="important-info-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Important Information</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar space-y-4" id="important-info-body"><div class="info-section"><h4 class="info-title">Calculation Logic</h4><p class="info-text">This calculator is based on the formulas and tables provided in the "Phili IC Fixpoints App Documentation v1.0." The logic employed in all calculations is designed to be transparent and accurate according to this official documentation.</p></div><div class="info-section"><h4 class="info-title">Disclaimer and Intended Use</h4><p class="info-text">This tool is intended for personal and informational purposes only. The results generated are estimates and should be used as a general guideline. These figures are not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+    <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="tech-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+    <div id="team-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="team-summary-modal-title" class="text-lg font-semibold text-white">Team Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
 
-    <div id="tech-summary-modal" class="modal">
-        <div class="modal-content w-full max-w-3xl">
-            <div class="modal-header">
-                <h3 class="modal-title">Tech Summary</h3>
-                <button class="modal-close-btn control-btn-icon" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+    <div id="guided-setup-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                <h3 class="text-lg font-semibold text-white">Guided Setup</h3>
+                <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
             </div>
-            <div class="modal-body modal-content-container p-0"></div>
-            <div class="modal-footer justify-end">
-                <button class="modal-close-btn btn-secondary">Close</button>
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <div id="setup-step-indicator" class="flex justify-center items-center gap-4 mb-6"></div>
+                <div id="setup-steps-container">
+                    <div class="setup-step" data-step="1">
+                        <h4 class="text-xl font-bold text-center mb-2">Welcome to the PCS Bonus Calculator!</h4>
+                        <p class="text-center text-brand-400 max-w-2xl mx-auto">This guided setup will help you configure the calculator. We'll set up your teams, review settings, and show you how to perform calculations.</p>
+                    </div>
+                    <div class="setup-step" data-step="2">
+                        <h4 class="text-xl font-bold mb-4">Step 1: Configure Your Teams</h4>
+                        <p class="text-brand-400 mb-4">Add your teams and assign Tech IDs to them. The default teams are provided as an example.</p>
+                        <div id="setup-team-list" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar p-2"></div>
+                        <button id="setup-add-team-btn" class="btn-secondary mt-4">Add New Team</button>
+                    </div>
+                    <div class="setup-step" data-step="3">
+                        <h4 class="text-xl font-bold mb-4">Step 2: How to Calculate</h4>
+                        <p class="text-brand-400 mb-4">This tour will guide you through the main calculation steps on the main screen. The modal will close temporarily.</p>
+                    </div>
+                     <div class="setup-step" data-step="4">
+                        <h4 class="text-xl font-bold text-center mb-2">Setup Complete!</h4>
+                        <p class="text-center text-brand-400 max-w-2xl mx-auto">You're all set! You can now start using the calculator. Remember, you can always revisit team and calculation settings from the main menu.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-brand-700 flex justify-end items-center gap-2">
+                <button id="setup-prev-btn" class="btn-secondary">Previous</button>
+                <button id="setup-next-btn" class="btn-primary">Next</button>
+                <button id="setup-finish-btn" class="btn-primary hidden">Finish</button>
             </div>
         </div>
     </div>
-
+    <script src="chatbot-knowledge-base.js"></script>
+    <script src="chatbot.js"></script>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('main-menu-btn');
+            const dropdown = document.getElementById('main-menu-dropdown');
+            if (btn && dropdown) {
+                btn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); });
+                document.addEventListener('click', (e) => { if (!btn.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden'); });
+            }
+            document.querySelectorAll('.modal-close-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const modal = button.closest('.fixed');
+                    if (modal) modal.classList.add('hidden');
+                });
+            });
+        });
+    </script>
     <div id="chatbot-container" class="fixed bottom-5 right-5 z-50">
     <div id="chatbot-bubble" class="w-16 h-16 bg-accent rounded-full flex items-center justify-center cursor-pointer shadow-lg">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="white" viewBox="0 0 16 16">
-            <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15zm0-1c3.719 0 6.643-2.504 7-5.421a.5.5 0 0 1 1 .5c-.068.746-.188 1.546-.382 2.274-.298 1.18-.846 2.155-1.588 2.875A8.995 8.995 0 0 1 8 14z"/>
+            <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15z"/>
         </svg>
     </div>
-    <div id="chatbot-window" class="hidden fixed bottom-24 right-5 w-80 h-96 bg-brand-800 border border-brand-700 rounded-lg shadow-xl flex flex-col z-40">
-        <div class="bg-brand-700 text-white font-bold p-3 rounded-t-lg">PCS Assistant</div>
-        <div id="chatbot-messages" class="flex-grow overflow-y-auto p-3 custom-scrollbar"></div>
-        <div class="p-3 border-t border-brand-700 flex">
-            <input type="text" id="chatbot-input" placeholder="Ask a question..." class="input-field flex-grow mr-2">
-            <button id="chatbot-send-btn" class="btn-primary px-3 py-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.5.5 0 0 1-.921.073l-2.618-4.225L2.832 9.43a.5.5 0 0 1-.028-.028L.146 6.166a.5.5 0 0 1 .54-.11L15.854.146zM8.146 4.981 12.56 1.542 12.331 6.007c-.131 1.488-.951 2.859-2.227 3.659L7.481 12.384 8.146 4.981z"/></svg></button>
-        </div>
+    <div id="chatbot-window" class="hidden absolute bottom-20 right-0 w-80 bg-brand-800 rounded-lg shadow-xl border border-brand-700 flex flex-col h-[500px]">
+    <div class="p-4 bg-brand-700 text-white font-bold rounded-t-lg">PCS Calculator Assistant</div>
+    <div id="chatbot-messages" class="p-4 flex-grow overflow-y-auto custom-scrollbar"></div>
+    <div class="p-4 border-t border-brand-700">
+        <input type="text" id="chatbot-input" class="input-field w-full" placeholder="Ask a question...">
     </div>
-    </div>
-    
-    <script src="script.js?v=1.1"></script>
-    <script src="chatbot-knowledge-base.js?v=1.1"></script>
-    <script src="chatbot.js?v=1.1"></script>
-
+</div>
+</div>
 </body>
 </html>
