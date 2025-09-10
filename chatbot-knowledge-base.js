@@ -80,123 +80,60 @@ const techNameDatabase = {
     "7243JC": "John Cañete"
 };
 
-// --- Helper: Normalize Input ---
-function normalizeText(text) {
-    return text.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
-}
-
 // --- General Knowledge Base ---
 const knowledgeBase = [
-    {
-        id: "developer",
-        keywords: ["developer", "creator", "renzku", "who made"],
-        answer: "Renzku is the developer of this application."
-    },
-    {
-        id: "serge",
-        keywords: ["serge", "taga leyte", "mamuhiay", "7249ss"],
-        answer: "Serge is taga Leyte mamuhiay ug manok!"
-    },
-    {
-        id: "jeave",
-        keywords: ["jeave", "babaydor", "who is jeave"],
-        answer: "Jeave is babaydor."
-    },
-    {
-        id: "setup",
-        keywords: ["how", "use", "work", "guide", "setup", "start", "tutorial"],
-        answer: "To use the app: 1) Add project data 2) Enter bonus multiplier 3) Click 'Calculate'. Or follow Menu > Guided Setup."
-    },
-    {
-        id: "teams",
-        keywords: ["teams", "manage", "members"],
-        answer: "Manage teams and members in Menu > Manage Teams."
-    },
-    {
-        id: "settings",
-        keywords: ["settings", "advanced", "customize", "logic", "formula"],
-        answer: "All calculation logic, points, and bonus tiers can be customized in Menu > Advanced Settings."
-    },
-    {
-        id: "summary",
-        keywords: ["quick summary", "summary card", "top performers", "leader"],
-        answer: "Quick Summary shows top performers in points, tasks, quality, and refixes. Ask 'who has the most points?' for details."
-    },
-    {
-        id: "quality",
-        keywords: ["quality", "formula", "calculated", "compute quality"],
-        answer: "Fix Quality = (Fix Tasks / (Fix Tasks + Refix Tasks + Warnings)) × 100."
-    },
-    {
-        id: "refix",
-        keywords: ["refix", "what is refix", "refix error"],
-        answer: "A 'refix' is an error that reduces a tech's quality. By default triggered by label 'i' in rv1_label/rv2_label."
-    },
-    {
-        id: "warning",
-        keywords: ["warning", "what is warning"],
-        answer: "A 'warning' counts against quality. Triggered by labels b–g or i in warning columns (e.g. r1_warn)."
-    },
-    {
-        id: "qcpenalty",
-        keywords: ["qc penalty", "transfer", "qc error"],
-        answer: "QC Penalty = when a QC tech misses an error. Points are subtracted and given to the i3qa tech."
-    },
-    {
-        id: "data",
-        keywords: ["data", "save", "store", "local", "where"],
-        answer: "All project data, teams, and settings are stored locally in your browser's IndexedDB. Nothing is uploaded."
-    },
-    {
-        id: "clear",
-        keywords: ["clear data", "delete all", "reset"],
-        answer: "Clear all projects & reset settings in Menu > Clear All Data. ⚠️ This cannot be undone."
-    },
-    {
-        id: "shapefile",
-        keywords: ["drag", "drop", "files", "shapefile", "shp", "dbf"],
-        answer: "Drag and drop .shp + .dbf files into the data area to parse them automatically."
-    },
-    {
-        id: "calculate",
-        keywords: ["calculate all", "calculate specific", "combine", "merge", "multiple"],
-        answer: "Use 'Calculate All / Specific' to merge multiple projects. Check 'Calculate Specific Projects' to choose which ones."
-    },
-    {
-        id: "theme",
-        keywords: ["theme", "dark", "light", "color"],
-        answer: "Switch between light and dark themes in Menu > Toggle Theme."
-    },
-    {
-        id: "bug",
-        keywords: ["bug", "report", "contact", "error", "problem"],
-        answer: "Report bugs via Menu > Report a Bug (opens Microsoft Teams)."
-    }
+    { id: "developer", keywords: ["developer", "creator", "renzku", "who made"], answer: "Renzku is the developer of this application." },
+    { id: "serge", keywords: ["serge", "taga leyte", "mamuhiay", "7249ss"], answer: "Serge is taga Leyte mamuhiay ug manok!" },
+    { id: "jeave", keywords: ["jeave", "babaydor"], answer: "Jeave is babaydor." },
+    { id: "setup", keywords: ["setup", "how to use", "guide", "tutorial", "start"], answer: "To use the app: 1) Add project data 2) Enter bonus multiplier 3) Click 'Calculate'. Or follow Menu > Guided Setup." },
+    { id: "teams", keywords: ["teams", "manage members"], answer: "Manage teams and members in Menu > Manage Teams." },
+    { id: "settings", keywords: ["settings", "advanced settings", "customize formula"], answer: "All calculation logic, points, and bonus tiers can be customized in Menu > Advanced Settings." },
+    { id: "summary", keywords: ["summary", "top performers", "leader"], answer: "Quick Summary shows top performers in points, tasks, quality, and refixes." },
+    { id: "quality", keywords: ["quality", "calculate quality", "quality formula"], answer: "Fix Quality = (Fix Tasks / (Fix Tasks + Refix Tasks + Warnings)) × 100." },
+    { id: "refix", keywords: ["refix", "refix error"], answer: "A 'refix' is an error that reduces a tech's quality." },
+    { id: "warning", keywords: ["warning", "what is warning"], answer: "A 'warning' counts against quality. Triggered by labels b–g or i in warning columns." },
+    { id: "qcpenalty", keywords: ["qc penalty", "qc error"], answer: "QC Penalty = when a QC tech misses an error. Points are transferred to the i3qa tech." },
+    { id: "data", keywords: ["data", "storage", "where is data saved"], answer: "All data is stored locally in your browser’s IndexedDB. Nothing is uploaded." },
+    { id: "clear", keywords: ["clear data", "reset"], answer: "Clear all projects & reset settings in Menu > Clear All Data. ⚠️ This cannot be undone." },
+    { id: "shapefile", keywords: ["shapefile", "shp", "dbf", "drag drop files"], answer: "Drag and drop .shp + .dbf files into the data area to parse them automatically." },
+    { id: "calculate", keywords: ["calculate all", "merge projects", "combine projects"], answer: "Use 'Calculate All / Specific' to merge multiple projects." },
+    { id: "theme", keywords: ["theme", "dark mode", "light mode"], answer: "Switch between light and dark themes in Menu > Toggle Theme." },
+    { id: "bug", keywords: ["bug", "report problem", "contact support"], answer: "Report bugs via Menu > Report a Bug (opens Microsoft Teams)." }
 ];
 
-// --- Search Function ---
+// --- Setup Fuzzy Search (requires Fuse.js) ---
+const fuse = new Fuse(knowledgeBase, {
+    keys: ["keywords"],
+    threshold: 0.4, // 0 = strict, 1 = very loose
+});
+
+// --- Find Answer ---
 function findAnswer(question) {
-    const q = normalizeText(question);
-    let bestMatch = null;
-    let highestScore = 0;
+    const results = fuse.search(question);
 
-    for (const entry of knowledgeBase) {
-        let score = 0;
-        for (const keyword of entry.keywords) {
-            if (q.includes(keyword)) score++;
-        }
-        if (score > highestScore) {
-            highestScore = score;
-            bestMatch = entry;
-        }
-    }
-
-    if (bestMatch) {
-        return bestMatch.answer;
+    if (results.length > 0) {
+        return results[0].item.answer;
     } else {
         return "🤔 I’m not sure about that. Try rephrasing, or check Menu > Help.";
     }
 }
 
-// Example usage (for testing in console)
-console.log(findAnswer("how do i calculate quality?"));
+// --- Example Integration for Chat UI ---
+function handleUserInput(inputText) {
+    const userMsg = inputText.trim();
+    if (!userMsg) return;
+
+    const botReply = findAnswer(userMsg);
+
+    // Hook this into your UI
+    if (typeof addMessage === "function") {
+        addMessage("user", userMsg);
+        addMessage("bot", botReply);
+    } else {
+        console.log("User:", userMsg);
+        console.log("Bot:", botReply);
+    }
+}
+
+// Example usage in console:
+console.log(findAnswer("how do i calculate qualiti?")); // fuzzy match works
