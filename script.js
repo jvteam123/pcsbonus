@@ -46,7 +46,7 @@ const CONSTANTS = {
         }
     },
     DEFAULT_COUNTING_SETTINGS: {
-        taskColumns: { qc: ['qc1_id', 'qc2_id', 'qc3_id'], i3qa: ['i3qa_id'], rv1: ['rv1_id'], rv2: ['rv2_id'] },
+       taskColumns: { qc: ['qc_id'], i3qa: ['i3qa_id'], rv1: ['rv1_id'], rv2: ['rv2_id'] },
         triggers: {
             refix: { labels: ['i'], columns: ['rv1_label', 'rv2_label', 'rv3_label'] },
             miss: { labels: ['m', 'c'], columns: ['i3qa_label', 'rv1_label', 'rv2_label', 'rv3_label'] },
