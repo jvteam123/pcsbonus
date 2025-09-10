@@ -85,10 +85,10 @@ const knowledgeBase = [
     { id: "developer", keywords: ["developer", "creator", "renzku", "who made"], answer: "Renzku is the developer of this application." },
     { id: "serge", keywords: ["serge", "taga leyte", "mamuhiay", "7249ss"], answer: "Serge is taga Leyte mamuhiay ug manok!" },
     { id: "jeave", keywords: ["jeave", "babaydor"], answer: "Jeave is babaydor." },
-    { id: "setup", keywords: ["setup", "how to use", "guide", "tutorial", "start"], answer: "To use the app: 1) Add project data 2) Enter bonus multiplier 3) Click 'Calculate'. Or follow Menu > Guided Setup." },
-    { id: "teams", keywords: ["teams", "manage members"], answer: "Manage teams and members in Menu > Manage Teams." },
+    { id: "setup", keywords: ["setup", "how to use", "guide", "tutorial", "start"], answer: "To use the app: 1) Add project data 2) Enter bonus multiplier 3) Click 'Calculate'. Or follow Menu > Guided Setup.", followUp: ["Tell me about project data", "How do I calculate?"] },
+    { id: "teams", keywords: ["teams", "manage members"], answer: "Manage teams and members in Menu > Manage Teams.", followUp: ["How do I save teams?", "How do I add a new team?"] },
     { id: "settings", keywords: ["settings", "advanced settings", "customize formula"], answer: "All calculation logic, points, and bonus tiers can be customized in Menu > Advanced Settings." },
-    { id: "summary", keywords: ["summary", "top performers", "leader"], answer: "Quick Summary shows top performers in points, tasks, quality, and refixes." },
+    { id: "summary", keywords: ["summary", "top performers", "leader"], answer: "Quick Summary shows top performers in points, tasks, quality, and refixes.", followUp: ["Who has the most points?", "Who has the best quality?"] },
     { id: "quality", keywords: ["quality", "calculate quality", "quality formula"], answer: "Fix Quality = (Fix Tasks / (Fix Tasks + Refix Tasks + Warnings)) × 100." },
     { id: "refix", keywords: ["refix", "refix error"], answer: "A 'refix' is an error that reduces a tech's quality." },
     { id: "warning", keywords: ["warning", "what is warning"], answer: "A 'warning' counts against quality. Triggered by labels b–g or i in warning columns." },
@@ -103,18 +103,27 @@ const knowledgeBase = [
 
 // --- Setup Fuzzy Search (requires Fuse.js) ---
 const fuse = new Fuse(knowledgeBase, {
-    keys: ["keywords"],
+    keys: ["keywords", "answer"], // Search both keywords and answers
     threshold: 0.4, // 0 = strict, 1 = very loose
+    includeScore: true,
+    // Sort results by their score (lower is better)
+    sort: (a, b) => a.score - b.score
 });
 
 // --- Find Answer ---
 function findAnswer(question) {
     const results = fuse.search(question);
+    const noAnswerResponses = [
+        "Hmm, I can't find an answer to that. Can you try rephrasing?",
+        "I'm not sure about that. Maybe try looking in the Help menu?",
+        "My knowledge on that topic is a bit fuzzy. Is there something else I can help with?"
+    ];
 
     if (results.length > 0) {
-        return results[0].item.answer;
+        return results[0].item; // Return the entire item to access followUp
     } else {
-        return "🤔 I’m not sure about that. Try rephrasing, or check Menu > Help.";
+        const randomResponse = noAnswerResponses[Math.floor(Math.random() * noAnswerResponses.length)];
+        return { answer: `🤔 ${randomResponse}` };
     }
 }
 
@@ -134,6 +143,3 @@ function handleUserInput(inputText) {
         console.log("Bot:", botReply);
     }
 }
-
-// Example usage in console:
-console.log(findAnswer("how do i calculate qualiti?")); // fuzzy match works
