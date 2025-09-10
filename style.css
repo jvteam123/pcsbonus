@@ -260,3 +260,35 @@ body.light-theme #advance-settings-modal #category-points-tbody tr:nth-child(eve
     margin-top: 1rem;
     padding-top: 0.75rem;
 }
+/* Chatbot Light Theme Overrides */
+body.light-theme #chatbot-window {
+    background-color: var(--panel-bg);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow);
+}
+
+body.light-theme #chatbot-window > div:first-child { /* Header */
+    background-color: var(--brand-600);
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+body.light-theme #chatbot-window > div:last-child { /* Input Area */
+    border-top-color: var(--border-color);
+}
+
+body.light-theme .chatbot-message.bot .message-bubble {
+    background-color: var(--brand-600);
+    color: var(--text-color);
+}
+
+body.light-theme .suggestion-btn {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.light-theme .suggestion-btn:hover {
+    background-color: var(--brand-600);
+    border-color: var(--accent);
+}
