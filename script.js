@@ -646,7 +646,6 @@ const Handlers = {
         }
 
         UI.setPanelHeights();
-        window.addEventListener('resize', UI.setPanelHeights);
         window.UI = UI; 
     },
     initializeFirebase() {
@@ -691,6 +690,7 @@ const Handlers = {
         document.getElementById('admin-panel-view').classList.toggle('hidden', !isAdmin);
         if (isAdmin) {
             this.loadVisitorLog();
+            this.loadAdminProjectList();
         }
     },
     async loadVisitorLog() {
@@ -1137,6 +1137,52 @@ const Handlers = {
         UI.closeModal('guided-setup-modal');
         UI.showNotification("Setup complete. Welcome!");
     },
+    async loadAdminProjectList() {
+        const { db, collection, getDocs, query, orderBy } = AppState.firebase.tools;
+        const tbody = document.getElementById('admin-project-list-tbody');
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Loading projects...</td></tr>';
+        
+        try {
+            const q = query(collection(db, "projects"), orderBy("projectOrder", "desc"));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4">No cloud projects found.</td></tr>';
+                return;
+            }
+
+            let projectsHTML = '';
+            querySnapshot.forEach(doc => {
+                const project = { id: doc.id, ...doc.data() };
+                projectsHTML += `
+                    <tr data-project-id="${project.id}">
+                        <td class="p-2">${project.name}</td>
+                        <td class="p-2">${project.gsdValue}</td>
+                        <td class="p-2 text-center">${project.isIRProject ? 'Yes' : 'No'}</td>
+                        <td class="p-2 text-center">
+                            <button class="admin-edit-project-btn btn-secondary text-xs py-1 px-2" data-project-id="${project.id}">Edit</button>
+                            <button class="admin-delete-project-btn btn-primary bg-red-600 hover:bg-red-700 text-xs py-1 px-2" data-project-id="${project.id}">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = projectsHTML;
+
+        } catch (error) {
+            console.error("Error loading admin project list:", error);
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">Error loading projects.</td></tr>';
+        }
+    },
+    resetAdminProjectForm() {
+        document.getElementById('admin-form-title').textContent = 'Add New Project';
+        document.getElementById('admin-project-id').value = '';
+        document.getElementById('admin-project-name').value = '';
+        document.getElementById('admin-project-data').value = '';
+        document.getElementById('admin-gsd-select').value = '3in';
+        document.getElementById('admin-is-ir-checkbox').checked = false;
+        document.getElementById('admin-save-project-btn').textContent = 'Save Project';
+        document.getElementById('admin-cancel-edit-btn').classList.add('hidden');
+    },
     setupEventListeners() {
         const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
         listen('admin-portal-btn', 'click', () => UI.openModal('admin-portal-modal'));
@@ -1289,6 +1335,7 @@ const Handlers = {
                 button.classList.add('active');
                 document.getElementById(`tab-${button.dataset.tab}`).classList.add('active');
                 if(button.dataset.tab === 'admin-visitors') this.loadVisitorLog();
+                if(button.dataset.tab === 'admin-projects') this.loadAdminProjectList();
             });
         });
 
@@ -1333,7 +1380,7 @@ const Handlers = {
                     return;
                 }
                 for (const doc of querySnapshot.docs) {
-                    await this.saveProjectToIndexedDB(doc.data());
+                    await this.saveProjectToIndexedDB({ id: doc.id, ...doc.data() });
                 }
                 await this.fetchProjectListSummary();
                 UI.showNotification(`${querySnapshot.size} project(s) synced from the cloud.`);
@@ -1346,19 +1393,63 @@ const Handlers = {
             }
         });
 
+        listen('admin-cancel-edit-btn', 'click', this.resetAdminProjectForm);
+        
+        document.getElementById('admin-project-list-tbody').addEventListener('click', async (e) => {
+            const target = e.target;
+            const projectId = target.dataset.projectId;
+
+            if (target.classList.contains('admin-edit-project-btn')) {
+                const { db, doc, getDoc } = AppState.firebase.tools;
+                const docRef = doc(db, "projects", projectId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const project = docSnap.data();
+                    document.getElementById('admin-form-title').textContent = `Editing: ${project.name}`;
+                    document.getElementById('admin-project-id').value = projectId;
+                    document.getElementById('admin-project-name').value = project.name;
+                    document.getElementById('admin-gsd-select').value = project.gsdValue;
+                    document.getElementById('admin-is-ir-checkbox').checked = project.isIRProject;
+                    
+                    // Decompress data for editing
+                    const binary_string = atob(project.rawData);
+                    const len = binary_string.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binary_string.charCodeAt(i);
+                    }
+                    const decompressedData = pako.inflate(bytes, { to: 'string' });
+                    document.getElementById('admin-project-data').value = decompressedData;
+
+                    document.getElementById('admin-save-project-btn').textContent = 'Update Project';
+                    document.getElementById('admin-cancel-edit-btn').classList.remove('hidden');
+                }
+            }
+
+            if (target.classList.contains('admin-delete-project-btn')) {
+                if (confirm("Are you sure you want to delete this project from the cloud? This cannot be undone.")) {
+                    const { db, doc, deleteDoc } = AppState.firebase.tools;
+                    await deleteDoc(doc(db, "projects", projectId));
+                    UI.showNotification("Project deleted from cloud.");
+                    this.loadAdminProjectList();
+                }
+            }
+        });
 
         listen('admin-save-project-btn', 'click', async (e) => {
             const button = e.target;
             UI.showLoading(button);
             const name = document.getElementById('admin-project-name').value.trim();
             const data = document.getElementById('admin-project-data').value.trim();
+            const existingId = document.getElementById('admin-project-id').value;
+
             if (!name || !data) {
                 alert("Project Name and Data are required.");
                 UI.hideLoading(button);
                 return;
             }
 
-            // --- COMPRESSION LOGIC START ---
             const compressed = pako.deflate(new TextEncoder().encode(data));
             let binary = '';
             const len = compressed.byteLength;
@@ -1366,22 +1457,25 @@ const Handlers = {
                 binary += String.fromCharCode(compressed[i]);
             }
             const base64Data = btoa(binary);
-            // --- COMPRESSION LOGIC END ---
 
-            const projectId = `${name.replace(/\W/g, '_').toLowerCase()}_${Date.now()}`;
             const projectData = {
-                id: projectId, name, rawData: base64Data, // Use compressed data
+                name, rawData: base64Data,
                 isIRProject: document.getElementById('admin-is-ir-checkbox').checked,
                 gsdValue: document.getElementById('admin-gsd-select').value,
                 projectOrder: Date.now()
             };
 
             try {
-                const { db, collection, addDoc } = AppState.firebase.tools;
-                 await addDoc(collection(db, "projects"), projectData);
-                UI.showNotification("Project saved to the cloud.");
-                document.getElementById('admin-project-name').value = '';
-                document.getElementById('admin-project-data').value = '';
+                const { db, collection, addDoc, doc, setDoc } = AppState.firebase.tools;
+                if (existingId) {
+                    await setDoc(doc(db, "projects", existingId), projectData, { merge: true });
+                    UI.showNotification("Project updated successfully.");
+                } else {
+                    await addDoc(collection(db, "projects"), projectData);
+                    UI.showNotification("Project saved to the cloud.");
+                }
+                this.resetAdminProjectForm();
+                this.loadAdminProjectList();
             } catch (error) {
                  console.error("Error saving project to cloud:", error);
                  UI.showNotification("Error saving project.", true);
@@ -1403,4 +1497,3 @@ const Handlers = {
 };
 
 document.addEventListener('DOMContentLoaded', Handlers.initializeApp.bind(Handlers));
-
