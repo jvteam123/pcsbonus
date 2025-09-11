@@ -875,7 +875,6 @@ const Handlers = {
     async saveProjectToIndexedDB(projectData) {
         try {
             await DB.put('projects', { ...projectData, projectOrder: projectData.projectOrder || Date.now() });
-            UI.showNotification("Project saved/updated locally.");
         } catch (error) {
             console.error("Error saving project:", error);
             UI.showNotification("Error saving project.", true);
@@ -1372,18 +1371,33 @@ const Handlers = {
             const icon = document.getElementById('update-online-icon');
             icon.classList.add('spinning');
             button.disabled = true;
+
             try {
-                const { db, collection, getDocs } = AppState.firebase.tools;
-                const querySnapshot = await getDocs(collection(db, "projects"));
+                const { db, collection, getDocs, query, where } = AppState.firebase.tools;
+                const lastSync = localStorage.getItem('lastProjectSync');
+                const lastSyncTime = lastSync ? parseInt(lastSync, 10) : 0;
+        
+                // Query for projects modified since the last sync
+                const q = query(collection(db, "projects"), where("lastModified", ">", lastSyncTime));
+                const querySnapshot = await getDocs(q);
+
                 if (querySnapshot.empty) {
-                    UI.showNotification("No online projects found.");
+                    UI.showNotification("All projects are up to date.");
                     return;
                 }
+
+                let successCount = 0;
                 for (const doc of querySnapshot.docs) {
                     await this.saveProjectToIndexedDB({ id: doc.id, ...doc.data() });
+                    successCount++;
                 }
+
                 await this.fetchProjectListSummary();
-                UI.showNotification(`${querySnapshot.size} project(s) synced from the cloud.`);
+                UI.showNotification(`${successCount} project(s) synced from the cloud.`);
+                
+                // Update the last sync timestamp to now
+                localStorage.setItem('lastProjectSync', Date.now().toString());
+
             } catch (error) {
                 console.error("Error updating online projects:", error);
                 UI.showNotification("Failed to sync online projects.", true);
@@ -1393,56 +1407,50 @@ const Handlers = {
             }
         });
 
+
         listen('admin-cancel-edit-btn', 'click', this.resetAdminProjectForm);
         
-        // In script.js, inside the setupEventListeners function
+        document.getElementById('admin-project-list-tbody').addEventListener('click', async (e) => {
+            const editTarget = e.target.closest('.admin-edit-project-btn');
+            if (editTarget) {
+                const projectId = editTarget.dataset.projectId;
+                const { db, doc, getDoc } = AppState.firebase.tools;
+                const docRef = doc(db, "projects", projectId);
+                const docSnap = await getDoc(docRef);
 
-document.getElementById('admin-project-list-tbody').addEventListener('click', async (e) => {
-    // Use .closest() to find the button, no matter what was clicked inside it
-    const target = e.target.closest('.admin-edit-project-btn');
+                if (docSnap.exists()) {
+                    const project = docSnap.data();
+                    document.getElementById('admin-form-title').textContent = `Editing: ${project.name}`;
+                    document.getElementById('admin-project-id').value = projectId;
+                    document.getElementById('admin-project-name').value = project.name;
+                    document.getElementById('admin-gsd-select').value = project.gsdValue;
+                    document.getElementById('admin-is-ir-checkbox').checked = project.isIRProject;
+                    
+                    const binary_string = atob(project.rawData);
+                    const len = binary_string.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binary_string.charCodeAt(i);
+                    }
+                    const decompressedData = pako.inflate(bytes, { to: 'string' });
+                    document.getElementById('admin-project-data').value = decompressedData;
 
-    // Check if a valid edit button was found
-    if (target) {
-        const projectId = target.dataset.projectId;
-        const { db, doc, getDoc } = AppState.firebase.tools;
-        const docRef = doc(db, "projects", projectId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            const project = docSnap.data();
-            document.getElementById('admin-form-title').textContent = `Editing: ${project.name}`;
-            document.getElementById('admin-project-id').value = projectId;
-            document.getElementById('admin-project-name').value = project.name;
-            document.getElementById('admin-gsd-select').value = project.gsdValue;
-            document.getElementById('admin-is-ir-checkbox').checked = project.isIRProject;
-
-            // Decompress data for editing
-            const binary_string = atob(project.rawData);
-            const len = binary_string.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binary_string.charCodeAt(i);
+                    document.getElementById('admin-save-project-btn').textContent = 'Update Project';
+                    document.getElementById('admin-cancel-edit-btn').classList.remove('hidden');
+                }
             }
-            const decompressedData = pako.inflate(bytes, { to: 'string' });
-            document.getElementById('admin-project-data').value = decompressedData;
 
-            document.getElementById('admin-save-project-btn').textContent = 'Update Project';
-            document.getElementById('admin-cancel-edit-btn').classList.remove('hidden');
-        }
-    }
-
-    // Handle delete button clicks separately
-    const deleteTarget = e.target.closest('.admin-delete-project-btn');
-    if (deleteTarget) {
-        const projectId = deleteTarget.dataset.projectId;
-        if (confirm("Are you sure you want to delete this project from the cloud? This cannot be undone.")) {
-            const { db, doc, deleteDoc } = AppState.firebase.tools;
-            await deleteDoc(doc(db, "projects", projectId));
-            UI.showNotification("Project deleted from cloud.");
-            Handlers.loadAdminProjectList(); // Assuming Handlers is accessible
-        }
-    }
-});
+            const deleteTarget = e.target.closest('.admin-delete-project-btn');
+            if (deleteTarget) {
+                const projectId = deleteTarget.dataset.projectId;
+                if (confirm("Are you sure you want to delete this project from the cloud? This cannot be undone.")) {
+                    const { db, doc, deleteDoc } = AppState.firebase.tools;
+                    await deleteDoc(doc(db, "projects", projectId));
+                    UI.showNotification("Project deleted from cloud.");
+                    this.loadAdminProjectList();
+                }
+            }
+        });
 
         listen('admin-save-project-btn', 'click', async (e) => {
             const button = e.target;
@@ -1469,7 +1477,8 @@ document.getElementById('admin-project-list-tbody').addEventListener('click', as
                 name, rawData: base64Data,
                 isIRProject: document.getElementById('admin-is-ir-checkbox').checked,
                 gsdValue: document.getElementById('admin-gsd-select').value,
-                projectOrder: Date.now()
+                projectOrder: Date.now(),
+                lastModified: Date.now() // Add lastModified timestamp
             };
 
             try {
