@@ -927,6 +927,44 @@ const Handlers = {
            alert("No valid .shp/.dbf pairs found.");
         }
     },
+    async handleAdminDroppedFiles(files) {
+    const fileGroups = {};
+    for (const file of files) {
+        const baseName = file.name.split('.')[0];
+        fileGroups[baseName] = fileGroups[baseName] || {};
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (['shp', 'dbf'].includes(ext)) fileGroups[baseName][ext] = file;
+    }
+    let allFeatures = [];
+    let count = 0;
+    for (const group of Object.values(fileGroups)) {
+        if (group.shp && group.dbf) {
+            const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
+            if (geojson && geojson.features) { allFeatures.push(...geojson.features); count++; }
+        }
+    }
+    if (allFeatures.length > 0) {
+        const allKeys = new Set();
+        allFeatures.forEach(feature => {
+            if (feature.properties) {
+                Object.keys(feature.properties).forEach(key => allKeys.add(key));
+            }
+        });
+        const headers = Array.from(allKeys);
+        let tsv = headers.join('\t') + '\n';
+        allFeatures.forEach(feature => {
+            const row = headers.map(header => {
+                return feature.properties ? (feature.properties[header] ?? '') : '';
+            });
+            tsv += row.join('\t') + '\n';
+        });
+
+        document.getElementById('admin-project-data').value = tsv;
+        UI.showNotification(`${count} shapefile set(s) processed for admin upload.`);
+    } else {
+       alert("No valid .shp/.dbf pairs found.");
+    }
+},
     async clearAllData() {
         if (confirm("Clear ALL data? This deletes projects and resets all settings to their defaults.")) {
             if (AppState.db) {
@@ -1281,6 +1319,10 @@ const Handlers = {
         listen('drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.add('bg-brand-700'); });
         listen('drop-zone', 'dragleave', e => e.target.closest('#drop-zone').classList.remove('bg-brand-700'));
         listen('drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.remove('bg-brand-700'); this.handleDroppedFiles(e.dataTransfer.files); });
+        // Admin Portal Drop Zone
+        listen('admin-drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#admin-drop-zone').classList.add('bg-brand-700'); });
+        listen('admin-drop-zone', 'dragleave', e => e.target.closest('#admin-drop-zone').classList.remove('bg-brand-700'));
+        listen('admin-drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#admin-drop-zone').classList.remove('bg-brand-700'); this.handleAdminDroppedFiles(e.dataTransfer.files); });
     }
 };
 
