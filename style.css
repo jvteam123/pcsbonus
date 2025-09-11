@@ -311,3 +311,24 @@ body.light-theme .suggestion-btn:hover {
     background-color: var(--brand-600);
     border-color: var(--accent);
 }
+
+/* Update Online Button Style */
+#update-online-btn {
+    background-color: var(--status-green);
+    border-color: transparent;
+    color: white;
+}
+
+#update-online-btn:hover {
+    background-color: #3aa181; /* Darker shade of --status-green */
+    border-color: transparent;
+}
+
+body.light-theme #update-online-btn {
+    background-color: var(--status-green);
+    color: white;
+}
+body.light-theme #update-online-btn:hover {
+    background-color: #059669; /* Darker shade for light theme */
+}
+
