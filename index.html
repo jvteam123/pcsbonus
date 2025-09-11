@@ -287,31 +287,33 @@
     <script src="chatbot-knowledge-base.js"></script>
     <script src="chatbot.js"></script>
     <script src="script.js?v=1.2"></script>
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, limit, doc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+   <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    // ---- ADD 'where' TO THIS LINE ---- v
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, limit, doc, deleteDoc, setDoc, getDoc, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDkeA5QzcTkpgNiSDJ2S4rwHD8g8eHbj5M",
-            authDomain: "pcsbonus-54607.firebaseapp.com",
-            projectId: "pcsbonus-54607",
-            storageBucket: "pcsbonus-54607.appspot.com",
-            messagingSenderId: "406315081815",
-            appId: "1:406315081815:web:0cfa3915ec314f1f2f8312",
-            measurementId: "G-C2J9ESZFTH"
-        };
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyDkeA5QzcTkpgNiSDJ2S4rwHD8g8eHbj5M",
+        authDomain: "pcsbonus-54607.firebaseapp.com",
+        projectId: "pcsbonus-54607",
+        storageBucket: "pcsbonus-54607.appspot.com",
+        messagingSenderId: "406315081815",
+        appId: "1:406315081815:web:0cfa3915ec314f1f2f8312",
+        measurementId: "G-C2J9ESZFTH"
+    };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
 
-        window.firebaseTools = { auth, provider, db, signInWithPopup, collection, addDoc, getDocs, onAuthStateChanged, onSnapshot, query, orderBy, limit, doc, deleteDoc, setDoc, getDoc };
-    </script>
+    // ---- ALSO ADD 'where' TO THIS LINE ---- v
+    window.firebaseTools = { auth, provider, db, signInWithPopup, collection, addDoc, getDocs, onAuthStateChanged, onSnapshot, query, orderBy, limit, doc, deleteDoc, setDoc, getDoc, where };
+</script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('main-menu-btn');
