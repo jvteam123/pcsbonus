@@ -8,12 +8,19 @@ const AppState = {
         totalSteps: 4,
         tourStep: 0,
         tourElements: []
+    },
+    firebase: {
+        auth: null,
+        db: null,
+        provider: null,
+        tools: {}
     }
 };
 
 // --- CONSTANTS ---
 const CONSTANTS = {
     TECH_ID_REGEX: /^\d{4}[a-zA-Z]{2}$/,
+    AUTHORIZED_ADMIN_EMAIL: "ev.lorens.ebrado@gmail.com",
     DEFAULT_TEAMS: {
         "Team 123": ["7244AA", "7240HH", "7247JA", "4232JD", "4475JT", "4472JS", "4426KV", "7236LE", "7039NO", "7231NR", "7249SS", "7314VP"],
         "Team 63": ["7089RR", "7102JD", "7161KA", "7159MC", "7168JS", "7158JD", "7167AD", "7040JP", "7178MD", "7092RN", "7170WS"],
@@ -99,6 +106,15 @@ const DB = {
             const tx = AppState.db.transaction([storeName], 'readonly').objectStore(storeName).getAll();
             tx.onsuccess = () => resolve(tx.result);
             tx.onerror = () => reject(tx.error);
+        });
+    },
+     async clear(storeName) {
+        return new Promise((resolve, reject) => {
+            const transaction = AppState.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.clear();
+            request.onsuccess = () => resolve();
+            request.onerror = (e) => reject(e.target.error);
         });
     }
 };
@@ -361,10 +377,12 @@ const UI = {
         this.updateTLSummary(filteredStats);
         this.updateQuickSummary(filteredStats);
     },
-    showNotification(message) {
+    showNotification(message, isError = false) {
         const el = document.getElementById('update-notification');
         if (el) {
             el.textContent = message;
+            el.classList.toggle('bg-status-red', isError);
+            el.classList.toggle('bg-accent', !isError);
             el.classList.remove('hidden', 'opacity-0', 'translate-y-2');
             setTimeout(() => {
                 el.classList.add('opacity-0', 'translate-y-2');
@@ -619,6 +637,14 @@ const Calculator = {
 
 const Handlers = {
     async initializeApp() {
+        if (window.firebaseTools) {
+            AppState.firebase.auth = window.firebaseTools.auth;
+            AppState.firebase.db = window.firebaseTools.db;
+            AppState.firebase.provider = window.firebaseTools.provider;
+            AppState.firebase.tools = window.firebaseTools;
+            this.setupFirebaseListeners();
+            this.logVisitor();
+        }
         await DB.open();
         Handlers.setupEventListeners();
         document.body.classList.toggle('light-theme', localStorage.getItem('theme') === 'light');
@@ -632,6 +658,66 @@ const Handlers = {
         UI.setPanelHeights();
         window.addEventListener('resize', UI.setPanelHeights);
         window.UI = UI; 
+    },
+     async logVisitor() {
+        try {
+            const { db, collection, addDoc } = AppState.firebase.tools;
+            await addDoc(collection(db, "visitors"), {
+                timestamp: new Date(),
+                userAgent: navigator.userAgent
+            });
+        } catch (error) {
+            console.error("Error logging visitor:", error);
+        }
+    },
+    setupFirebaseListeners() {
+        const { auth, onAuthStateChanged, db, collection, onSnapshot, query, orderBy, limit } = AppState.firebase.tools;
+        onAuthStateChanged(auth, user => {
+            const adminLoginView = document.getElementById('admin-login-view');
+            const adminPanelView = document.getElementById('admin-panel-view');
+            if (user && user.email === CONSTANTS.AUTHORIZED_ADMIN_EMAIL) {
+                adminLoginView.classList.add('hidden');
+                adminPanelView.classList.remove('hidden');
+                this.loadVisitorLog();
+            } else {
+                adminLoginView.classList.remove('hidden');
+                adminPanelView.classList.add('hidden');
+            }
+        });
+
+        const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"), limit(1));
+        onSnapshot(q, (querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                const notification = { id: doc.id, ...doc.data() };
+                const acceptedUpdates = JSON.parse(localStorage.getItem('acceptedUpdates')) || [];
+                if (!acceptedUpdates.includes(notification.id)) {
+                    const banner = document.getElementById('update-notification-banner');
+                    document.getElementById('update-notification-text').textContent = notification.text;
+                    banner.dataset.notificationId = notification.id;
+                    banner.classList.remove('hidden');
+                }
+            });
+        });
+    },
+    async loadVisitorLog() {
+        const { db, collection, getDocs, query, orderBy } = AppState.firebase.tools;
+        const visitorLogTbody = document.getElementById('visitor-log-tbody');
+        visitorLogTbody.innerHTML = '<tr><td colspan="2" class="text-center p-4">Loading...</td></tr>';
+        
+        try {
+            const q = query(collection(db, "visitors"), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+            let rows = '';
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const timestamp = data.timestamp.toDate().toLocaleString();
+                rows += `<tr><td class="p-2">${timestamp}</td><td class="p-2 text-xs">${data.userAgent}</td></tr>`;
+            });
+            visitorLogTbody.innerHTML = rows || '<tr><td colspan="2" class="text-center p-4">No visitors yet.</td></tr>';
+        } catch (error) {
+            console.error("Error loading visitor log: ", error);
+            visitorLogTbody.innerHTML = '<tr><td colspan="2" class="text-center p-4 text-red-500">Error loading logs.</td></tr>';
+        }
     },
     async loadBonusTiers() {
         const saved = await DB.get('bonusTiers', 'customTiers');
@@ -731,7 +817,7 @@ const Handlers = {
             const base64 = btoa(binary);
     
             await DB.put('projects', { ...projectData, rawData: base64, projectOrder: projectData.projectOrder || Date.now() });
-            UI.showNotification("Project saved/updated.");
+            UI.showNotification("Project saved/updated locally.");
         } catch (error) {
             console.error("Error saving project:", error);
             alert("An error occurred while saving the project. The data might be too large or invalid.");
@@ -744,13 +830,19 @@ const Handlers = {
     async fetchFullProjectData(projectId) {
         const data = await DB.get('projects', projectId);
         if (data && data.rawData) {
-            const binary_string = atob(data.rawData);
-            const len = binary_string.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binary_string.charCodeAt(i);
+            try {
+                const binary_string = atob(data.rawData);
+                const len = binary_string.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binary_string.charCodeAt(i);
+                }
+                data.rawData = pako.inflate(bytes, { to: 'string' });
+            } catch (e) {
+                console.warn("Could not decompress data, assuming it's uncompressed.", e);
+                // If it fails, it might be uncompressed from Firebase.
+                // The rawData from Firebase is already a string.
             }
-            data.rawData = pako.inflate(bytes, { to: 'string' });
             return data;
         }
         return null;
@@ -844,6 +936,7 @@ const Handlers = {
             req.onsuccess = async () => {
                 alert("All data has been cleared. The application will now reset.");
                 localStorage.removeItem('theme');
+                localStorage.removeItem('acceptedUpdates');
                 window.location.reload();
             };
             req.onerror = () => alert("Error clearing data. Please close all other tabs with this application open and try again.");
@@ -963,6 +1056,111 @@ const Handlers = {
         listen('setup-prev-btn', 'click', () => { AppState.guidedSetup.currentStep--; this.updateGuidedSetupView(); });
         listen('setup-finish-btn', 'click', this.finishGuidedSetup.bind(this));
         listen('setup-add-team-btn', 'click', () => UI.addTeamCard('', [], 'setup-team-list'));
+
+        listen('admin-portal-btn', 'click', () => UI.openModal('admin-portal-modal'));
+        listen('admin-google-signin-btn', 'click', () => {
+            const { auth, provider, signInWithPopup } = AppState.firebase.tools;
+            signInWithPopup(auth, provider).catch(error => console.error("Sign-in error", error));
+        });
+        document.querySelectorAll('#admin-panel-view .tab-button').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('#admin-panel-view .tab-button, .admin-tab-content').forEach(el => el.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        listen('send-update-btn', 'click', async () => {
+            const text = document.getElementById('update-text-input').value.trim();
+            if (!text) return alert("Update message cannot be empty.");
+            try {
+                const { db, collection, addDoc } = AppState.firebase.tools;
+                await addDoc(collection(db, "notifications"), {
+                    text: text,
+                    timestamp: new Date()
+                });
+                UI.showNotification("Update sent successfully!");
+                document.getElementById('update-text-input').value = '';
+            } catch (error) {
+                console.error("Error sending update:", error);
+                UI.showNotification("Error sending update.", true);
+            }
+        });
+        
+        listen('accept-update-btn', 'click', (e) => {
+            const banner = e.target.closest('#update-notification-banner');
+            const notificationId = banner.dataset.notificationId;
+            if (notificationId) {
+                const acceptedUpdates = JSON.parse(localStorage.getItem('acceptedUpdates')) || [];
+                acceptedUpdates.push(notificationId);
+                localStorage.setItem('acceptedUpdates', JSON.stringify(acceptedUpdates));
+                banner.classList.add('hidden');
+                Handlers.resetAdvanceSettingsToDefaults();
+                location.reload();
+            }
+        });
+
+        listen('update-online-btn', 'click', async (e) => {
+            const button = e.currentTarget;
+            const icon = document.getElementById('update-online-icon');
+            icon.classList.add('spinning');
+            button.disabled = true;
+
+            try {
+                const { db, collection, getDocs } = AppState.firebase.tools;
+                const querySnapshot = await getDocs(collection(db, "projects"));
+                
+                await DB.clear('projects');
+
+                for (const doc of querySnapshot.docs) {
+                    const project = { id: doc.id, ...doc.data() };
+                    // The data from firestore is not compressed
+                    await DB.put('projects', project);
+                }
+
+                await Handlers.fetchProjectListSummary();
+                UI.showNotification(`Synced ${querySnapshot.size} project(s) from the cloud.`);
+            } catch (error) {
+                console.error("Error updating from online:", error);
+                UI.showNotification("Failed to sync projects.", true);
+            } finally {
+                icon.classList.remove('spinning');
+                button.disabled = false;
+            }
+        });
+
+
+        listen('admin-save-project-btn', 'click', async (e) => {
+            const button = e.target;
+            UI.showLoading(button);
+            const name = document.getElementById('admin-project-name').value.trim();
+            const data = document.getElementById('admin-project-data').value.trim();
+            if (!name || !data) {
+                alert("Project Name and Data are required.");
+                UI.hideLoading(button);
+                return;
+            }
+            const projectId = `${name.replace(/\W/g, '_').toLowerCase()}_${Date.now()}`;
+            const projectData = {
+                id: projectId, name, rawData: data,
+                isIRProject: document.getElementById('admin-is-ir-checkbox').checked,
+                gsdValue: document.getElementById('admin-gsd-select').value,
+                projectOrder: Date.now()
+            };
+
+            try {
+                const { db, collection, addDoc } = AppState.firebase.tools;
+                 await addDoc(collection(db, "projects"), projectData);
+                UI.showNotification("Project saved to the cloud.");
+                document.getElementById('admin-project-name').value = '';
+                document.getElementById('admin-project-data').value = '';
+            } catch (error) {
+                 console.error("Error saving project to cloud:", error);
+                 UI.showNotification("Error saving project.", true);
+            } finally {
+                UI.hideLoading(button);
+            }
+        });
         
         document.body.addEventListener('click', e => {
             const techIcon = e.target.closest('.tech-summary-icon');
