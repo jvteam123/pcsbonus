@@ -1,7 +1,7 @@
 /**
  * PCS Bonus Calculator Refactored Script
  * Author: Renzku & Gemini
- * Version: 3.0 (Refactored for Modularity and Maintainability)
+ * Version: 3.1 (Complete Refactor)
  */
 
 // --- GLOBAL STATE & CONSTANTS ---
@@ -682,5 +682,117 @@ const App = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', App.init);
+// --- EVENT LISTENERS MODULE ---
+const EventListeners = {
+    init() {
+        // Body-level click delegation for dynamic elements
+        document.body.addEventListener('click', this.handleBodyClick);
+        
+        // Input and Change events
+        DOMElements.projectSelect.addEventListener('change', () => ProjectService.loadProjectIntoForm(DOMElements.projectSelect.value));
+        DOMElements.customizeCalcAllCheckbox.addEventListener('change', this.toggleProjectSelectMultiple);
+        DOMElements.leaderboardSortSelect.addEventListener('change', UI.applyFilters);
+        DOMElements.teamFilterContainer.addEventListener('change', UI.applyFilters);
+        document.querySelector('[data-input="search-tech-id"]').addEventListener('input', UI.applyFilters);
 
+        // Drag and Drop
+        this.setupDropZone(DOMElements.dropZone, ProjectService.handleDroppedFiles);
+        this.setupDropZone(DOMElements.adminDropZone, AdminService.handleAdminDroppedFiles);
+
+        // Admin Portal Tabs
+        document.querySelectorAll('#admin-panel-view .tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.dataset.tab;
+                document.querySelectorAll('#admin-panel-view .tab-button, .admin-tab-content').forEach(el => el.classList.remove('active'));
+                button.classList.add('active');
+                document.querySelector(`[data-tab-content="${tabId}"]`).classList.add('active');
+                if (tabId === 'admin-visitors') AdminService.loadVisitorLog();
+                if (tabId === 'admin-projects') AdminService.loadAdminProjectList();
+            });
+        });
+    },
+
+    handleBodyClick(e) {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+        const actionMap = {
+            'open-guided-setup': GuidedSetup.start,
+            'open-teams-modal': () => {
+                const container = DOMElements.teamListContainer;
+                container.innerHTML = '';
+                Object.entries(AppState.teamSettings).forEach(([teamName, techIds]) => UI.addTeamCard(teamName, techIds, container));
+                UI.openModal('manage-teams');
+            },
+            'open-settings-modal': SettingsService.populateAdvanceSettingsEditor,
+            'open-admin-portal': () => UI.openModal('admin-portal'),
+            'open-info-modal': () => UI.openModal('important-info'),
+            'toggle-theme': () => {
+                document.body.classList.toggle('light-theme');
+                localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+            },
+            'report-bug': () => window.open("https://teams.microsoft.com/l/chat/48:notes/conversations?context=%7B%22contextType%22%3A%22chat%22%7D", "_blank"),
+            'clear-all-data': App.clearAllData,
+            'refresh-project-list': ProjectService.fetchLocalProjectListSummary,
+            'edit-local-project': ProjectService.toggleLocalEditMode,
+            'delete-local-project': () => ProjectService.deleteProjectFromIndexedDB(DOMElements.projectSelect.value),
+            'save-local-project': (e) => ProjectService.saveProjectToIndexedDB(e.target),
+            'cancel-edit-local-project': ProjectService.cancelLocalEdit,
+            'calculate-single': (e) => ProjectService.runCalculation(e.target, false),
+            'calculate-all': (e) => ProjectService.runCalculation(e.target, true),
+            'sync-projects-from-cloud': (e) => ProjectService.syncProjectsFromCloud(e.currentTarget),
+            'show-tech-summary': () => {
+                const techId = target.dataset.techId;
+                const tech = AppState.currentTechStats[techId];
+                if (tech) {
+                    document.querySelector('[data-component="tech-summary-title"]').textContent = `Summary for ${techId}`;
+                    document.querySelector('[data-component="tech-summary-body"]').innerHTML = UI.generateTechBreakdownHTML(tech);
+                    UI.openModal('tech-summary');
+                }
+            },
+            // Team Modal Actions
+            'add-new-team': () => UI.addTeamCard('', [], DOMElements.teamListContainer),
+            'save-teams': SettingsService.saveTeamSettings,
+            // Settings Modal Actions
+            'reset-settings': SettingsService.resetToDefaults,
+            'save-settings': SettingsService.save,
+            // Admin Actions
+            'admin-login': FirebaseService.handleAdminLogin,
+            'admin-save-project': (e) => AdminService.saveCloudProject(e.target),
+            'admin-cancel-edit': AdminService.resetAdminProjectForm,
+            'admin-edit-project': () => AdminService.editCloudProject(target.dataset.projectId),
+            'admin-delete-project': () => AdminService.deleteCloudProject(target.dataset.projectId),
+            'admin-send-update': AdminService.sendUpdateNotification,
+            'accept-update': FirebaseService.acceptUpdate,
+            // Guided Setup Actions
+            'setup-next': GuidedSetup.nextStep,
+            'setup-prev': GuidedSetup.prevStep,
+            'setup-finish': GuidedSetup.finish,
+            'setup-add-team': () => UI.addTeamCard('', [], DOMElements.setupTeamList),
+        };
+
+        if (actionMap[action]) {
+            actionMap[action]();
+        }
+    },
+
+    toggleProjectSelectMultiple(e) {
+        const isChecked = e.target.checked;
+        DOMElements.projectSelect.multiple = isChecked;
+        DOMElements.projectSelect.size = isChecked ? 6 : 1;
+        document.querySelector('[data-action="calculate-single"]').disabled = isChecked;
+    },
+
+    setupDropZone(element, handler) {
+        element.addEventListener('dragover', e => { e.preventDefault(); element.classList.add('bg-brand-700'); });
+        element.addEventListener('dragleave', e => element.classList.remove('bg-brand-700'));
+        element.addEventListener('drop', e => { 
+            e.preventDefault(); 
+            element.classList.remove('bg-brand-700'); 
+            handler(e.dataTransfer.files); 
+        });
+    }
+};
+
+document.addEventListener('DOMContentLoaded', App.init);
