@@ -1,7 +1,7 @@
 /**
  * PCS Bonus Calculator Refactored Script
  * Author: Renzku & Gemini
- * Version: 3.1 (Complete Refactor)
+ * Version: 3.2 (Complete & Corrected Refactor)
  */
 
 // --- GLOBAL STATE & CONSTANTS ---
@@ -679,7 +679,22 @@ const App = {
             SettingsService.loadCalculationSettings(), 
             SettingsService.loadCountingSettings() 
         ]);
-    }
+    },
+    async clearAllData() {
+        if (confirm("Clear ALL data? This deletes projects and resets all settings to their defaults.")) {
+            if (AppState.db) {
+                AppState.db.close();
+            }
+            const req = indexedDB.deleteDatabase('BonusCalculatorDB');
+            req.onsuccess = async () => {
+                alert("All data has been cleared. The application will now reset.");
+                localStorage.clear(); // Clear local storage too
+                window.location.reload();
+            };
+            req.onerror = () => alert("Error clearing data. Please close all other tabs with this application open and try again.");
+            req.onblocked = () => alert("Could not clear data. Please close all other tabs with this application open and try again.");
+        }
+    },
 };
 
 // --- EVENT LISTENERS MODULE ---
@@ -796,3 +811,4 @@ const EventListeners = {
 };
 
 document.addEventListener('DOMContentLoaded', App.init);
+
