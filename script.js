@@ -631,12 +631,11 @@ const Handlers = {
     async initializeApp() {
         await DB.open();
         
-        // Initialize dayjs plugin for relative time
         dayjs.extend(window.dayjs_plugin_relativeTime);
 
         Handlers.setupEventListeners();
         document.body.classList.toggle('light-theme', localStorage.getItem('theme') === 'light');
-        this.initializeFirebase(); // Setup Firebase and its listeners
+        this.initializeFirebase();
 
         await Promise.all([ Handlers.fetchProjectListSummary(), Handlers.loadTeamSettings(), Handlers.loadBonusTiers(), Handlers.loadCalculationSettings(), Handlers.loadCountingSettings() ]);
         
@@ -707,7 +706,7 @@ const Handlers = {
                 return;
             }
 
-            const parser = new UAParser(); // Initialize parser
+            const parser = new UAParser();
             let logsHTML = '';
             
             querySnapshot.forEach(doc => {
@@ -715,13 +714,11 @@ const Handlers = {
                 const timestamp = data.timestamp ? data.timestamp.toDate() : new Date();
                 const userAgent = data.userAgent;
 
-                // Parse User Agent
                 parser.setUA(userAgent);
                 const result = parser.getResult();
                 const browser = `${result.browser.name || 'N/A'} ${result.browser.version || ''}`;
                 const os = `${result.os.name || 'N/A'} ${result.os.version || ''}`;
 
-                // Format time using dayjs
                 const timeAgo = dayjs(timestamp).fromNow();
 
                 logsHTML += `
@@ -743,19 +740,16 @@ const Handlers = {
         try {
             const { db, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } = AppState.firebase.tools;
             
-            // Add the new visitor log
             await addDoc(collection(db, "visitors"), {
                 timestamp: new Date(),
                 userAgent: navigator.userAgent
             });
 
-            // Clean up old logs, keeping only the 10 most recent
             const q = query(collection(db, "visitors"), orderBy("timestamp", "desc"));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.size > 10) {
                 const deletePromises = [];
-                // Start deleting from the 11th item onwards
                 for (let i = 10; i < querySnapshot.docs.length; i++) {
                     const docToDelete = querySnapshot.docs[i];
                     deletePromises.push(deleteDoc(doc(db, "visitors", docToDelete.id)));
@@ -1024,7 +1018,7 @@ const Handlers = {
             const req = indexedDB.deleteDatabase('BonusCalculatorDB');
             req.onsuccess = async () => {
                 alert("All data has been cleared. The application will now reset.");
-                localStorage.clear(); // Clear local storage too
+                localStorage.clear();
                 window.location.reload();
             };
             req.onerror = () => alert("Error clearing data. Please close all other tabs with this application open and try again.");
@@ -1243,7 +1237,6 @@ const Handlers = {
             const existingId = document.getElementById('project-select').value;
             const projectId = existingId ? existingId : `${name.replace(/\W/g, '_').toLowerCase()}_${Date.now()}`;
             
-            // Compress data for local storage
             const compressed = pako.deflate(new TextEncoder().encode(data));
             let binary = '';
             const len = compressed.byteLength;
@@ -1339,16 +1332,16 @@ const Handlers = {
         });
 
         listen('accept-update-btn', 'click', async () => {
-            await this.resetAdvanceSettingsToDefaults(); // Reset settings
+            await this.resetAdvanceSettingsToDefaults();
             const { db, collection, query, orderBy, limit, getDocs } = AppState.firebase.tools;
             const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"), limit(1));
             const snapshot = await getDocs(q);
             if (!snapshot.empty) {
                 const latestUpdateId = snapshot.docs[0].id;
-                localStorage.setItem('acceptedUpdateId', latestUpdateId); // Mark as accepted
+                localStorage.setItem('acceptedUpdateId', latestUpdateId);
             }
-            document.getElementById('user-update-banner').classList.add('hidden'); // Hide banner
-            window.location.reload(); // Refresh the page
+            document.getElementById('user-update-banner').classList.add('hidden');
+            window.location.reload();
         });
         
         listen('admin-send-update-btn', 'click', async () => {
@@ -1373,16 +1366,17 @@ const Handlers = {
             button.disabled = true;
 
             try {
-                const { db, collection, getDocs, query, where } = AppState.firebase.tools;
+                const { db, collection, getDocs, query, where } = AppState.firebase.tools; // Ensure 'where' is destructured
                 const lastSync = localStorage.getItem('lastProjectSync');
                 const lastSyncTime = lastSync ? parseInt(lastSync, 10) : 0;
         
-                // Query for projects modified since the last sync
                 const q = query(collection(db, "projects"), where("lastModified", ">", lastSyncTime));
                 const querySnapshot = await getDocs(q);
 
                 if (querySnapshot.empty) {
                     UI.showNotification("All projects are up to date.");
+                    // Still update the timestamp to now even if no new projects
+                    localStorage.setItem('lastProjectSync', Date.now().toString());
                     return;
                 }
 
@@ -1392,10 +1386,11 @@ const Handlers = {
                     successCount++;
                 }
 
-                await this.fetchProjectListSummary();
-                UI.showNotification(`${successCount} project(s) synced from the cloud.`);
+                if (successCount > 0) {
+                    await this.fetchProjectListSummary();
+                    UI.showNotification(`${successCount} project(s) synced from the cloud.`);
+                }
                 
-                // Update the last sync timestamp to now
                 localStorage.setItem('lastProjectSync', Date.now().toString());
 
             } catch (error) {
@@ -1406,7 +1401,6 @@ const Handlers = {
                 button.disabled = false;
             }
         });
-
 
         listen('admin-cancel-edit-btn', 'click', this.resetAdminProjectForm);
         
@@ -1478,7 +1472,7 @@ const Handlers = {
                 isIRProject: document.getElementById('admin-is-ir-checkbox').checked,
                 gsdValue: document.getElementById('admin-gsd-select').value,
                 projectOrder: Date.now(),
-                lastModified: Date.now() // Add lastModified timestamp
+                lastModified: Date.now()
             };
 
             try {
