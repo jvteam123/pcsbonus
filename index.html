@@ -188,7 +188,9 @@
                         <div class="flex items-center gap-2"><input id="admin-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="admin-is-ir-checkbox" class="text-sm font-medium text-accent">IR Project</label></div>
                         <select id="admin-gsd-select" class="input-field text-sm"><option value="3in">3in GSD</option><option value="4in">4in GSD</option><option value="6in">6in GSD</option><option value="9in">9in GSD</option></select>
                     </div>
-                    <textarea id="admin-project-data" rows="10" class="input-field w-full font-mono text-sm custom-scrollbar mt-4" placeholder="Paste project data here..."></textarea>
+                 <div id="admin-drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
+                   <textarea id="admin-project-data" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
+                </div>
                     <button id="admin-save-project-btn" class="btn-primary mt-4">Save Project to Cloud</button>
                 </div>
                 <div id="tab-admin-visitors" class="admin-tab-content">
