@@ -12,11 +12,12 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://unpkg.com/shapefile@0.6.6/dist/shapefile.js"></script>
     
+    <!-- Libraries for improved visitor log -->
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@0.7.32/src/ua-parser.min.js"></script>
 
-   <link rel="stylesheet" href="style.css?v=1.3">
+   <link rel="stylesheet" href="style.css?v=1.4">
     <script>
         // Custom Tailwind theme
         tailwind.config = {
@@ -36,14 +37,14 @@
 </head>
 <body class="bg-brand-900 text-brand-300 font-sans antialiased">
 
-    <div id="user-update-banner" class="hidden fixed top-0 left-0 right-0 bg-accent text-white p-3 text-center z-50 flex justify-center items-center gap-4">
-        <span id="update-banner-text">A new update is available for the calculation settings.</span>
-        <button id="accept-update-btn" class="btn-secondary bg-white/20 hover:bg-white/30 border-white/30 text-white py-1 px-3">Accept Update</button>
+    <div id="user-update-banner" data-component="update-banner" class="hidden fixed top-0 left-0 right-0 bg-accent text-white p-3 text-center z-50 flex justify-center items-center gap-4">
+        <span data-component="update-banner-text">A new update is available for the calculation settings.</span>
+        <button data-action="accept-update" class="btn-secondary bg-white/20 hover:bg-white/30 border-white/30 text-white py-1 px-3">Accept Update</button>
     </div>
 
-    <div id="spotlight-overlay" class="hidden"></div>
+    <div id="spotlight-overlay" data-component="spotlight-overlay" class="hidden"></div>
 
-    <div id="update-notification" class="hidden fixed top-5 right-5 bg-accent text-white py-2 px-4 rounded-lg shadow-lg z-[60] transition-all duration-300">
+    <div id="update-notification" data-component="notification" class="hidden fixed top-5 right-5 bg-accent text-white py-2 px-4 rounded-lg shadow-lg z-[60] transition-all duration-300">
         Notification message.
     </div>
 
@@ -51,21 +52,21 @@
         <header class="flex justify-between items-center mb-6">
             <h1 class="text-xl md:text-2xl font-bold text-white">PCS Bonus Calculator V2</h1>
             <div class="relative" id="main-menu-container">
-                <button id="main-menu-btn" class="menu-btn" aria-label="Main Menu">
+                <button data-action="toggle-main-menu" class="menu-btn" aria-label="Main Menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                     <span>Menu</span>
                 </button>
-                <div id="main-menu-dropdown" class="absolute right-0 mt-2 w-56 bg-brand-800 border border-brand-700 rounded-md shadow-lg z-20 hidden">
-                    <a href="#" id="guided-setup-btn" class="dropdown-item">Guided Setup</a>
-                    <a href="#" id="manage-teams-btn" class="dropdown-item">Manage Teams</a>
-                    <a href="#" id="advance-settings-btn" class="dropdown-item">Advance Settings</a>
-                    <a href="#" id="admin-portal-btn" class="dropdown-item">Admin Portal</a>
-                    <a href="#" id="toggle-theme-btn" class="dropdown-item">Toggle Theme</a>
+                <div data-component="main-menu" class="absolute right-0 mt-2 w-56 bg-brand-800 border border-brand-700 rounded-md shadow-lg z-20 hidden">
+                    <a href="#" data-action="open-guided-setup" class="dropdown-item">Guided Setup</a>
+                    <a href="#" data-action="open-teams-modal" class="dropdown-item">Manage Teams</a>
+                    <a href="#" data-action="open-settings-modal" class="dropdown-item">Advance Settings</a>
+                    <a href="#" data-action="open-admin-portal" class="dropdown-item">Admin Portal</a>
+                    <a href="#" data-action="toggle-theme" class="dropdown-item">Toggle Theme</a>
                     <div class="border-t border-brand-700 my-1"></div>
-                    <a href="#" id="important-info-btn" class="dropdown-item">Important Information</a>
-                    <a href="#" id="bug-report-btn" class="dropdown-item">Report a Bug</a>
+                    <a href="#" data-action="open-info-modal" class="dropdown-item">Important Information</a>
+                    <a href="#" data-action="report-bug" class="dropdown-item">Report a Bug</a>
                     <div class="border-t border-brand-700 my-1"></div>
-                    <a href="#" id="clear-data-btn" class="dropdown-item text-red-400 hover:bg-red-500/20">Clear All Data</a>
+                    <a href="#" data-action="clear-all-data" class="dropdown-item text-red-400 hover:bg-red-500/20">Clear All Data</a>
                 </div>
             </div>
         </header>
@@ -75,38 +76,40 @@
             <div id="data-projects-panel" class="dashboard-panel flex flex-col">
                 <div class="panel-header flex justify-between items-center">
                     <h2 class="panel-title">Data & Projects</h2>
-                    <button id="update-online-btn" title="Sync projects from cloud" class="btn-secondary py-1 px-2 text-sm update-online-btn">
-                        <svg id="update-online-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                    <button data-action="sync-projects-from-cloud" title="Sync projects from cloud" class="btn-secondary py-1 px-2 text-sm update-online-btn">
+                        <svg data-component="update-online-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
                         <span>Update online</span>
                     </button>
                 </div>
                 <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
                     <div>
                         <div class="flex items-center gap-2">
-                            <select id="project-select" class="input-field w-full"><option value="">Select a project...</option></select>
-                            <span id="project-ir-badge" class="project-info-badge hidden"></span>
-                            <div id="project-loading-spinner" class="hidden"><div class="pulsing-spinner"></div></div>
-                            <button id="refresh-projects-btn" title="Refresh Project List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
-                            <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
-                            <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
+                            <select data-input="project-select" class="input-field w-full"><option value="">Select a project...</option></select>
+                            <span data-component="project-ir-badge" class="project-info-badge hidden"></span>
+                            <button data-action="refresh-project-list" title="Refresh Project List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+                            <button data-action="edit-local-project" title="Edit Selected Project" class="control-btn-icon hidden"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
+                            <button data-action="delete-local-project" title="Delete Selected Project" class="control-btn-icon-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
                         </div>
-                        <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
-                            <textarea id="techData" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
+                        <div data-component="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
+                            <textarea data-input="project-data" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <input type="text" id="project-name" class="input-field" placeholder="Project Name">
-                            <div class="flex items-center gap-2"><input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="is-ir-project-checkbox" class="text-sm font-medium text-accent">IR Project</label></div>
-                            <select id="gsd-value-select" class="input-field text-sm"><option value="3in">3in GSD</option><option value="4in">4in GSD</option><option value="6in">6in GSD</option><option value="9in">9in GSD</option></select>
-                            <div class="flex items-center gap-2"><button id="save-project-btn" class="btn-primary w-full">Save Project</button><button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel</button></div>
+                            <input type="text" data-input="project-name" class="input-field" placeholder="Project Name">
+                            <div class="flex items-center gap-2"><input data-input="project-is-ir" id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="is-ir-project-checkbox" class="text-sm font-medium text-accent">IR Project</label></div>
+                            <select data-input="project-gsd" class="input-field text-sm"><option value="3in">3in GSD</option><option value="4in">4in GSD</option><option value="6in">6in GSD</option><option value="9in">9in GSD</option></select>
+                            <div class="flex items-center gap-2">
+                                <button data-action="save-local-project" class="btn-primary w-full">Save Project</button>
+                                <button data-action="cancel-edit-local-project" class="btn-secondary w-full hidden">Cancel</button>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="border-t border-brand-700 pt-4 mt-4 space-y-4">
-                        <input type="number" id="bonusMultiplierDirect" class="input-field w-full" placeholder="Bonus Multiplier (e.g., 9)">
+                        <input type="number" data-input="bonus-multiplier" class="input-field w-full" placeholder="Bonus Multiplier (e.g., 9)">
                         <div class="space-y-3">
-                            <button id="calculate-btn" class="btn-primary w-full text-base">Calculate</button>
-                            <div class="flex items-center"><input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="customize-calc-all-cb" class="ml-2 text-sm">Calculate Specific Projects</label></div>
-                            <button id="calculate-all-btn" class="btn-primary w-full">Calculate All / Specific</button>
+                            <button data-action="calculate-single" class="btn-primary w-full text-base">Calculate</button>
+                            <div class="flex items-center"><input data-input="customize-calc-all-cb" id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="customize-calc-all-cb" class="ml-2 text-sm">Calculate Specific Projects</label></div>
+                            <button data-action="calculate-all" class="btn-primary w-full">Calculate All / Specific</button>
                         </div>
                     </div>
                 </div>
@@ -117,19 +120,19 @@
                 <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-semibold text-white sr-only">Leaderboard</h3>
-                        <select id="leaderboard-sort-select" class="input-field text-xs py-1 w-full"><option value="fixQuality">Sort by: Quality</option><option value="totalPoints">Sort by: Points</option><option value="fixTasks">Sort by: Tasks</option></select>
+                        <select data-input="leaderboard-sort" class="input-field text-xs py-1 w-full"><option value="fixQuality">Sort by: Quality</option><option value="totalPoints">Sort by: Points</option><option value="fixTasks">Sort by: Tasks</option></select>
                     </div>
-                    <div class="table-container text-sm"><table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr><th class="p-2 text-left">Rank</th><th class="p-2 text-left">Tech</th><th id="leaderboard-metric-header" class="p-2 text-left">Value</th></tr></thead><tbody id="leaderboard-body"><tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr></tbody></table></div>
+                    <div class="table-container text-sm"><table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr><th class="p-2 text-left">Rank</th><th class="p-2 text-left">Tech</th><th data-component="leaderboard-metric-header" class="p-2 text-left">Value</th></tr></thead><tbody data-component="leaderboard-body"><tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr></tbody></table></div>
                 </div>
             </div>
 
             <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col">
                 <div class="panel-header"><h2 class="panel-title">TL Summary</h2></div>
                 <div class="p-4 space-y-4 flex flex-col min-h-0">
-                    <div><h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3><div id="team-quality-container" class="space-y-2"></div></div>
+                    <div><h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3><div data-component="team-quality-container" class="space-y-2"></div></div>
                     <div class="border-t border-brand-700 pt-4 mt-4 flex flex-col min-h-0 flex-grow">
                         <h3 class="text-lg font-semibold text-white mb-2 flex-shrink-0">Fix4 Breakdown</h3>
-                        <div id="fix4-breakdown-container" class="space-y-4 overflow-y-auto custom-scrollbar flex-grow"></div>
+                        <div data-component="fix4-breakdown-container" class="space-y-4 overflow-y-auto custom-scrollbar flex-grow"></div>
                     </div>
                 </div>
             </div>
@@ -137,15 +140,18 @@
         
         <section id="quick-summary-section" class="mt-6 dashboard-panel hidden">
             <div class="panel-header"><h2 class="panel-title">Quick Summary</h2></div>
-            <div id="quick-summary-container" class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+            <div data-component="quick-summary-container" class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
         </section>
 
         <section id="bonus-payout-section" class="mt-6 dashboard-panel hidden">
-            <div class="panel-header"><h2 id="results-title" class="panel-title">Bonus Payouts</h2></div>
+            <div class="panel-header"><h2 data-component="results-title" class="panel-title">Bonus Payouts</h2></div>
             <div class="p-4 space-y-4 panel-content-flex">
                 <div class="flex flex-col md:flex-row gap-4">
-                    <input type="text" id="search-tech-id" class="input-field w-full md:w-1/3" placeholder="Search Tech ID...">
-                    <div id="team-filter-container" class="flex flex-wrap gap-x-4 gap-y-2 items-center"><span class="text-sm font-medium text-brand-300">Filter by Team:</span><button id="refresh-teams-btn" title="Refresh Team List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button></div>
+                    <input type="text" data-input="search-tech-id" class="input-field w-full md:w-1/3" placeholder="Search Tech ID...">
+                    <div data-component="team-filter-container" class="flex flex-wrap gap-x-4 gap-y-2 items-center">
+                        <span class="text-sm font-medium text-brand-300">Filter by Team:</span>
+                        <button data-action="refresh-teams-list" title="Refresh Team List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+                    </div>
                 </div>
                 <div class="table-container max-h-[500px] custom-scrollbar border border-brand-700 rounded-md">
                     <table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr>
@@ -157,143 +163,31 @@
                         <th class="p-2 text-left sortable-header" data-sort="bonusEarned">Bonus Earned %</th>
                         <th class="p-2 text-left sortable-header" data-sort="payout">Payout</th>
                         <th class="p-2 text-center">Details</th>
-                    </tr></thead><tbody id="tech-results-tbody"></tbody></table>
+                    </tr></thead><tbody data-component="tech-results-body"></tbody></table>
                 </div>
             </div>
         </section>
     </div>
 
-    <div id="merge-fixpoints-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Merge Partials FP</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar"><div id="merge-drop-zone" class="p-10 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors"><p class="text-brand-400">Drag & drop shapefiles (.shp, .dbf) here</p></div><div id="merge-file-list" class="mt-4 text-sm"></div><div id="merge-options" class="hidden mt-4 space-y-3"><input type="text" id="merge-project-name" class="input-field w-full" placeholder="Enter Project Name"><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4"><div class="flex items-center"><input id="merge-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="merge-is-ir-checkbox" class="ml-2 block text-sm font-medium text-accent whitespace-nowrap">IR Project</label></div><div class="flex items-center w-full"><label for="merge-gsd-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label><select id="merge-gsd-select" class="input-field w-full text-sm py-1"><option value="3in">3in</option><option value="4in">4in</option><option value="6in">6in</option><option value="9in">9in</option></select></div></div></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="merge-save-btn" class="btn-primary" disabled>Save Project</button></div></div></div>
-    <div id="manage-teams-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Manage Teams</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-list-container" class="p-6 overflow-y-auto custom-scrollbar space-y-4"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button id="add-team-btn" class="btn-secondary">Add New Team</button><div class="space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-teams-btn" class="btn-primary">Save Changes</button></div></div></div></div>
-    <div id="advance-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Advance Settings</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="advance-settings-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button id="reset-defaults-btn" class="btn-secondary">Reset Defaults</button><div class="space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-advance-settings-btn" class="btn-primary">Save Changes</button></div></div></div></div>
-    <div id="important-info-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Important Information</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar space-y-4" id="important-info-body"><div class="info-section"><h4 class="info-title">Calculation Logic</h4><p class="info-text">This calculator is based on the formulas and tables provided in the "Phili IC Fixpoints App Documentation v1.0." The logic employed in all calculations is designed to be transparent and accurate according to this official documentation.</p></div><div class="info-section"><h4 class="info-title">Disclaimer and Intended Use</h4><p class="info-text">This tool is intended for personal and informational purposes only. The results generated are estimates and should be used as a general guideline. These figures are not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
-    <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="tech-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
-    <div id="team-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="team-summary-modal-title" class="text-lg font-semibold text-white">Team Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
+    <!-- Modals -->
+    <div data-modal="merge-fixpoints" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Merge Partials FP</h3><button data-action="close-modal" class="text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar"><div id="merge-drop-zone" class="p-10 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors"><p class="text-brand-400">Drag & drop shapefiles (.shp, .dbf) here</p></div><div id="merge-file-list" class="mt-4 text-sm"></div><div id="merge-options" class="hidden mt-4 space-y-3"><input type="text" id="merge-project-name" class="input-field w-full" placeholder="Enter Project Name"><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4"><div class="flex items-center"><input id="merge-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="merge-is-ir-checkbox" class="ml-2 block text-sm font-medium text-accent whitespace-nowrap">IR Project</label></div><div class="flex items-center w-full"><label for="merge-gsd-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label><select id="merge-gsd-select" class="input-field w-full text-sm py-1"><option value="3in">3in</option><option value="4in">4in</option><option value="6in">6in</option><option value="9in">9in</option></select></div></div></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button data-action="close-modal" class="btn-secondary">Close</button><button id="merge-save-btn" class="btn-primary" disabled>Save Project</button></div></div></div>
+    <div data-modal="manage-teams" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Manage Teams</h3><button data-action="close-modal" class="text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div data-component="team-list-container" class="p-6 overflow-y-auto custom-scrollbar space-y-4"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button data-action="add-new-team" class="btn-secondary">Add New Team</button><div class="space-x-2"><button data-action="close-modal" class="btn-secondary">Close</button><button data-action="save-teams" class="btn-primary">Save Changes</button></div></div></div></div>
+    <div data-modal="advance-settings" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Advance Settings</h3><button data-action="close-modal" class="text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div data-component="advance-settings-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button data-action="reset-settings" class="btn-secondary">Reset Defaults</button><div class="space-x-2"><button data-action="close-modal" class="btn-secondary">Close</button><button data-action="save-settings" class="btn-primary">Save Changes</button></div></div></div></div>
+    <div data-modal="important-info" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Important Information</h3><button data-action="close-modal" class="text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar space-y-4"><div class="info-section"><h4 class="info-title">Calculation Logic</h4><p class="info-text">This calculator is based on the formulas and tables provided in the "Phili IC Fixpoints App Documentation v1.0." The logic employed in all calculations is designed to be transparent and accurate according to this official documentation.</p></div><div class="info-section"><h4 class="info-title">Disclaimer and Intended Use</h4><p class="info-text">This tool is intended for personal and informational purposes only. The results generated are estimates and should be used as a general guideline. These figures are not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button data-action="close-modal" class="btn-secondary">Close</button></div></div></div>
+    <div data-modal="tech-summary" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 data-component="tech-summary-title" class="text-lg font-semibold text-white">Tech Summary</h3><button data-action="close-modal" class="text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div data-component="tech-summary-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button data-action="close-modal" class="btn-secondary">Close</button></div></div></div>
+    <div data-modal="team-summary" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 data-component="team-summary-title" class="text-lg font-semibold text-white">Team Summary</h3><button data-action="close-modal" class="text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div data-component="team-summary-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button data-action="close-modal" class="btn-secondary">Close</button></div></div></div>
+    <div data-modal="guided-setup" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Guided Setup</h3><button data-action="close-modal" class="text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar"><div data-component="setup-step-indicator" class="flex justify-center items-center gap-4 mb-6"></div><div id="setup-steps-container"><div class="setup-step" data-step="1"><h4 class="text-xl font-bold text-center mb-2">Welcome to the PCS Bonus Calculator!</h4><p class="text-center text-brand-400 max-w-2xl mx-auto">This guided setup will help you configure the calculator. We'll set up your teams, review settings, and show you how to perform calculations.</p></div><div class="setup-step" data-step="2"><h4 class="text-xl font-bold mb-4">Step 1: Configure Your Teams</h4><p class="text-brand-400 mb-4">Add your teams and assign Tech IDs to them. The default teams are provided as an example.</p><div data-component="setup-team-list" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar p-2"></div><button data-action="setup-add-team" class="btn-secondary mt-4">Add New Team</button></div><div class="setup-step" data-step="3"><h4 class="text-xl font-bold mb-4">Step 2: How to Calculate</h4><p class="text-brand-400 mb-4">This tour will guide you through the main calculation steps on the main screen. The modal will close temporarily.</p></div><div class="setup-step" data-step="4"><h4 class="text-xl font-bold text-center mb-2">Setup Complete!</h4><p class="text-center text-brand-400 max-w-2xl mx-auto">You're all set! You can now start using the calculator. Remember, you can always revisit team and calculation settings from the main menu.</p></div></div></div><div class="p-4 border-t border-brand-700 flex justify-end items-center gap-2"><button data-action="setup-prev" class="btn-secondary">Previous</button><button data-action="setup-next" class="btn-primary">Next</button><button data-action="setup-finish" class="btn-primary hidden">Finish</button></div></div></div>
+    <div data-modal="admin-portal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Admin Portal</h3><button data-action="close-modal" class="text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div data-component="admin-login-view" class="p-6 text-center"><h4 class="text-xl font-bold mb-4">Admin Access Required</h4><p class="text-brand-400 mb-6">Please sign in with your authorized Google account.</p><button data-action="admin-login" class="btn-primary"><svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C41.38,36.128,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>Sign In with Google</button></div><div data-component="admin-panel-view" class="hidden p-6 overflow-y-auto custom-scrollbar"><div class="flex items-center gap-2 border-b border-brand-700 mb-4"><button class="tab-button active" data-tab="admin-projects">Projects</button><button class="tab-button" data-tab="admin-visitors">Visitor Log</button><button class="tab-button" data-tab="admin-updates">Updates</button></div><div data-tab-content="admin-projects" class="admin-tab-content active"><div id="admin-project-form-container" class="mb-6 p-4 border border-brand-700 rounded-lg"><h4 data-component="admin-form-title" class="text-xl font-bold mb-4">Add New Project</h4><input type="hidden" data-input="admin-project-id"><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"><input type="text" data-input="admin-project-name" class="input-field" placeholder="Project Name"><select data-input="admin-gsd-select" class="input-field text-sm"><option value="3in">3in GSD</option><option value="4in">4in GSD</option><option value="6in">6in GSD</option><option value="9in">9in GSD</option></select><div class="flex items-center gap-2 col-span-full"><input data-input="admin-is-ir-checkbox" id="admin-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="admin-is-ir-checkbox" class="text-sm font-medium text-accent">IR Project</label></div></div><div data-component="admin-drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4"><textarea data-input="admin-project-data" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea></div><div class="flex gap-2 mt-4"><button data-action="admin-save-project" class="btn-primary">Save Project</button><button data-action="admin-cancel-edit" class="btn-secondary hidden">Cancel Edit</button></div></div><h4 class="text-xl font-bold mb-4">Cloud Projects</h4><div class="table-container max-h-96 custom-scrollbar border border-brand-700 rounded-md"><table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr><th class="p-2 text-left">Project Name</th><th class="p-2 text-left">GSD</th><th class="p-2 text-center">IR</th><th class="p-2 text-center">Actions</th></tr></thead><tbody data-component="admin-project-list-body"></tbody></table></div></div><div data-tab-content="admin-visitors" class="admin-tab-content"><h4 class="text-xl font-bold mb-4">Visitor Log</h4><div class="table-container max-h-96 custom-scrollbar border border-brand-700 rounded-md"><table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr><th class="p-2 text-left">Time</th><th class="p-2 text-left">Browser</th><th class="p-2 text-left">Operating System</th></tr></thead><tbody data-component="visitor-log-body"></tbody></table></div></div><div data-tab-content="admin-updates" class="admin-tab-content"><h4 class="text-xl font-bold mb-4">Send Update Notification</h4><textarea data-input="admin-update-text" class="input-field w-full" rows="3" placeholder="Enter update message for users..."></textarea><button data-action="admin-send-update" class="btn-primary mt-2">Send Update</button></div></div></div></div>
 
-    <div id="guided-setup-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Guided Setup</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
-            </div>
-            <div class="p-6 overflow-y-auto custom-scrollbar">
-                <div id="setup-step-indicator" class="flex justify-center items-center gap-4 mb-6"></div>
-                <div id="setup-steps-container">
-                    <div class="setup-step" data-step="1">
-                        <h4 class="text-xl font-bold text-center mb-2">Welcome to the PCS Bonus Calculator!</h4>
-                        <p class="text-center text-brand-400 max-w-2xl mx-auto">This guided setup will help you configure the calculator. We'll set up your teams, review settings, and show you how to perform calculations.</p>
-                    </div>
-                    <div class="setup-step" data-step="2">
-                        <h4 class="text-xl font-bold mb-4">Step 1: Configure Your Teams</h4>
-                        <p class="text-brand-400 mb-4">Add your teams and assign Tech IDs to them. The default teams are provided as an example.</p>
-                        <div id="setup-team-list" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar p-2"></div>
-                        <button id="setup-add-team-btn" class="btn-secondary mt-4">Add New Team</button>
-                    </div>
-                    <div class="setup-step" data-step="3">
-                        <h4 class="text-xl font-bold mb-4">Step 2: How to Calculate</h4>
-                        <p class="text-brand-400 mb-4">This tour will guide you through the main calculation steps on the main screen. The modal will close temporarily.</p>
-                    </div>
-                     <div class="setup-step" data-step="4">
-                        <h4 class="text-xl font-bold text-center mb-2">Setup Complete!</h4>
-                        <p class="text-center text-brand-400 max-w-2xl mx-auto">You're all set! You can now start using the calculator. Remember, you can always revisit team and calculation settings from the main menu.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 border-t border-brand-700 flex justify-end items-center gap-2">
-                <button id="setup-prev-btn" class="btn-secondary">Previous</button>
-                <button id="setup-next-btn" class="btn-primary">Next</button>
-                <button id="setup-finish-btn" class="btn-primary hidden">Finish</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="admin-portal-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Admin Portal</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
-            </div>
-            <div id="admin-login-view" class="p-6 text-center">
-                <h4 class="text-xl font-bold mb-4">Admin Access Required</h4>
-                <p class="text-brand-400 mb-6">Please sign in with your authorized Google account.</p>
-                <button id="admin-google-signin-btn" class="btn-primary">
-                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C41.38,36.128,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
-                    Sign In with Google
-                </button>
-            </div>
-            <div id="admin-panel-view" class="hidden p-6 overflow-y-auto custom-scrollbar">
-                <div class="flex items-center gap-2 border-b border-brand-700 mb-4">
-                    <button class="tab-button active" data-tab="admin-projects">Projects</button>
-                    <button class="tab-button" data-tab="admin-visitors">Visitor Log</button>
-                    <button class="tab-button" data-tab="admin-updates">Updates</button>
-                </div>
-                <div id="tab-admin-projects" class="admin-tab-content active">
-                    <div id="admin-project-form-container" class="mb-6 p-4 border border-brand-700 rounded-lg">
-                        <h4 id="admin-form-title" class="text-xl font-bold mb-4">Add New Project</h4>
-                        <input type="hidden" id="admin-project-id">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <input type="text" id="admin-project-name" class="input-field" placeholder="Project Name">
-                            <select id="admin-gsd-select" class="input-field text-sm"><option value="3in">3in GSD</option><option value="4in">4in GSD</option><option value="6in">6in GSD</option><option value="9in">9in GSD</option></select>
-                            <div class="flex items-center gap-2 col-span-full"><input id="admin-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="admin-is-ir-checkbox" class="text-sm font-medium text-accent">IR Project</label></div>
-                        </div>
-                        <div id="admin-drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
-                            <textarea id="admin-project-data" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
-                        </div>
-                        <div class="flex gap-2 mt-4">
-                            <button id="admin-save-project-btn" class="btn-primary">Save Project</button>
-                            <button id="admin-cancel-edit-btn" class="btn-secondary hidden">Cancel Edit</button>
-                        </div>
-                    </div>
-
-                    <h4 class="text-xl font-bold mb-4">Cloud Projects</h4>
-                    <div class="table-container max-h-96 custom-scrollbar border border-brand-700 rounded-md">
-                        <table class="min-w-full">
-                            <thead class="sticky top-0 bg-brand-800">
-                                <tr>
-                                    <th class="p-2 text-left">Project Name</th>
-                                    <th class="p-2 text-left">GSD</th>
-                                    <th class="p-2 text-center">IR</th>
-                                    <th class="p-2 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-project-list-tbody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="tab-admin-visitors" class="admin-tab-content">
-                    <h4 class="text-xl font-bold mb-4">Visitor Log</h4>
-                    <div id="visitor-log-container" class="table-container max-h-96 custom-scrollbar border border-brand-700 rounded-md">
-                        <table class="min-w-full">
-                            <thead class="sticky top-0 bg-brand-800">
-                                <tr>
-                                    <th class="p-2 text-left">Time</th>
-                                    <th class="p-2 text-left">Browser</th>
-                                    <th class="p-2 text-left">Operating System</th>
-                                </tr>
-                            </thead>
-                            <tbody id="visitor-log-tbody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="tab-admin-updates" class="admin-tab-content">
-                     <h4 class="text-xl font-bold mb-4">Send Update Notification</h4>
-                    <textarea id="admin-update-text" class="input-field w-full" rows="3" placeholder="Enter update message for users..."></textarea>
-                    <button id="admin-send-update-btn" class="btn-primary mt-2">Send Update</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- Firebase SDK -->
     <script src="chatbot-knowledge-base.js"></script>
     <script src="chatbot.js"></script>
-    <script src="script.js?v=1.2"></script>
+    <script src="script.js?v=1.4"></script>
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, limit, doc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDkeA5QzcTkpgNiSDJ2S4rwHD8g8eHbj5M",
             authDomain: "pcsbonus-54607.firebaseapp.com",
@@ -304,27 +198,44 @@
             measurementId: "G-C2J9ESZFTH"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+        try {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            const provider = new GoogleAuthProvider();
 
-        window.firebaseTools = { auth, provider, db, signInWithPopup, collection, addDoc, getDocs, onAuthStateChanged, onSnapshot, query, orderBy, limit, doc, deleteDoc, setDoc, getDoc };
+            window.firebaseTools = { 
+                auth, provider, db, 
+                signInWithPopup, onAuthStateChanged, signOut,
+                collection, addDoc, getDocs, onSnapshot, 
+                query, orderBy, limit, 
+                doc, deleteDoc, setDoc, getDoc 
+            };
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+        }
     </script>
+    <!-- Basic DOM Event Listeners -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const btn = document.getElementById('main-menu-btn');
-            const dropdown = document.getElementById('main-menu-dropdown');
-            if (btn && dropdown) {
-                btn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); });
-                document.addEventListener('click', (e) => { if (!btn.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden'); });
-            }
-            document.querySelectorAll('.modal-close-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const modal = button.closest('.fixed');
-                    if (modal) modal.classList.add('hidden');
-                });
+            document.body.addEventListener('click', (e) => {
+                const action = e.target.closest('[data-action]');
+                if (action) {
+                     if (action.dataset.action === 'close-modal') {
+                        const modal = action.closest('[data-modal]');
+                        if (modal) modal.classList.add('hidden');
+                    }
+                    if (action.dataset.action === 'toggle-main-menu') {
+                        document.querySelector('[data-component="main-menu"]')?.classList.toggle('hidden');
+                    }
+                }
+            });
+            document.addEventListener('click', (e) => {
+                const menuButton = document.querySelector('[data-action="toggle-main-menu"]');
+                const menuDropdown = document.querySelector('[data-component="main-menu"]');
+                if (menuButton && menuDropdown && !menuButton.contains(e.target) && !menuDropdown.contains(e.target)) {
+                    menuDropdown.classList.add('hidden');
+                }
             });
         });
     </script>
