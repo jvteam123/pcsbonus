@@ -1395,47 +1395,54 @@ const Handlers = {
 
         listen('admin-cancel-edit-btn', 'click', this.resetAdminProjectForm);
         
-        document.getElementById('admin-project-list-tbody').addEventListener('click', async (e) => {
-            const target = e.target;
-            const projectId = target.dataset.projectId;
+        // In script.js, inside the setupEventListeners function
 
-            if (target.classList.contains('admin-edit-project-btn')) {
-                const { db, doc, getDoc } = AppState.firebase.tools;
-                const docRef = doc(db, "projects", projectId);
-                const docSnap = await getDoc(docRef);
+document.getElementById('admin-project-list-tbody').addEventListener('click', async (e) => {
+    // Use .closest() to find the button, no matter what was clicked inside it
+    const target = e.target.closest('.admin-edit-project-btn');
 
-                if (docSnap.exists()) {
-                    const project = docSnap.data();
-                    document.getElementById('admin-form-title').textContent = `Editing: ${project.name}`;
-                    document.getElementById('admin-project-id').value = projectId;
-                    document.getElementById('admin-project-name').value = project.name;
-                    document.getElementById('admin-gsd-select').value = project.gsdValue;
-                    document.getElementById('admin-is-ir-checkbox').checked = project.isIRProject;
-                    
-                    // Decompress data for editing
-                    const binary_string = atob(project.rawData);
-                    const len = binary_string.length;
-                    const bytes = new Uint8Array(len);
-                    for (let i = 0; i < len; i++) {
-                        bytes[i] = binary_string.charCodeAt(i);
-                    }
-                    const decompressedData = pako.inflate(bytes, { to: 'string' });
-                    document.getElementById('admin-project-data').value = decompressedData;
+    // Check if a valid edit button was found
+    if (target) {
+        const projectId = target.dataset.projectId;
+        const { db, doc, getDoc } = AppState.firebase.tools;
+        const docRef = doc(db, "projects", projectId);
+        const docSnap = await getDoc(docRef);
 
-                    document.getElementById('admin-save-project-btn').textContent = 'Update Project';
-                    document.getElementById('admin-cancel-edit-btn').classList.remove('hidden');
-                }
+        if (docSnap.exists()) {
+            const project = docSnap.data();
+            document.getElementById('admin-form-title').textContent = `Editing: ${project.name}`;
+            document.getElementById('admin-project-id').value = projectId;
+            document.getElementById('admin-project-name').value = project.name;
+            document.getElementById('admin-gsd-select').value = project.gsdValue;
+            document.getElementById('admin-is-ir-checkbox').checked = project.isIRProject;
+
+            // Decompress data for editing
+            const binary_string = atob(project.rawData);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary_string.charCodeAt(i);
             }
+            const decompressedData = pako.inflate(bytes, { to: 'string' });
+            document.getElementById('admin-project-data').value = decompressedData;
 
-            if (target.classList.contains('admin-delete-project-btn')) {
-                if (confirm("Are you sure you want to delete this project from the cloud? This cannot be undone.")) {
-                    const { db, doc, deleteDoc } = AppState.firebase.tools;
-                    await deleteDoc(doc(db, "projects", projectId));
-                    UI.showNotification("Project deleted from cloud.");
-                    this.loadAdminProjectList();
-                }
-            }
-        });
+            document.getElementById('admin-save-project-btn').textContent = 'Update Project';
+            document.getElementById('admin-cancel-edit-btn').classList.remove('hidden');
+        }
+    }
+
+    // Handle delete button clicks separately
+    const deleteTarget = e.target.closest('.admin-delete-project-btn');
+    if (deleteTarget) {
+        const projectId = deleteTarget.dataset.projectId;
+        if (confirm("Are you sure you want to delete this project from the cloud? This cannot be undone.")) {
+            const { db, doc, deleteDoc } = AppState.firebase.tools;
+            await deleteDoc(doc(db, "projects", projectId));
+            UI.showNotification("Project deleted from cloud.");
+            Handlers.loadAdminProjectList(); // Assuming Handlers is accessible
+        }
+    }
+});
 
         listen('admin-save-project-btn', 'click', async (e) => {
             const button = e.target;
