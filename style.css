@@ -117,6 +117,25 @@ body.light-theme .summary-card { background-color: var(--brand-600); }
     font-weight: 700;
     color: var(--status-green) !important;
 }
+
+/* Admin Portal & Update Banner */
+.tab-button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: transparent;
+    color: var(--text-muted-color);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border-bottom: 2px solid transparent;
+}
+.tab-button.active, .tab-button:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+.admin-tab-content { display: none; }
+.admin-tab-content.active { display: block; animation: fadeIn 0.5s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
 /* Light Theme Overrides */
 body.light-theme { background-color: var(--brand-900) !important; }
 body.light-theme .bg-brand-900 { background-color: var(--brand-900) !important; }
@@ -138,10 +157,10 @@ body.light-theme .fixed.inset-0 > div { background-color: var(--brand-800) !impo
 body.light-theme .fixed.inset-0 h3, body.light-theme .fixed.inset-0 p, body.light-theme .fixed.inset-0 .info-title, body.light-theme .fixed.inset-0 .info-text { color: var(--text-color) !important; }
 body.light-theme .fixed.inset-0 .modal-close-btn { color: var(--text-muted-color) !important; }
 body.light-theme .fixed.inset-0 .modal-close-btn:hover { color: var(--text-color) !important; }
-body.light-theme #advance-settings-modal .tab-button, body.light-theme #manage-teams-modal .team-card { background-color: #F9FAFB; border-color: #E5E7EB; }
-body.light-theme #advance-settings-modal .tab-button { color: var(--text-muted-color); }
-body.light-theme #advance-settings-modal .tab-button.active { background-color: #FFFFFF; color: var(--accent); border-color: var(--accent); }
-body.light-theme #advance-settings-modal h4, body.light-theme #advance-settings-modal .text-gray-400 { color: var(--text-color) !important; }
+body.light-theme #advance-settings-modal .tab-button, body.light-theme #manage-teams-modal .team-card, body.light-theme #admin-portal-modal .tab-button { background-color: #F9FAFB; border-color: #E5E7EB; }
+body.light-theme #advance-settings-modal .tab-button, body.light-theme #admin-portal-modal .tab-button { color: var(--text-muted-color); }
+body.light-theme #advance-settings-modal .tab-button.active, body.light-theme #admin-portal-modal .tab-button.active { background-color: #FFFFFF; color: var(--accent); border-color: var(--accent); }
+body.light-theme #advance-settings-modal h4, body.light-theme #advance-settings-modal .text-gray-400, body.light-theme #admin-portal-modal h4, body.light-theme #admin-portal-modal p { color: var(--text-color) !important; }
 body.light-theme #advance-settings-modal #category-points-tbody tr, body.light-theme #advance-settings-modal .bg-gray-800\/50 { background-color: transparent !important; }
 body.light-theme #advance-settings-modal #category-points-tbody tr:nth-child(even) { background-color: var(--brand-600) !important; }
 
