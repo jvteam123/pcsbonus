@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Code Editor</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+        }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #4a5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: #2d3748;
+        }
+        /* Use CSS for syntax highlighting and custom styles */
+        pre code.hljs {
+            display: block;
+            overflow-x: auto;
+            padding: 1em;
+        }
+        code {
+            color: #d1d5db; /* Default text color */
+        }
+
+        /* The editable div must have these properties to look like the code block */
+        .editable-code {
+            position: absolute;
+            inset: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: auto;
+            padding: 1em;
+            line-height: 1.5;
+            outline: none;
+        }
+    </style>
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+</head>
+<body class="text-gray-200">
+    <!-- Adjusted height to ensure it takes up more vertical space -->
+    <div class="flex flex-col md:flex-row min-h-[85vh] p-4 space-y-4 md:space-y-0 md:space-x-4">
+        
+        <!-- Editor and Controls Panel (Now takes up more space horizontally on desktop) -->
+        <div class="flex-[2] flex flex-col space-y-4 bg-gray-800 rounded-lg p-4 shadow-xl">
+            <h1 class="text-xl font-bold">Code Editor</h1>
+            
+            <!-- Code Editor Area -->
+            <div class="relative flex-1 bg-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <!-- The height of this div is now fixed to ensure it's always visible -->
+                <div id="editable-editor" contenteditable="true" class="absolute inset-0 text-gray-200 font-mono text-sm resize-none rounded-lg p-4 editable-code h-[400px] md:h-auto"></div>
+                <!-- Hidden textarea to store the actual code content for execution -->
+                <textarea id="code-editor" style="display:none;"></textarea>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <button id="run-btn" class="w-full sm:w-auto bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-200">Run Code</button>
+                <button id="clear-btn" class="w-full sm:w-auto bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors duration-200">Clear Console</button>
+            </div>
+        </div>
+        
+        <!-- Output, Console, and AI Assistant Panel -->
+        <div class="flex-1 flex flex-col space-y-4 bg-gray-800 rounded-lg p-4 shadow-xl">
+            <h1 class="text-xl font-bold">Output & Console</h1>
+            
+            <!-- Live Preview Iframe -->
+            <iframe id="preview-iframe" class="flex-1 w-full bg-white rounded-lg shadow-inner border border-gray-600"></iframe>
+            
+            <!-- Custom Console Output -->
+            <div id="console-output" class="h-40 overflow-y-auto bg-gray-900 text-sm p-4 rounded-lg font-mono whitespace-pre-wrap border border-gray-600">
+                <span class="text-gray-400">Console is ready.</span>
+            </div>
+
+            <!-- AI Assistant Panel -->
+            <div class="mt-4 flex flex-col space-y-2">
+                <h2 class="text-lg font-semibold">AI Assistant</h2>
+                <textarea id="ai-prompt" class="w-full h-24 p-2 text-sm bg-gray-900 rounded-lg resize-none placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ask the AI to generate code. Example: 'create a for loop that prints numbers from 1 to 10'"></textarea>
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                    <button id="ai-btn" class="w-full bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-purple-700 transition-colors duration-200">Generate Code</button>
+                    <button id="format-btn" class="w-full bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-yellow-700 transition-colors duration-200">Format Code</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get DOM elements
+            const editableEditor = document.getElementById('editable-editor');
+            const codeEditor = document.getElementById('code-editor');
+            const runBtn = document.getElementById('run-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const previewFrame = document.getElementById('preview-iframe');
+            const consoleOutput = document.getElementById('console-output');
+            const aiPromptInput = document.getElementById('ai-prompt');
+            const aiBtn = document.getElementById('ai-btn');
+            const formatBtn = document.getElementById('format-btn');
+
+            // Initial code to be displayed in the editor
+            const initialCode = `// Syntax highlighting is active!
+console.log("Hello, world!");
+
+const greet = (name) => {
+    return \`Hello, \${name}!\`;
+};
+
+const message = greet("Gemini");
+console.log(message);
+
+// You can add HTML as well, but it will
+// overwrite the console output.
+document.body.innerHTML = '<h1>Live Preview!</h1><p>You can see your HTML/CSS here.</p><button id="my-button" class="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow-md mt-4">Click me!</button>';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const myButton = document.getElementById('my-button');
+    if (myButton) {
+        myButton.addEventListener('click', () => {
+            console.log('Button was clicked!');
+        });
+    }
+});`;
+
+            /**
+             * Handles real-time syntax highlighting while preserving the user's cursor position.
+             */
+            const highlightAndRestoreCursor = () => {
+                // Get the current raw text from the editable div
+                const rawText = editableEditor.innerText;
+                codeEditor.value = rawText;
+                
+                // Save the current cursor position before updating the innerHTML
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return; // Exit if no cursor is present
+                
+                const range = selection.getRangeAt(0);
+                const preSelectionRange = range.cloneRange();
+                preSelectionRange.selectNodeContents(editableEditor);
+                preSelectionRange.setEnd(range.startContainer, range.startOffset);
+                const cursorPosition = preSelectionRange.toString().length;
+
+                // Apply syntax highlighting
+                const highlightedCode = hljs.highlight(rawText, {language: 'javascript'}).value;
+                editableEditor.innerHTML = highlightedCode;
+
+                // Restore the cursor to its previous position
+                const newRange = document.createRange();
+                newRange.setStart(editableEditor.firstChild, cursorPosition);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            };
+
+            /**
+             * Executes the code from the hidden textarea and displays output in the custom console.
+             */
+            const runCode = () => {
+                const code = codeEditor.value;
+                const doc = previewFrame.contentWindow.document;
+                
+                // Clear previous output
+                doc.body.innerHTML = '';
+                consoleOutput.innerHTML = '';
+
+                // Create a script tag to execute the user's code
+                const script = doc.createElement('script');
+                script.textContent = `
+                    // Override console.log to capture its output and display it in the custom console
+                    (function() {
+                        const originalLog = console.log;
+                        console.log = function(...args) {
+                            originalLog(...args); // Log to the real console as well
+                            const output = document.createElement('div');
+                            output.textContent = args.map(arg => {
+                                if (typeof arg === 'object') {
+                                    return JSON.stringify(arg, null, 2);
+                                }
+                                return String(arg);
+                            }).join(' ');
+                            
+                            // Access the parent window's console div to display the output
+                            const consoleDiv = window.parent.document.getElementById('console-output');
+                            if (consoleDiv) {
+                                consoleDiv.appendChild(output);
+                                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                            }
+                        };
+                    })();
+                    
+                    // Execute the user's code with error handling
+                    try {
+                        ${code}
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
+                `;
+                
+                doc.body.appendChild(script);
+            };
+            
+            /**
+             * Handles the AI code generation based on user prompt.
+             * This is a simulated response to keep the app self-contained.
+             */
+            const handleGenerateCode = () => {
+                const prompt = aiPromptInput.value.toLowerCase();
+                let generatedCode = '';
+
+                // Simulate AI generation based on keywords
+                if (prompt.includes('for loop')) {
+                    generatedCode = `// A for loop that prints numbers from 1 to 10
+for (let i = 1; i <= 10; i++) {
+    console.log(i);
+}`;
+                } else if (prompt.includes('button')) {
+                    generatedCode = `// A simple button that logs a message when clicked
+const newButton = document.createElement('button');
+newButton.textContent = 'Click Me!';
+newButton.classList.add('px-4', 'py-2', 'bg-green-500', 'text-white', 'rounded-lg');
+newButton.onclick = () => {
+    console.log('Button was clicked!');
+};
+document.body.appendChild(newButton);`;
+                } else if (prompt.includes('fetch')) {
+                    generatedCode = `// A function to fetch data from an API
+async function fetchData() {
+    try {
+        const response = await fetch('https://api.github.com/users/octocat');
+        const data = await response.json();
+        console.log('User data fetched:', data);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+}
+fetchData();`;
+                } else if (prompt.includes('class')) {
+                     generatedCode = `// A simple JavaScript class
+class Person {
+    constructor(name, age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    greet() {
+        console.log(\`Hello, my name is \${this.name} and I am \${this.age} years old.\`);
+    }
+}
+
+const john = new Person('John Doe', 30);
+john.greet();`;
+                } else if (prompt.includes('array')) {
+                    generatedCode = `// An array of strings
+const fruits = ['apple', 'banana', 'cherry'];
+
+// Loop through the array and print each item
+fruits.forEach(fruit => {
+    console.log(fruit);
+});`;
+                } else if (prompt.includes('function')) {
+                    generatedCode = `// A function that returns the sum of two numbers
+function addNumbers(a, b) {
+    return a + b;
+}
+console.log(addNumbers(5, 7));`;
+                } else {
+                    generatedCode = `// Sorry, I can't generate code for that yet.
+// Try asking for "for loop", "button", "fetch", "class", "array", or "function".`;
+                }
+
+                // Append the generated code to the editable div
+                const currentText = editableEditor.innerText.trim();
+                const newText = currentText ? currentText + '\\n\\n' + generatedCode : generatedCode;
+                editableEditor.innerText = newText;
+                
+                // Manually trigger an input event to force the highlighting and cursor update
+                const event = new Event('input', { bubbles: true });
+                editableEditor.dispatchEvent(event);
+                
+                // Clear the prompt input
+                aiPromptInput.value = '';
+            };
+
+            const formatCode = () => {
+                const code = codeEditor.value;
+                try {
+                    // Use a simple indentation logic based on braces and newlines
+                    let formattedCode = '';
+                    let indentLevel = 0;
+                    const lines = code.split('\\n');
+                    
+                    lines.forEach(line => {
+                        line = line.trim();
+                        if (line.endsWith('}')) {
+                            indentLevel--;
+                        }
+                        
+                        let indentation = ' '.repeat(indentLevel * 4);
+                        formattedCode += indentation + line + '\\n';
+                        
+                        if (line.endsWith('{')) {
+                            indentLevel++;
+                        }
+                    });
+
+                    // Update the editor with the formatted code
+                    editableEditor.innerText = formattedCode;
+                    codeEditor.value = formattedCode;
+                    highlightAndRestoreCursor();
+                } catch (e) {
+                    console.error('Error formatting code:', e);
+                }
+            };
+
+            /**
+             * Initializes the editor by setting the initial code and adding event listeners.
+             */
+            const setupEditor = () => {
+                // Set the initial code
+                editableEditor.innerText = initialCode;
+                codeEditor.value = initialCode;
+                highlightAndRestoreCursor();
+
+                // Listen for input events to update the highlighting and hidden textarea
+                editableEditor.addEventListener('input', highlightAndRestoreCursor);
+            };
+
+            // Event listeners for the buttons
+            runBtn.addEventListener('click', runCode);
+            clearBtn.addEventListener('click', () => {
+                consoleOutput.innerHTML = '<span class="text-gray-400">Console cleared.</span>';
+            });
+            aiBtn.addEventListener('click', handleGenerateCode);
+            formatBtn.addEventListener('click', formatCode);
+            
+            // Listen for keydown events to implement the "select code block" feature
+            editableEditor.addEventListener('keydown', (e) => {
+                // Check if the key combination is Ctrl + Shift + F
+                if (e.ctrlKey && e.shiftKey && (e.key === 'f' || e.key === 'F')) {
+                    e.preventDefault(); // Prevent the default browser search function
+                    
+                    const code = editableEditor.innerText;
+                    const selection = window.getSelection();
+                    if (!selection.rangeCount) return;
+
+                    const currentOffset = selection.getRangeAt(0).startOffset;
+                    
+                    // Simple logic to find the start of the current block
+                    let blockStart = code.lastIndexOf('{', currentOffset);
+                    if (blockStart === -1) {
+                        blockStart = 0; // If no opening brace is found, select from the start of the code
+                    } else {
+                        // Find the start of the function/class keyword
+                        let keywordStart = code.lastIndexOf('function', blockStart) || code.lastIndexOf('class', blockStart);
+                        if (keywordStart !== -1) {
+                            blockStart = keywordStart;
+                        }
+                    }
+
+                    // Simple logic to find the end of the current block by matching braces
+                    let braceCount = 0;
+                    let blockEnd = -1;
+                    for (let i = blockStart; i < code.length; i++) {
+                        if (code[i] === '{') {
+                            braceCount++;
+                        } else if (code[i] === '}') {
+                            braceCount--;
+                            if (braceCount === 0) {
+                                blockEnd = i + 1;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If no matching brace is found, select to the end of the code
+                    if (blockEnd === -1) {
+                        blockEnd = code.length;
+                    }
+
+                    // Create and set the new selection range
+                    const newRange = document.createRange();
+                    newRange.setStart(editableEditor.firstChild, blockStart);
+                    newRange.setEnd(editableEditor.firstChild, blockEnd);
+                    
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+                }
+            });
+
+            // Start the application
+            setupEditor();
+            runCode(); // Run the initial code on load
+        });
+    </script>
+</body>
+</html>
