@@ -1035,9 +1035,8 @@ const Handlers = {
             });
 
             document.getElementById('techData').value = tsv;
-            // --- FIX START: Explicitly ensure the IR checkbox is unchecked after processing files ---
+            // FIX: Explicitly ensure the IR checkbox is unchecked after processing files
             document.getElementById('is-ir-project-checkbox').checked = false; 
-            // --- FIX END ---
             UI.showNotification(`${count} shapefile set(s) processed.`);
         } else {
            alert("No valid .shp/.dbf pairs found.");
@@ -1250,13 +1249,16 @@ const Handlers = {
     setupEventListeners() {
         const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
         
-        // --- FIX FOR IR PROJECT CHECKBOX BUG: Clear Project Context on manual input ---
+        // --- FIX FOR IR PROJECT CHECKBOX BUG: Clear Project Context and IR Checkbox on manual input ---
         listen('techData', 'input', () => {
             const projectSelect = document.getElementById('project-select');
             if (projectSelect.value !== '') {
                 projectSelect.value = '';
-                this.loadProjectIntoForm("");
+                this.loadProjectIntoForm(""); // Resets to a blank form
             }
+            // Add explicit reset for redundancy
+            document.getElementById('is-ir-project-checkbox').checked = false; 
+            document.getElementById('is-ir-project-checkbox').disabled = false;
         });
         // --- END FIX ---
         
