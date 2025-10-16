@@ -603,7 +603,7 @@ const Calculator = {
             
             triggers.refix.columns.forEach((c, i) => {
                 if (triggers.refix.labels.some(l => get(c)?.trim().toLowerCase().includes(l))) {
-                    const fixTechId = fixIds[i + 1];
+                    const fixTechId = fixIds[i]; // <-- FIX: This now correctly targets FIX1_ID, FIX2_ID, etc.
                     if (fixTechId && techStats[fixTechId]) techStats[fixTechId].refixTasks++;
                 }
             });
