@@ -1035,6 +1035,9 @@ const Handlers = {
             });
 
             document.getElementById('techData').value = tsv;
+            // --- FIX START: Explicitly ensure the IR checkbox is unchecked after processing files ---
+            document.getElementById('is-ir-project-checkbox').checked = false; 
+            // --- FIX END ---
             UI.showNotification(`${count} shapefile set(s) processed.`);
         } else {
            alert("No valid .shp/.dbf pairs found.");
