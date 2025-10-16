@@ -1246,6 +1246,17 @@ const Handlers = {
     },
     setupEventListeners() {
         const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
+        
+        // --- FIX FOR IR PROJECT CHECKBOX BUG: Clear Project Context on manual input ---
+        listen('techData', 'input', () => {
+            const projectSelect = document.getElementById('project-select');
+            if (projectSelect.value !== '') {
+                projectSelect.value = '';
+                this.loadProjectIntoForm("");
+            }
+        });
+        // --- END FIX ---
+        
         listen('admin-portal-btn', 'click', () => UI.openModal('admin-portal-modal'));
         listen('guided-setup-btn', 'click', this.startGuidedSetup.bind(this));
         listen('manage-teams-btn', 'click', () => { UI.populateAdminTeamManagement(); UI.openModal('manage-teams-modal'); });
