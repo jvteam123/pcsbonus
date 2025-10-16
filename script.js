@@ -542,6 +542,7 @@ const Calculator = {
 
             const fixIds = [get('fix1_id'), get('fix2_id'), get('fix3_id'), get('fix4_id')].map(id => id?.trim().toUpperCase());
 
+            // Helper for awarding points (used for fix tasks and the transfer)
             const processFixTech = (techId, catSources) => {
                 if (!techId || !techStats[techId]) return;
                 let techPoints = 0;
@@ -563,11 +564,7 @@ const Calculator = {
                 techStats[techId].pointsBreakdown.fix += pointsToAdd;
             };
 
-            processFixTech(fixIds[0], get('afp1_stat')?.trim().toUpperCase() === 'AA' ? [{ cat: 'afp1_cat', isRQA: true, sourceType: 'afp' }] : [{ cat: 'category', sourceType: 'primary' }, { cat: 'i3qa_cat', label: 'i3qa_label', condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'i3qa' }]);
-            processFixTech(fixIds[1], get('afp2_stat')?.trim().toUpperCase() === 'AA' ? [{ cat: 'afp2_cat', isRQA: true, sourceType: 'afp' }] : [{ cat: 'rv1_cat', label: 'rv1_label', condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'rv' }]);
-            processFixTech(fixIds[2], get('afp3_stat')?.trim().toUpperCase() === 'AA' ? [{ cat: 'afp3_cat', isRQA: true, sourceType: 'afp' }] : [{ cat: 'rv2_cat', label: 'rv2_label', condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'rv' }]);
-            processFixTech(fixIds[3], [{ cat: 'rv3_cat', label: 'rv3_label', condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'rv' }]);
-
+            // Helper for non-fix tasks (QC, i3QA, RV)
             const addPointsForTask = (techId, points, field, taskType) => {
                 if (techId && techStats[techId]) {
                     techStats[techId].points += points;
@@ -577,11 +574,86 @@ const Calculator = {
                     }
                 }
             };
+
+            // Helper to check for refix trigger
+            const isRefixTriggered = (reviewLabelCol, fixIndex) => {
+                const label = get(reviewLabelCol)?.trim().toLowerCase();
+                if (label && triggers.refix.labels.some(l => label.includes(l))) {
+                    return !!fixIds[fixIndex]; // Only trigger if the original fix ID column has a tech
+                }
+                return false;
+            };
+
+            // Mapping for fix, category column, and review column for conditional point calculation and refix logic
+            const fixPointMap = [
+                { cat: 'category', review: 'rv1_label', refixTechIndex: 1, afpStat: 'afp1_stat', afpCat: 'afp1_cat', i3qaCat: 'i3qa_cat', isPrimary: true }, // FIX1 reviewed by RV1
+                { cat: 'rv1_cat', review: 'rv2_label', refixTechIndex: 2, afpStat: 'afp2_stat', afpCat: 'afp2_cat' }, // FIX2 reviewed by RV2
+                { cat: 'rv2_cat', review: 'rv3_label', refixTechIndex: 3, afpStat: 'afp3_stat', afpCat: 'afp3_cat' }, // FIX3 reviewed by RV3
+                { cat: 'rv3_cat', review: null, refixTechIndex: null } // FIX4 (no review to trigger refix transfer)
+            ];
+
+            fixPointMap.forEach((fix, i) => {
+                const fixTechId = fixIds[i];
+                
+                if (!fixTechId) return; 
+
+                // Determine if this fix (fixTechId) is being penalized by the next reviewer (fix.review)
+                const refixTriggered = fix.review && isRefixTriggered(fix.review, i);
+                
+                // --- 1. Original Fixer Point Awarding (ONLY if no refix) ---
+                if (!refixTriggered) {
+                    let catSources = [];
+
+                    if (fix.afpStat && get(fix.afpStat)?.trim().toUpperCase() === 'AA') {
+                        // AFP tasks are always awarded regardless of refix status as it's RQA
+                        catSources.push({ cat: fix.afpCat, isRQA: true, sourceType: 'afp' });
+                    } 
+                    
+                    if (fix.isPrimary) { // FIX1 logic
+                        catSources.push({ cat: fix.cat, sourceType: 'primary' });
+                        // Add I3QA points only if the i3qa_label is a MISS (m) or CORRECT (c)
+                        catSources.push({ cat: fix.i3qaCat, label: 'i3qa_label', condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'i3qa' });
+                    } else if (fix.cat) { // FIX2, FIX3, FIX4 RV logic
+                        // Add RV points only if the RV label is a MISS (m) or CORRECT (c)
+                        const reviewCol = i === 1 ? 'rv1_label' : i === 2 ? 'rv2_label' : 'rv3_label';
+                        catSources.push({ cat: fix.cat, label: reviewCol, condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'rv' });
+                    }
+
+                    processFixTech(fixTechId, catSources);
+                }
+
+                // --- 2. Refix Penalty and Point Transfer (ONLY if refix is triggered) ---
+                if (refixTriggered) {
+                    // a) Penalize original tech (refixTasks++)
+                    techStats[fixTechId].refixTasks++;
+                    
+                    // b) Award points and fix task to the refix tech (FIX2, FIX3, FIX4)
+                    const refixTechId = fixIds[fix.refixTechIndex];
+                    const catValue = parseInt(get(fix.cat)); 
+                    
+                    if (refixTechId && techStats[refixTechId] && !isNaN(catValue) && catValue >= 1 && catValue <= 9) {
+                        const pointValue = AppState.calculationSettings.categoryValues[catValue]?.[gsdForCalculation] || 0;
+                        const pointsToTransfer = pointValue * (isFixTaskIR ? AppState.calculationSettings.irModifierValue : 1);
+                        
+                        techStats[refixTechId].points += pointsToTransfer;
+                        techStats[refixTechId].pointsBreakdown.fix += pointsToTransfer;
+                        techStats[refixTechId].fixTasks++;
+                        
+                        if(techStats[refixTechId].categoryCounts[catValue]) {
+                            // The transferred points are counted as a primary fix in category breakdown.
+                            techStats[refixTechId].categoryCounts[catValue]['primary']++; 
+                        }
+                    }
+                }
+            });
+            
+            // Non-Fix ID tasks (QC, i3QA, RV) are handled below, independent of the above refix logic.
             taskColumns.qc.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.qc, 'qc', 'qc'));
             taskColumns.i3qa.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.i3qa, 'i3qa', 'i3qa'));
             taskColumns.rv1.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), isComboIR ? AppState.calculationSettings.points.rv1_combo : AppState.calculationSettings.points.rv1, 'rv', 'rv'));
             taskColumns.rv2.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.rv2, 'rv', 'rv'));
             
+            // QC Penalty Logic (unchanged)
             if (triggers.qcPenalty.columns.some(c => triggers.qcPenalty.labels.includes(get(c)?.trim().toLowerCase()))) {
                 const i3qaTechId = get('i3qa_id')?.trim().toUpperCase();
                 if (i3qaTechId && techStats[i3qaTechId]) {
@@ -601,19 +673,15 @@ const Calculator = {
                 }
             }
             
-            triggers.refix.columns.forEach((c, i) => {
-                if (triggers.refix.labels.some(l => get(c)?.trim().toLowerCase().includes(l))) {
-                    const fixTechId = fixIds[i]; // <-- FIX: This now correctly targets FIX1_ID, FIX2_ID, etc.
-                    if (fixTechId && techStats[fixTechId]) techStats[fixTechId].refixTasks++;
-                }
-            });
+            // Warning Logic (Fix is now fixed to 'i' instead of 'i+1')
             triggers.warning.columns.forEach((c, i) => {
                 if (triggers.warning.labels.includes(get(c)?.trim().toLowerCase())) {
-                    const fixTechId = fixIds[i];
+                    const fixTechId = fixIds[i]; // Corrected index
                     if (fixTechId && techStats[fixTechId]) techStats[fixTechId].warnings.push({});
                 }
             });
             
+            // Fix4 Logic (unchanged)
             const fix4Id = get('fix4_id')?.trim().toUpperCase();
             if (fix4Id && techStats[fix4Id]) {
                 const cat = parseInt(get('rv3_cat'));
