@@ -1012,12 +1012,28 @@ const Handlers = {
         }
         let allFeatures = [];
         let count = 0;
-        for (const group of Object.values(fileGroups)) {
-            if (group.shp && group.dbf) {
+        // --- START BUG FIX: ADD TRY/CATCH & FEATURE CHECK ---
+    for (const group of Object.values(fileGroups)) {
+        if (group.shp && group.dbf) {
+            try {
                 const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
-                if (geojson && geojson.features) { allFeatures.push(...geojson.features); count++; }
+                
+                // Ensure geojson is valid and contains features before pushing
+                if (geojson && geojson.features && geojson.features.length > 0) {
+                    allFeatures.push(...geojson.features);
+                    count++;
+                } else if (geojson && geojson.features && geojson.features.length === 0) {
+                    // Log a warning if a file was read but was empty
+                    console.warn(`Shapefile pair for ${group.shp.name.split('.')[0]} was successfully parsed but contained no features.`);
+                }
+            } catch (e) {
+                // If parsing fails for one pair, show a notification but continue the loop
+                console.error("Error parsing shapefile pair:", e);
+                UI.showNotification(`Error processing file pair ${group.shp.name.split('.')[0]}. Please check file integrity.`, true);
             }
         }
+    }
+    // --- END BUG FIX ---
         if (allFeatures.length > 0) {
             const allKeys = new Set();
             allFeatures.forEach(feature => {
