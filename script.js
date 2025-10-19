@@ -1248,19 +1248,25 @@ const Handlers = {
     },
     setupEventListeners() {
         const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
-        
-        // --- FIX FOR IR PROJECT CHECKBOX BUG: Clear Project Context and IR Checkbox on manual input ---
-        listen('techData', 'input', () => {
-            const projectSelect = document.getElementById('project-select');
-            if (projectSelect.value !== '') {
-                projectSelect.value = '';
-                this.loadProjectIntoForm(""); // Resets to a blank form
-            }
-            // Add explicit reset for redundancy
-            document.getElementById('is-ir-project-checkbox').checked = false; 
-            document.getElementById('is-ir-project-checkbox').disabled = false;
-        });
-        // --- END FIX ---
+        // from script.js
+
+// ... (inside Handlers.setupEventListeners)
+
+// --- FIX FOR IR PROJECT CHECKBOX BUG: Clear Project Context and IR Checkbox on manual input ---
+listen('techData', 'input', () => {
+    const projectSelect = document.getElementById('project-select');
+    // Forcefully remove the selected project context if it exists
+    if (projectSelect.value !== '') {
+        projectSelect.value = '';
+        projectSelect.selectedIndex = 0; // Explicitly reset selected index
+        this.loadProjectIntoForm(""); // Resets to a blank form, enabling text areas
+    }
+    // Explicitly set IR checkbox to unchecked and enabled for pasted data
+    document.getElementById('is-ir-project-checkbox').checked = false; 
+    document.getElementById('is-ir-project-checkbox').disabled = false;
+    document.getElementById('project-name').value = ''; // Clear project name on paste
+});
+// --- END FIX ---
         
         listen('admin-portal-btn', 'click', () => UI.openModal('admin-portal-modal'));
         listen('guided-setup-btn', 'click', this.startGuidedSetup.bind(this));
