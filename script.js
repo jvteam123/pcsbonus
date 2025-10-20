@@ -1012,28 +1012,30 @@ const Handlers = {
         }
         let allFeatures = [];
         let count = 0;
+        
         // --- START BUG FIX: ADD TRY/CATCH & FEATURE CHECK ---
-    for (const group of Object.values(fileGroups)) {
-        if (group.shp && group.dbf) {
-            try {
-                const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
-                
-                // Ensure geojson is valid and contains features before pushing
-                if (geojson && geojson.features && geojson.features.length > 0) {
-                    allFeatures.push(...geojson.features);
-                    count++;
-                } else if (geojson && geojson.features && geojson.features.length === 0) {
-                    // Log a warning if a file was read but was empty
-                    console.warn(`Shapefile pair for ${group.shp.name.split('.')[0]} was successfully parsed but contained no features.`);
+        for (const group of Object.values(fileGroups)) {
+            if (group.shp && group.dbf) {
+                try {
+                    const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
+                    
+                    // Ensure geojson is valid and contains features before pushing
+                    if (geojson && geojson.features && geojson.features.length > 0) {
+                        allFeatures.push(...geojson.features);
+                        count++;
+                    } else if (geojson && geojson.features && geojson.features.length === 0) {
+                        // Log a warning if a file was read but was empty
+                        console.warn(`Shapefile pair for ${group.shp.name.split('.')[0]} was successfully parsed but contained no features.`);
+                    }
+                } catch (e) {
+                    // If parsing fails for one pair, show a notification but continue the loop
+                    console.error("Error parsing shapefile pair:", e);
+                    UI.showNotification(`Error processing file pair ${group.shp.name.split('.')[0]}. Please check file integrity.`, true);
                 }
-            } catch (e) {
-                // If parsing fails for one pair, show a notification but continue the loop
-                console.error("Error parsing shapefile pair:", e);
-                UI.showNotification(`Error processing file pair ${group.shp.name.split('.')[0]}. Please check file integrity.`, true);
             }
         }
-    }
-    // --- END BUG FIX ---
+        // --- END BUG FIX ---
+        
         if (allFeatures.length > 0) {
             const allKeys = new Set();
             allFeatures.forEach(feature => {
@@ -1055,7 +1057,7 @@ const Handlers = {
             document.getElementById('is-ir-project-checkbox').checked = false; 
             UI.showNotification(`${count} shapefile set(s) processed.`);
         } else {
-           alert("No valid .shp/.dbf pairs found.");
+           alert("No valid .shp/.dbf pairs found, or all valid files contained no data.");
         }
     },
     async handleAdminDroppedFiles(files) {
@@ -1070,8 +1072,20 @@ const Handlers = {
         let count = 0;
         for (const group of Object.values(fileGroups)) {
             if (group.shp && group.dbf) {
-                const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
-                if (geojson && geojson.features) { allFeatures.push(...geojson.features); count++; }
+                // --- START BUG FIX: ADD TRY/CATCH & FEATURE CHECK ---
+                try {
+                    const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
+                    if (geojson && geojson.features && geojson.features.length > 0) { 
+                        allFeatures.push(...geojson.features); 
+                        count++; 
+                    } else if (geojson && geojson.features && geojson.features.length === 0) {
+                        console.warn(`Admin: Shapefile pair for ${group.shp.name.split('.')[0]} was successfully parsed but contained no features.`);
+                    }
+                } catch (e) {
+                    console.error("Admin: Error parsing shapefile pair:", e);
+                    UI.showNotification(`Admin: Error processing file pair ${group.shp.name.split('.')[0]}.`, true);
+                }
+                // --- END BUG FIX ---
             }
         }
         if (allFeatures.length > 0) {
@@ -1219,25 +1233,35 @@ const Handlers = {
     async loadAdminProjectList() {
         const { db, collection, getDocs, query, orderBy } = AppState.firebase.tools;
         const tbody = document.getElementById('admin-project-list-tbody');
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Loading projects...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading projects...</td></tr>';
         
         try {
             const q = query(collection(db, "projects"), orderBy("projectOrder", "desc"));
             const querySnapshot = await getDocs(q);
             
             if (querySnapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4">No cloud projects found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">No cloud projects found.</td></tr>';
                 return;
             }
 
             let projectsHTML = '';
             querySnapshot.forEach(doc => {
                 const project = { id: doc.id, ...doc.data() };
+
+                // --- NEW RELEASE STATUS LOGIC ---
+                const isReleased = project.isReleased || false;
+                const releaseText = isReleased ? 'Released' : 'Draft'; 
+                const releaseClass = isReleased ? 'bg-status-green hover:bg-status-green/80' : 'bg-status-orange hover:bg-status-orange/80';
+                // --------------------------------
+
                 projectsHTML += `
                     <tr data-project-id="${project.id}">
                         <td class="p-2">${project.name}</td>
                         <td class="p-2">${project.gsdValue}</td>
                         <td class="p-2 text-center">${project.isIRProject ? 'Yes' : 'No'}</td>
+                        <td class="p-2 text-center">
+                            <button class="admin-release-project-btn btn-primary text-xs py-1 px-2 ${releaseClass}" data-project-id="${project.id}" data-is-released="${isReleased}">${releaseText}</button>
+                        </td>
                         <td class="p-2 text-center">
                             <button class="admin-edit-project-btn btn-secondary text-xs py-1 px-2" data-project-id="${project.id}">Edit</button>
                             <button class="admin-delete-project-btn btn-primary bg-red-600 hover:bg-red-700 text-xs py-1 px-2" data-project-id="${project.id}">Delete</button>
@@ -1249,7 +1273,7 @@ const Handlers = {
 
         } catch (error) {
             console.error("Error loading admin project list:", error);
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">Error loading projects.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Error loading projects.</td></tr>';
         }
     },
     resetAdminProjectForm() {
@@ -1264,25 +1288,22 @@ const Handlers = {
     },
     setupEventListeners() {
         const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
-        // from script.js
-
-// ... (inside Handlers.setupEventListeners)
-
-// --- FIX FOR IR PROJECT CHECKBOX BUG: Clear Project Context and IR Checkbox on manual input ---
-listen('techData', 'input', () => {
-    const projectSelect = document.getElementById('project-select');
-    // Forcefully remove the selected project context if it exists
-    if (projectSelect.value !== '') {
-        projectSelect.value = '';
-        projectSelect.selectedIndex = 0; // Explicitly reset selected index
-        this.loadProjectIntoForm(""); // Resets to a blank form, enabling text areas
-    }
-    // Explicitly set IR checkbox to unchecked and enabled for pasted data
-    document.getElementById('is-ir-project-checkbox').checked = false; 
-    document.getElementById('is-ir-project-checkbox').disabled = false;
-    document.getElementById('project-name').value = ''; // Clear project name on paste
-});
-// --- END FIX ---
+        
+        // --- FIX FOR IR PROJECT CHECKBOX BUG: Clear Project Context and IR Checkbox on manual input ---
+        listen('techData', 'input', () => {
+            const projectSelect = document.getElementById('project-select');
+            // Forcefully remove the selected project context if it exists
+            if (projectSelect.value !== '') {
+                projectSelect.value = '';
+                projectSelect.selectedIndex = 0; // Explicitly reset selected index
+                this.loadProjectIntoForm(""); // Resets to a blank form, enabling text areas
+            }
+            // Explicitly set IR checkbox to unchecked and enabled for pasted data
+            document.getElementById('is-ir-project-checkbox').checked = false; 
+            document.getElementById('is-ir-project-checkbox').disabled = false;
+            document.getElementById('project-name').value = ''; // Clear project name on paste
+        });
+        // --- END FIX ---
         
         listen('admin-portal-btn', 'click', () => UI.openModal('admin-portal-modal'));
         listen('guided-setup-btn', 'click', this.startGuidedSetup.bind(this));
@@ -1472,11 +1493,19 @@ listen('techData', 'input', () => {
             button.disabled = true;
 
             try {
-                const { db, collection, getDocs, query, where } = AppState.firebase.tools; // Ensure 'where' is destructured
+                // Ensure 'where' is available from firebaseTools
+                const { db, collection, getDocs, query, where } = AppState.firebase.tools;
+
                 const lastSync = localStorage.getItem('lastProjectSync');
                 const lastSyncTime = lastSync ? parseInt(lastSync, 10) : 0;
         
-                const q = query(collection(db, "projects"), where("lastModified", ">", lastSyncTime));
+                // Fetch projects that are RELEASED AND have been modified since last sync
+                const q = query(
+                    collection(db, "projects"), 
+                    where("isReleased", "==", true), // <-- Only sync released projects
+                    where("lastModified", ">", lastSyncTime)
+                );
+                
                 const querySnapshot = await getDocs(q);
 
                 if (querySnapshot.empty) {
@@ -1550,6 +1579,21 @@ listen('techData', 'input', () => {
                     this.loadAdminProjectList();
                 }
             }
+            
+            // --- NEW: Release Button Handler ---
+            const releaseTarget = e.target.closest('.admin-release-project-btn');
+            if (releaseTarget) {
+                const projectId = releaseTarget.dataset.projectId;
+                const currentStatus = releaseTarget.dataset.isReleased === 'true';
+                const newStatus = !currentStatus;
+                
+                if (confirm(`Are you sure you want to change the release status of project ${projectId} to ${newStatus ? 'RELEASED' : 'DRAFT'}? This will affect its availability for client sync.`)) {
+                    const { db, doc, setDoc } = AppState.firebase.tools;
+                    await setDoc(doc(db, "projects", projectId), { isReleased: newStatus, lastModified: Date.now() }, { merge: true });
+                    UI.showNotification(`Project status updated to ${newStatus ? 'RELEASED' : 'DRAFT'}.`);
+                    this.loadAdminProjectList(); // Refresh the list to update button state
+                }
+            }
         });
 
         listen('admin-save-project-btn', 'click', async (e) => {
@@ -1573,7 +1617,8 @@ listen('techData', 'input', () => {
             }
             const base64Data = btoa(binary);
 
-            const projectData = {
+            // Base fields for both new and existing projects
+            const projectFields = { 
                 name, rawData: base64Data,
                 isIRProject: document.getElementById('admin-is-ir-checkbox').checked,
                 gsdValue: document.getElementById('admin-gsd-select').value,
@@ -1584,10 +1629,12 @@ listen('techData', 'input', () => {
             try {
                 const { db, collection, addDoc, doc, setDoc } = AppState.firebase.tools;
                 if (existingId) {
-                    await setDoc(doc(db, "projects", existingId), projectData, { merge: true });
+                    // Update existing project, preserving 'isReleased' status via merge
+                    await setDoc(doc(db, "projects", existingId), projectFields, { merge: true });
                     UI.showNotification("Project updated successfully.");
                 } else {
-                    await addDoc(collection(db, "projects"), projectData);
+                    // Add new project, default 'isReleased' to false
+                    await addDoc(collection(db, "projects"), { ...projectFields, isReleased: false });
                     UI.showNotification("Project saved to the cloud.");
                 }
                 this.resetAdminProjectForm();
