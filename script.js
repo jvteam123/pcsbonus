@@ -1312,10 +1312,12 @@ const Handlers = {
         listen('toggle-theme-btn', 'click', () => { document.body.classList.toggle('light-theme'); localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark'); });
         listen('save-advance-settings-btn', 'click', this.saveAdvanceSettings);
         listen('important-info-btn', 'click', () => UI.openModal('important-info-modal'));
-        // -----------------------------------------------------------------------------------------
-        // --- REPORT A BUG FIX: Replaced Teams link with mailto:ev.lorens.ebrado@gmail.com ---
-        listen('bug-report-btn', 'click', () => window.location.href = "mailto:ev.lorens.ebrado@gmail.com?subject=PCS%20Bonus%20Calculator%20Bug%20Report");
-        // -----------------------------------------------------------------------------------------
+        
+        // --- REPORT A BUG FIX: Using window.open for Gmail URL ---
+        const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=ev.lorens.ebrado@gmail.com&su=PCS%20Bonus%20Calculator%20Bug%20Report';
+        listen('bug-report-btn', 'click', () => window.open(gmailUrl, '_blank'));
+        // --------------------------------------------------------
+        
         listen('clear-data-btn', 'click', this.clearAllData);
 
         listen('setup-next-btn', 'click', () => { AppState.guidedSetup.currentStep++; this.updateGuidedSetupView(); });
