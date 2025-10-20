@@ -1509,7 +1509,8 @@ const Handlers = {
                 const querySnapshot = await getDocs(q);
 
                 if (querySnapshot.empty) {
-                    UI.showNotification("All projects are up to date.");
+                    // FIX: Change message to be more accurate when no new released projects are found.
+                    UI.showNotification("No new project updates found.");
                     // Still update the timestamp to now even if no new projects
                     localStorage.setItem('lastProjectSync', Date.now().toString());
                     return;
