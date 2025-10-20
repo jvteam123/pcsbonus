@@ -1312,7 +1312,10 @@ const Handlers = {
         listen('toggle-theme-btn', 'click', () => { document.body.classList.toggle('light-theme'); localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark'); });
         listen('save-advance-settings-btn', 'click', this.saveAdvanceSettings);
         listen('important-info-btn', 'click', () => UI.openModal('important-info-modal'));
-        listen('bug-report-btn', 'click', () => window.open("https://teams.microsoft.com/l/chat/48:notes/conversations?context=%7B%22contextType%22%3A%22chat%22%7D", "_blank"));
+        // -----------------------------------------------------------------------------------------
+        // --- REPORT A BUG FIX: Replaced Teams link with mailto:ev.lorens.ebrado@gmail.com ---
+        listen('bug-report-btn', 'click', () => window.location.href = "mailto:ev.lorens.ebrado@gmail.com?subject=PCS%20Bonus%20Calculator%20Bug%20Report");
+        // -----------------------------------------------------------------------------------------
         listen('clear-data-btn', 'click', this.clearAllData);
 
         listen('setup-next-btn', 'click', () => { AppState.guidedSetup.currentStep++; this.updateGuidedSetupView(); });
