@@ -625,8 +625,13 @@ const Calculator = {
                 // --- 2. Refix Penalty and Point Transfer (ONLY if refix is triggered) ---
                 if (refixTriggered) {
                     // a) Penalize original tech (refixTasks++)
-                    techStats[fixTechId].refixTasks++;
-                    
+                    //techStats[fixTechId].refixTasks++;
+                    if (techStats[fixTechId]) { // ADDED CHECK: Ensure the stat object is initialized
+                         techStats[fixTechId].refixTasks++;
+                        } else {
+                     // Optional: Log a warning if a tech ID is found but not initialized.
+                     console.warn(`Tech ID ${fixTechId} not initialized for refix penalty.`);
+                    }
                     // b) Award points and fix task to the refix tech (FIX2, FIX3, FIX4)
                     const refixTechId = fixIds[fix.refixTechIndex];
                     const catValue = parseInt(get(fix.cat)); 
