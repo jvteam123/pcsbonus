@@ -90,245 +90,430 @@
                             <button id="edit-data-btn" title="Edit Selected Project" class="control-btn-icon hidden"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
                             <button id="delete-project-btn" title="Delete Selected Project" class="control-btn-icon-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
                         </div>
-                        <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
-                            <textarea id="techData" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
+                    </div>
+
+                    <div id="drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors">
+                        <textarea id="project-data" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
+                        <div class="mt-2 text-sm text-brand-400">Supported formats: TSV/CSV text or Fix Folder files (.shp/.dbf).</div>
+                    </div>
+
+                    <div class="flex items-center gap-4 mt-4 p-4 rounded-lg bg-brand-800 border border-brand-700">
+                        <label for="project-name" class="text-sm font-medium whitespace-nowrap">Project Name:</label>
+                        <input type="text" id="project-name" class="input-field w-full" placeholder="Project Name">
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4 mt-4 p-4 rounded-lg bg-brand-800 border border-brand-700">
+                        <div class="flex items-center gap-2">
+                            <label for="gsd-value-select" class="text-sm font-medium">GSD:</label>
+                            <select id="gsd-value-select" class="input-field text-sm">
+                                <option value="3in">3in</option>
+                                <option value="4in">4in</option>
+                                <option value="6in">6in</option>
+                                <option value="9in">9in</option>
+                            </select>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <input type="text" id="project-name" class="input-field" placeholder="Project Name">
-                            <div class="flex items-center gap-2"><input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="is-ir-project-checkbox" class="text-sm font-medium text-accent">IR Project</label></div>
-                            <select id="gsd-value-select" class="input-field text-sm"><option value="3in">3in GSD</option><option value="4in">4in GSD</option><option value="6in">6in GSD</option><option value="9in">9in GSD</option></select>
-                            <div class="flex items-center gap-2"><button id="save-project-btn" class="btn-primary w-full">Save Project</button><button id="cancel-edit-btn" class="btn-secondary w-full hidden">Cancel</button></div>
+                        <div class="flex items-center gap-2">
+                            <input id="is-ir-project-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
+                            <label for="is-ir-project-checkbox" class="text-sm font-medium text-accent">IR Project</label>
+                        </div>
+                        <div id="tech-id-override-container" class="flex items-center gap-2">
+                            <label for="tech-id-override" class="text-sm font-medium">Override ID:</label>
+                            <input type="text" id="tech-id-override" class="input-field text-sm w-20" placeholder="1234AB">
                         </div>
                     </div>
                     
+                    <div class="flex gap-2 mt-4">
+                        <button id="save-project-btn" class="btn-primary w-full text-base">Save Project</button>
+                        <button id="clear-data-btn-local" class="btn-secondary w-full">Clear Data</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div id="calculation-controls-panel" class="dashboard-panel mb-6">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Calculation Controls</h2>
+                    </div>
+                    <div class="p-4 flex flex-wrap items-end gap-4">
+                        <div class="flex-grow">
+                            <label for="project-combined-select" class="block text-sm font-medium text-brand-400 mb-1">Combine Projects</label>
+                            <select id="project-combined-select" class="input-field w-full" multiple size="3"></select>
+                            <p id="combined-project-info" class="text-xs text-brand-400 mt-1 hidden"></p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <button id="calculate-combined-btn" class="btn-primary" disabled>Calculate Combined</button>
+                        </div>
+                    </div>
                     <div class="border-t border-brand-700 pt-4 mt-4 space-y-4">
                         <input type="number" id="bonusMultiplierDirect" class="input-field w-full" placeholder="Bonus Multiplier (e.g., 9)">
                         <div class="space-y-3">
-                            <button id="calculate-btn" class="btn-primary w-full text-base">Calculate</button>
-                            <div class="flex items-center"><input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="customize-calc-all-cb" class="ml-2 text-sm">Calculate Specific Projects</label></div>
-                            <button id="calculate-all-btn" class="btn-primary w-full">Calculate All / Specific</button>
+                            <button id="calculate-btn" class="btn-primary w-full text-base">Calculate All</button>
+                            <div class="flex items-center">
+                                <input id="customize-calc-all-cb" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
+                                <label for="customize-calc-all-cb" class="ml-2 text-sm font-medium text-brand-400">Customize Calculation (Experimental)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="bonus-payout-section" class="dashboard-panel hidden">
+                    <div class="panel-header">
+                        <h2 id="results-title" class="panel-title">Bonus Payouts</h2>
+                        <div class="flex items-center gap-2">
+                            <button id="filter-reset-btn" title="Reset Filters and Search" class="btn-secondary py-1 px-2 text-sm">Reset</button>
+                            <button id="export-csv-btn" title="Export Results to CSV" class="btn-secondary py-1 px-2 text-sm">Export CSV</button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 border-b border-brand-700 flex flex-wrap items-center gap-4">
+                        <div id="team-filter-container" class="flex flex-wrap items-center gap-3">
+                            <span class="text-sm font-medium text-brand-300">Filter by Team:</span>
+                            <button id="refresh-teams-btn" title="Refresh Teams" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+                        </div>
+                        <input type="text" id="tech-search-input" class="input-field w-32 ml-auto" placeholder="Search Tech ID">
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr>
+                                    <th class="sortable-header" data-sort="id">ID</th>
+                                    <th class="sortable-header" data-sort="points">Points</th>
+                                    <th class="sortable-header" data-sort="fixTasks">Tasks</th>
+                                    <th class="sortable-header" data-sort="refixTasks">Refix</th>
+                                    <th class="sortable-header" data-sort="quality">Quality</th>
+                                    <th class="sortable-header" data-sort="bonusEarned">Bonus %</th>
+                                    <th class="sortable-header sort-desc" data-sort="payout">Payout</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tech-results-tbody">
+                                </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="quick-summary-card" class="p-4 border-t border-brand-700 mt-4 space-y-3">
+                        <h3 class="text-lg font-bold text-white mb-2">Project Summary</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="quick-summary-container">
+                            </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div id="leaderboard-panel" class="dashboard-panel flex flex-col">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Leaderboard</h2>
+                        </div>
+                        <div class="p-4 flex items-center gap-2 border-b border-brand-700">
+                            <label for="leaderboard-sort-select" class="text-sm font-medium text-brand-400">Sort by:</label>
+                            <select id="leaderboard-sort-select" class="input-field text-sm w-auto">
+                                <option value="payout">Payout</option>
+                                <option value="totalPoints">Points</option>
+                                <option value="fixTasks">Fix Tasks</option>
+                                <option value="fixQuality">Quality</option>
+                            </select>
+                            <button id="leaderboard-refresh-btn" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+                        </div>
+                        <div class="overflow-y-auto custom-scrollbar flex-grow">
+                            <table class="min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="w-1/4">Rank</th>
+                                        <th class="w-1/4">ID</th>
+                                        <th class="w-1/2" id="leaderboard-metric-header">Payout</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-body">
+                                    <tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate results to see data.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="tl-summary-card" class="dashboard-panel flex flex-col hidden">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Team Leader Summary</h2>
+                            <button id="tl-refresh-btn" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+                        </div>
+                        <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar">
+                            <div id="team-quality-container" class="space-y-3">
+                                </div>
+                            <div id="fix4-breakdown-container" class="space-y-3 mt-4">
+                                <h3 class="text-lg font-bold text-white border-t border-brand-700 pt-4">Fix Category 4 (Combined)</h3>
+                                </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div id="leaderboard-panel" class="dashboard-panel flex flex-col">
-                <div class="panel-header"><h2 class="panel-title">Leaderboard</h2></div>
-                <div class="p-4 space-y-4 flex-grow overflow-y-auto custom-scrollbar min-h-0">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-white sr-only">Leaderboard</h3>
-                        <select id="leaderboard-sort-select" class="input-field text-xs py-1 w-full"><option value="fixQuality">Sort by: Quality</option><option value="totalPoints">Sort by: Points</option><option value="fixTasks">Sort by: Tasks</option></select>
-                    </div>
-                    <div class="table-container text-sm"><table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr><th class="p-2 text-left">Rank</th><th class="p-2 text-left">Tech</th><th id="leaderboard-metric-header" class="p-2 text-left">Value</th></tr></thead><tbody id="leaderboard-body"><tr><td class="p-4 text-center text-brand-400" colspan="3">Calculate a project to see results.</td></tr></tbody></table></div>
-                </div>
-            </div>
 
-            <div id="tl-summary-card" class="dashboard-panel hidden lg:flex flex-col">
-                <div class="panel-header"><h2 class="panel-title">TL Summary</h2></div>
-                <div class="p-4 space-y-4 flex flex-col min-h-0">
-                    <div><h3 class="text-lg font-semibold text-white mb-2">Quality Per Team</h3><div id="team-quality-container" class="space-y-2"></div></div>
-                    <div class="border-t border-brand-700 pt-4 mt-4 flex flex-col min-h-0 flex-grow">
-                        <h3 class="text-lg font-semibold text-white mb-2 flex-shrink-0">Fix4 Breakdown</h3>
-                        <div id="fix4-breakdown-container" class="space-y-4 overflow-y-auto custom-scrollbar flex-grow"></div>
-                    </div>
-                </div>
-            </div>
         </main>
         
-        <section id="quick-summary-section" class="mt-6 dashboard-panel hidden">
-            <div class="panel-header"><h2 class="panel-title">Quick Summary</h2></div>
-            <div id="quick-summary-container" class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
-        </section>
+        <style>
+        .clickable-metric {
+            cursor: pointer;
+            text-decoration: underline;
+            text-decoration-color: #6C5ECF; /* accent color */
+            text-underline-offset: 3px;
+            transition: color 0.1s ease-in-out;
+        }
+        .clickable-metric:hover {
+            color: #ABBBC2; /* brand-400 (light gray) */
+        }
+        </style>
 
-        <section id="bonus-payout-section" class="mt-6 dashboard-panel hidden">
-            <div class="panel-header"><h2 id="results-title" class="panel-title">Bonus Payouts</h2></div>
-            <div class="p-4 space-y-4 panel-content-flex">
-                <div class="flex flex-col md:flex-row gap-4">
-                    <input type="text" id="search-tech-id" class="input-field w-full md:w-1/3" placeholder="Search Tech ID...">
-                    <div id="team-filter-container" class="flex flex-wrap gap-x-4 gap-y-2 items-center"><span class="text-sm font-medium text-brand-300">Filter by Team:</span><button id="refresh-teams-btn" title="Refresh Team List" class="control-btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button></div>
+        <div id="metric-breakdown-modal" class="hidden fixed inset-0 bg-brand-900/75 z-50 flex justify-center items-center p-4">
+            <div class="bg-brand-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                    <h3 id="metric-breakdown-modal-title" class="text-lg font-semibold text-white">Metric Breakdown</h3>
+                    <button class="modal-close-btn text-brand-400 hover:text-white" onclick="document.getElementById('metric-breakdown-modal').classList.add('hidden')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </button>
                 </div>
-                <div class="table-container max-h-[500px] custom-scrollbar border border-brand-700 rounded-md">
-                    <table class="min-w-full"><thead class="sticky top-0 bg-brand-800"><tr>
-                        <th class="p-2 text-left sortable-header" data-sort="id">Tech ID</th>
-                        <th class="p-2 text-left sortable-header" data-sort="points">Points</th>
-                        <th class="p-2 text-left sortable-header" data-sort="fixTasks">Tasks</th>
-                        <th class="p-2 text-left sortable-header" data-sort="refixTasks">Refix</th>
-                        <th class="p-2 text-left sortable-header" data-sort="quality">Quality</th>
-                        <th class="p-2 text-left sortable-header" data-sort="bonusEarned">Bonus Earned %</th>
-                        <th class="p-2 text-left sortable-header" data-sort="payout">Payout</th>
-                        <th class="p-2 text-center">Details</th>
-                    </tr></thead><tbody id="tech-results-tbody"></tbody></table>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <div id="merge-fixpoints-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Merge Partials FP</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar"><div id="merge-drop-zone" class="p-10 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors"><p class="text-brand-400">Drag & drop shapefiles (.shp, .dbf) here</p></div><div id="merge-file-list" class="mt-4 text-sm"></div><div id="merge-options" class="hidden mt-4 space-y-3"><input type="text" id="merge-project-name" class="input-field w-full" placeholder="Enter Project Name"><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 flex flex-col sm:flex-row gap-4"><div class="flex items-center"><input id="merge-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="merge-is-ir-checkbox" class="ml-2 block text-sm font-medium text-accent whitespace-nowrap">IR Project</label></div><div class="flex items-center w-full"><label for="merge-gsd-select" class="block text-sm font-medium text-brand-300 mr-2 whitespace-nowrap">GSD:</label><select id="merge-gsd-select" class="input-field w-full text-sm py-1"><option value="3in">3in</option><option value="4in">4in</option><option value="6in">6in</option><option value="9in">9in</option></select></div></div></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="merge-save-btn" class="btn-primary" disabled>Save Project</button></div></div></div>
-    <div id="manage-teams-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Manage Teams</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-list-container" class="p-6 overflow-y-auto custom-scrollbar space-y-4"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button id="add-team-btn" class="btn-secondary">Add New Team</button><div class="space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-teams-btn" class="btn-primary">Save Changes</button></div></div></div></div>
-    <div id="advance-settings-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Advance Settings</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="advance-settings-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 flex justify-between items-center"><button id="reset-defaults-btn" class="btn-secondary">Reset Defaults</button><div class="space-x-2"><button class="modal-close-btn btn-secondary">Close</button><button id="save-advance-settings-btn" class="btn-primary">Save Changes</button></div></div></div></div>
-    <div id="important-info-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 class="text-lg font-semibold text-white">Important Information</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div class="p-6 overflow-y-auto custom-scrollbar space-y-4" id="important-info-body"><div class="info-section"><h4 class="info-title">Calculation Logic</h4><p class="info-text">This calculator is based on the formulas and tables provided in the "Phili IC Fixpoints App Documentation v1.0." The logic employed in all calculations is designed to be transparent and accurate according to this official documentation.</p></div><div class="info-section"><h4 class="info-title">Disclaimer and Intended Use</h4><p class="info-text">This tool is intended for personal and informational purposes only. The results generated are estimates and should be used as a general guideline. These figures are not a guarantee of actual compensation and may differ from official salary offers or personal expectations.</p></div></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
-    <div id="tech-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="tech-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
-    <div id="team-summary-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden"><div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"><div class="flex justify-between items-center p-4 border-b border-brand-700"><h3 id="team-summary-modal-title" class="text-lg font-semibold text-white">Team Summary</h3><button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div><div id="team-summary-modal-body" class="p-6 overflow-y-auto custom-scrollbar"></div><div class="p-4 border-t border-brand-700 text-right space-x-2"><button class="modal-close-btn btn-secondary">Close</button></div></div></div>
-
-    <div id="guided-setup-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Guided Setup</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
-            </div>
-            <div class="p-6 overflow-y-auto custom-scrollbar">
-                <div id="setup-step-indicator" class="flex justify-center items-center gap-4 mb-6"></div>
-                <div id="setup-steps-container">
-                    <div class="setup-step" data-step="1">
-                        <h4 class="text-xl font-bold text-center mb-2">Welcome to the PCS Bonus Calculator!</h4>
-                        <p class="text-center text-brand-400 max-w-2xl mx-auto">This guided setup will help you configure the calculator. We'll set up your teams, review settings, and show you how to perform calculations.</p>
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-grow" id="metric-breakdown-modal-body">
                     </div>
-                    <div class="setup-step" data-step="2">
-                        <h4 class="text-xl font-bold mb-4">Step 1: Configure Your Teams</h4>
-                        <p class="text-brand-400 mb-4">Add your teams and assign Tech IDs to them. The default teams are provided as an example.</p>
-                        <div id="setup-team-list" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar p-2"></div>
-                        <button id="setup-add-team-btn" class="btn-secondary mt-4">Add New Team</button>
-                    </div>
-                    <div class="setup-step" data-step="3">
-                        <h4 class="text-xl font-bold mb-4">Step 2: How to Calculate</h4>
-                        <p class="text-brand-400 mb-4">This tour will guide you through the main calculation steps on the main screen. The modal will close temporarily.</p>
-                    </div>
-                     <div class="setup-step" data-step="4">
-                        <h4 class="text-xl font-bold text-center mb-2">Setup Complete!</h4>
-                        <p class="text-center text-brand-400 max-w-2xl mx-auto">You're all set! You can now start using the calculator. Remember, you can always revisit team and calculation settings from the main menu.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 border-t border-brand-700 flex justify-end items-center gap-2">
-                <button id="setup-prev-btn" class="btn-secondary">Previous</button>
-                <button id="setup-next-btn" class="btn-primary">Next</button>
-                <button id="setup-finish-btn" class="btn-primary hidden">Finish</button>
             </div>
         </div>
+
+        <div id="team-summary-modal" class="hidden fixed inset-0 bg-brand-900/75 z-50 flex justify-center items-center p-4">
+            <div class="bg-brand-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                    <h3 id="team-summary-modal-title" class="text-lg font-semibold text-white">Team Summary</h3>
+                    <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar" id="team-summary-modal-body">
+                    </div>
+            </div>
+        </div>
+
+        <div id="tech-summary-modal" class="hidden fixed inset-0 bg-brand-900/75 z-50 flex justify-center items-center p-4">
+            <div class="bg-brand-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                    <h3 id="tech-summary-modal-title" class="text-lg font-semibold text-white">Tech Details</h3>
+                    <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar" id="tech-summary-modal-body">
+                    </div>
+            </div>
+        </div>
+
+        <div id="manage-teams-modal" class="hidden fixed inset-0 bg-brand-900/75 z-50 flex justify-center items-center p-4">
+            <div class="bg-brand-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                    <h3 class="text-lg font-semibold text-white">Manage Teams</h3>
+                    <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-grow">
+                    <div class="flex items-center justify-between mb-4">
+                        <button id="add-team-btn" class="btn-secondary">Add New Team</button>
+                        <button id="reset-teams-btn" class="btn-secondary text-red-400 hover:bg-red-500/20">Reset to Defaults</button>
+                    </div>
+                    <div id="team-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        </div>
+                </div>
+                <div class="p-4 border-t border-brand-700">
+                    <button id="save-teams-btn" class="btn-primary w-full">Save Teams</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="advance-settings-modal" class="hidden fixed inset-0 bg-brand-900/75 z-50 flex justify-center items-center p-4">
+            <div class="bg-brand-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                    <h3 class="text-lg font-semibold text-white">Advance Settings</h3>
+                    <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-grow" id="advance-settings-body">
+                    </div>
+                <div class="p-4 border-t border-brand-700 flex justify-end gap-2">
+                    <button id="reset-advance-settings-btn" class="btn-secondary text-red-400 hover:bg-red-500/20">Reset to Defaults</button>
+                    <button id="save-advance-settings-btn" class="btn-primary">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="admin-portal-modal" class="hidden fixed inset-0 bg-brand-900/75 z-50 flex justify-center items-center p-4">
+            <div class="bg-brand-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                    <h3 class="text-lg font-semibold text-white">Admin Portal</h3>
+                    <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-grow">
+                    <div class="flex items-center gap-2 border-b border-brand-700 mb-4">
+                        <button class="tab-button active" data-tab="admin-projects">Projects</button>
+                        <button class="tab-button" data-tab="admin-users" id="admin-users-tab">Users</button>
+                        <button class="tab-button" data-tab="admin-logs">Logs</button>
+                    </div>
+
+                    <div id="admin-projects" class="admin-tab-content active">
+                        <div id="admin-project-form-container" class="mb-6 p-4 border border-brand-700 rounded-lg">
+                            <h4 id="admin-form-title" class="text-xl font-bold mb-4">Add New Project</h4>
+                            <input type="hidden" id="admin-project-id">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <input type="text" id="admin-project-name" class="input-field" placeholder="Project Name">
+                                <select id="admin-gsd-select" class="input-field text-sm">
+                                    <option value="3in">3in GSD</option>
+                                    <option value="4in">4in GSD</option>
+                                    <option value="6in">6in GSD</option>
+                                    <option value="9in">9in GSD</option>
+                                </select>
+                                <div class="flex items-center gap-2 col-span-full">
+                                    <input id="admin-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded">
+                                    <label for="admin-is-ir-checkbox" class="text-sm font-medium text-accent">IR Project</label>
+                                </div>
+                            </div>
+                            <div id="admin-drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
+                                <textarea id="admin-project-data" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
+                            </div>
+                            <div class="flex gap-2 mt-4">
+                                <button id="admin-save-project-btn" class="btn-primary w-full text-base">Save to Cloud</button>
+                                <button id="admin-reset-form-btn" class="btn-secondary w-full hidden">Cancel</button>
+                            </div>
+                        </div>
+
+                        <h4 class="text-xl font-bold mb-4">Cloud Projects</h4>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Project Name</th>
+                                        <th>GSD</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-project-list-tbody">
+                                    <tr><td colspan="4" class="text-center p-4 text-brand-400">Loading projects...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="admin-users" class="admin-tab-content hidden">
+                        <h4 class="text-xl font-bold mb-4">User Management</h4>
+                        <div id="user-management-container">
+                            <p class="text-brand-400">Loading user data...</p>
+                        </div>
+                    </div>
+
+                    <div id="admin-logs" class="admin-tab-content hidden">
+                        <h4 class="text-xl font-bold mb-4">Visitor Logs</h4>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>User Agent</th>
+                                        <th>Browser</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-log-tbody">
+                                    <tr><td colspan="3" class="text-center p-4 text-brand-400">Loading logs...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div id="guided-setup-modal" class="hidden fixed inset-0 bg-brand-900/75 z-50 flex justify-center items-center p-4">
+            <div class="bg-brand-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                    <h3 class="text-lg font-semibold text-white">Guided Setup</h3>
+                    <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-grow">
+                    <div id="setup-step-indicator" class="flex justify-center items-center gap-4 mb-6">
+                        </div>
+                    <div id="setup-content-container">
+                        </div>
+                </div>
+                <div class="p-4 border-t border-brand-700 flex justify-between">
+                    <button id="setup-prev-btn" class="btn-secondary" disabled>Previous</button>
+                    <button id="setup-next-btn" class="btn-primary">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="merge-fp-modal" class="hidden fixed inset-0 bg-brand-900/75 z-50 flex justify-center items-center p-4">
+            <div class="bg-brand-800 rounded-xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                    <h3 class="text-lg font-semibold text-white">Merge Partials FP</h3>
+                    <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar">
+                    <div id="merge-drop-zone" class="p-10 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors">
+                        <p class="text-brand-400">Drag and drop **partial** Fix folder files here (.shp/.dbf)</p>
+                    </div>
+                    <div id="merge-info-container" class="mt-4 p-4 rounded-lg bg-brand-900 border border-brand-700 hidden">
+                        <h4 class="font-bold text-white mb-2">Files to Merge:</h4>
+                        <ul id="merge-file-list" class="list-disc list-inside text-sm text-brand-400 space-y-1"></ul>
+                    </div>
+                </div>
+                <div class="p-4 border-t border-brand-700">
+                    <button id="execute-merge-btn" class="btn-primary w-full" disabled>Merge and Populate Data</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="important-info-modal" class="hidden fixed inset-0 bg-brand-900/75 z-50 flex justify-center items-center p-4">
+            <div class="bg-brand-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-brand-700">
+                    <h3 class="text-lg font-semibold text-white">Important Information</h3>
+                    <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar space-y-4" id="important-info-body">
+                    <div class="info-section">
+                        <h4 class="info-title">Calculation Logic</h4>
+                        <p class="info-text">This calculator is based on the formulas and tables provided in the "Phili IC Fixpoints App Documentation v1.0." The logic employed in all calculations is designed to be transparent and accurate according to this official documentation.</p>
+                    </div>
+                    <div class="info-section">
+                        <h4 class="info-title">Bonus Tier Table</h4>
+                        <table class="info-table w-full text-sm">
+                            <thead><tr><th>Quality %</th><th>Bonus Multiplier</th><th>Quality %</th><th>Bonus Multiplier</th></tr></thead>
+                            <tbody id="bonus-tier-info-tbody">
+                                </tbody>
+                        </table>
+                    </div>
+                    <div class="info-section">
+                        <h4 class="info-title">Points by Category (3in GSD default)</h4>
+                        <table class="info-table w-full text-sm">
+                            <thead><tr><th>Category</th><th>Points</th><th>Category</th><th>Points</th></tr></thead>
+                            <tbody id="category-points-info-tbody">
+                                </tbody>
+                        </table>
+                        <p class="text-xs text-brand-400 mt-2">Note: This table shows default 3in GSD values. Check 'Advance Settings' for other GSD values and QC/i3QA/RV point values.</p>
+                    </div>
+                    <div class="info-section">
+                        <h4 class="info-title">Counting Logic Triggers</h4>
+                        <p class="info-text">The following labels/columns trigger penalties:</p>
+                        <ul class="list-disc list-inside text-sm text-brand-400 space-y-1 mt-2">
+                            <li>**Refix (i)**: Increases Refix count in columns: rv1_label, rv2_label, rv3_label.</li>
+                            <li>**Miss (m, c)**: Increases Warnings count in columns: i3qa_label, rv1_label, rv2_label, rv3_label.</li>
+                            <li>**Warning (b, c, d, e, f, g, i)**: Increases Warnings count in columns: r1_warn, r2_warn, r3_warn, r4_warn.</li>
+                            <li>**QC Penalty (m, e)**: Triggers an additional QC Task penalty in column: i3qa_label.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     
-    <div id="admin-portal-modal" class="fixed inset-0 bg-brand-900 bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
-        <div class="bg-brand-800 border border-brand-700 rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-brand-700">
-                <h3 class="text-lg font-semibold text-white">Admin Portal</h3>
-                <button class="modal-close-btn text-brand-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
-            </div>
-            <div id="admin-login-view" class="p-6 text-center">
-                <h4 class="text-xl font-bold mb-4">Admin Access Required</h4>
-                <p class="text-brand-400 mb-6">Please sign in with your authorized Google account.</p>
-                <button id="admin-google-signin-btn" class="btn-primary">
-                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C41.38,36.128,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
-                    Sign In with Google
-                </button>
-            </div>
-            <div id="admin-panel-view" class="hidden p-6 overflow-y-auto custom-scrollbar">
-                <div class="flex items-center gap-2 border-b border-brand-700 mb-4">
-                    <button class="tab-button active" data-tab="admin-projects">Projects</button>
-                    <button class="tab-button" data-tab="admin-visitors">Visitor Log</button>
-                    <button class="tab-button" data-tab="admin-updates">Updates</button>
-                </div>
-                <div id="tab-admin-projects" class="admin-tab-content active">
-                    <div id="admin-project-form-container" class="mb-6 p-4 border border-brand-700 rounded-lg">
-                        <h4 id="admin-form-title" class="text-xl font-bold mb-4">Add New Project</h4>
-                        <input type="hidden" id="admin-project-id">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <input type="text" id="admin-project-name" class="input-field" placeholder="Project Name">
-                            <select id="admin-gsd-select" class="input-field text-sm"><option value="3in">3in GSD</option><option value="4in">4in GSD</option><option value="6in">6in GSD</option><option value="9in">9in GSD</option></select>
-                            <div class="flex items-center gap-2 col-span-full"><input id="admin-is-ir-checkbox" type="checkbox" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded"><label for="admin-is-ir-checkbox" class="text-sm font-medium text-accent">IR Project</label></div>
-                        </div>
-                        <div id="admin-drop-zone" class="p-4 text-center border-2 border-dashed border-brand-700 rounded-lg hover:border-accent transition-colors mt-4">
-                            <textarea id="admin-project-data" rows="8" class="input-field w-full font-mono text-sm custom-scrollbar" placeholder="Paste data or drag & drop Fix folder files here..."></textarea>
-                        </div>
-                        <div class="flex gap-2 mt-4">
-                            <button id="admin-save-project-btn" class="btn-primary">Save Project</button>
-                            <button id="admin-cancel-edit-btn" class="btn-secondary hidden">Cancel Edit</button>
-                        </div>
-                    </div>
+    <script src="script.js?v=1.3"></script>
 
-                    <h4 class="text-xl font-bold mb-4">Cloud Projects</h4>
-                    <div class="table-container max-h-96 custom-scrollbar border border-brand-700 rounded-md">
-                        <table class="min-w-full">
-                            <thead class="sticky top-0 bg-brand-800">
-                                <tr>
-                                    <th class="p-2 text-left">Project Name</th>
-                                    <th class="p-2 text-left">GSD</th>
-                                    <th class="p-2 text-center">IR</th>
-                                    <th class="p-2 text-center">Release Status</th>
-                                    <th class="p-2 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-project-list-tbody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="tab-admin-visitors" class="admin-tab-content">
-                    <h4 class="text-xl font-bold mb-4">Visitor Log</h4>
-                    <div id="visitor-log-container" class="table-container max-h-96 custom-scrollbar border border-brand-700 rounded-md">
-                        <table class="min-w-full">
-                            <thead class="sticky top-0 bg-brand-800">
-                                <tr>
-                                    <th class="p-2 text-left">Time</th>
-                                    <th class="p-2 text-left">Browser</th>
-                                    <th class="p-2 text-left">Operating System</th>
-                                </tr>
-                            </thead>
-                            <tbody id="visitor-log-tbody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="tab-admin-updates" class="admin-tab-content">
-                     <h4 class="text-xl font-bold mb-4">Send Update Notification</h4>
-                    <textarea id="admin-update-text" class="input-field w-full" rows="3" placeholder="Enter update message for users..."></textarea>
-                    <button id="admin-send-update-btn" class="btn-primary mt-2">Send Update</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="chatbot-knowledge-base.js"></script>
-    <script src="chatbot.js"></script>
-    <script src="script.js?v=1.2"></script>
-   <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    // ---- ADD 'where' TO THIS LINE ---- v
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, limit, doc, deleteDoc, setDoc, getDoc, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    // Your web app's Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyDkeA5QzcTkpgNiSDJ2S4rwHD8g8eHbj5M",
-        authDomain: "pcsbonus-54607.firebaseapp.com",
-        projectId: "pcsbonus-54607",
-        storageBucket: "pcsbonus-54607.appspot.com",
-        messagingSenderId: "406315081815",
-        appId: "1:406315081815:web:0cfa3915ec314f1f2f8312",
-        measurementId: "G-C2J9ESZFTH"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
-
-    // ---- ALSO ADD 'where' TO THIS LINE ---- v
-    window.firebaseTools = { auth, provider, db, signInWithPopup, collection, addDoc, getDocs, onAuthStateChanged, onSnapshot, query, orderBy, limit, doc, deleteDoc, setDoc, getDoc, where };
-</script>
     <script>
+        // Initialize listeners after DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            const btn = document.getElementById('main-menu-btn');
-            const dropdown = document.getElementById('main-menu-dropdown');
-            if (btn && dropdown) {
-                btn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); });
-                document.addEventListener('click', (e) => { if (!btn.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden'); });
-            }
-            document.querySelectorAll('.modal-close-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const modal = button.closest('.fixed');
-                    if (modal) modal.classList.add('hidden');
-                });
-            });
+            UI.initListeners();
+            App.init();
         });
     </script>
     <div id="chatbot-container" class="fixed bottom-5 right-5 z-50">
@@ -337,13 +522,19 @@
             <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15z"/>
         </svg>
     </div>
-    <div id="chatbot-window" class="hidden absolute bottom-20 right-0 w-80 bg-brand-800 rounded-lg shadow-xl border border-brand-700 flex flex-col h-[500px]">
-    <div class="p-4 bg-brand-700 text-white font-bold rounded-t-lg">PCS Calculator Assistant</div>
-    <div id="chatbot-messages" class="p-4 flex-grow overflow-y-auto custom-scrollbar"></div>
-    <div class="p-4 border-t border-brand-700">
-        <input type="text" id="chatbot-input" class="input-field w-full" placeholder="Ask a question...">
+    <div id="chatbot-window" class="hidden absolute bottom-20 right-0 w-80 h-96 bg-brand-800 rounded-lg shadow-2xl flex flex-col border border-brand-700">
+        <div class="p-3 border-b border-brand-700 flex justify-between items-center">
+            <span class="font-semibold text-white">FixPoints Chatbot</span>
+            <button id="chatbot-close-btn" class="text-brand-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.647 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+        </div>
+        <div id="chatbot-messages" class="flex-grow p-3 space-y-2 overflow-y-auto custom-scrollbar">
+            </div>
+        <div class="p-3 border-t border-brand-700">
+            <input type="text" id="chatbot-input" class="input-field w-full" placeholder="Ask about the calculator...">
+        </div>
     </div>
-</div>
-</div>
+    </div>
 </body>
 </html>
