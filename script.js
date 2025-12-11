@@ -1221,22 +1221,23 @@ const Core = {
         listen('admin-file-input', 'change', e => { FileHandler.handleAdminDroppedFiles(e.target.files); e.target.value = ''; });
         
         // --- Dark/Light Mode Toggle ---
+        // FIX: Added optional chaining (?) to prevent crash if icon elements are not present.
         listen('theme-toggle', 'click', e => {
             const isDark = document.body.classList.toggle('light-theme');
             localStorage.setItem('theme', isDark ? 'light' : 'dark');
-            document.getElementById('moon-icon').classList.toggle('hidden', isDark);
-            document.getElementById('sun-icon').classList.toggle('hidden', !isDark);
+            document.getElementById('moon-icon')?.classList.toggle('hidden', isDark);
+            document.getElementById('sun-icon')?.classList.toggle('hidden', !isDark);
         });
         
         // Initial Theme Setup
         const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
         if (savedTheme === 'light') {
             document.body.classList.add('light-theme');
-            document.getElementById('moon-icon').classList.add('hidden');
-            document.getElementById('sun-icon').classList.remove('hidden');
+            document.getElementById('moon-icon')?.classList.add('hidden');
+            document.getElementById('sun-icon')?.classList.remove('hidden');
         } else {
-            document.getElementById('moon-icon').classList.remove('hidden');
-            document.getElementById('sun-icon').classList.add('hidden');
+            document.getElementById('moon-icon')?.classList.remove('hidden');
+            document.getElementById('sun-icon')?.classList.add('hidden');
         }
 
         // --- Firebase Integration (Simplified stub) ---
@@ -1277,7 +1278,7 @@ const Core = {
             // Check if user is an admin
             if (user && CONSTANTS.ADMIN_EMAIL.includes(user.email)) {
                 AppState.firebase.isAdmin = true;
-                document.getElementById('admin-portal-menu-item').classList.remove('hidden');
+                document.getElementById('admin-portal-menu-item')?.classList.remove('hidden');
             }
         });
     }
@@ -1285,7 +1286,9 @@ const Core = {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Extend dayjs for relative time functionality
-    // NOTE: This uses the global variable 'dayjs_plugin_relativeTime' provided by the CDN script.
-    dayjs.extend(dayjs_plugin_relativeTime); 
+    // FIX: Using the correct global variable 'dayjs_plugin_relativeTime' from the CDN.
+    if (typeof dayjs !== 'undefined' && typeof dayjs_plugin_relativeTime !== 'undefined') {
+        dayjs.extend(dayjs_plugin_relativeTime); 
+    }
     Core.initialize();
 });
