@@ -158,25 +158,21 @@ const UI = {
         } else {
             techArray.forEach(tech => {
                 const row = document.createElement('tr');
-                // MODIFIED BLOCK START
                 row.innerHTML = `
                     <td class="font-semibold text-white">${tech.id}</td>
-                    <td class="breakdown-trigger clickable-metric" data-tech-id="${tech.id}" data-metric="points">${tech.points.toFixed(3)}</td>
-                    <td class="breakdown-trigger clickable-metric" data-tech-id="${tech.id}" data-metric="fixTasks">${tech.fixTasks}</td>
-                    <td class="breakdown-trigger clickable-metric ${tech.refixTasks > 0 ? 'text-red-400' : ''}" data-tech-id="${tech.id}" data-metric="refixTasks">${tech.refixTasks}</td>
+                    <td>${tech.points.toFixed(3)}</td>
+                    <td>${tech.fixTasks}</td>
+                    <td class="${tech.refixTasks > 0 ? 'text-red-400' : ''}">${tech.refixTasks}</td>
                     <td><span class="quality-pill ${tech.quality >= 95 ? 'quality-pill-green' : tech.quality >= 85 ? 'quality-pill-orange' : 'quality-pill-red'}">${tech.quality.toFixed(2)}%</span></td>
                     <td>${tech.bonusEarned.toFixed(2)}%</td>
                     <td class="payout-amount">${tech.payout.toFixed(2)}</td>
                     <td class="text-center"><button class="info-icon tech-summary-icon" data-tech-id="${tech.id}" title="View Details">${infoIconSvg}</button></td>
                 `;
-                // MODIFIED BLOCK END
                 resultsTbody.appendChild(row);
             });
         }
         document.getElementById('bonus-payout-section').classList.remove('hidden');
         this.updateSortHeaders();
-        // **NEW LINE:** Initialize the click listeners after results are displayed
-        this.initBreakdownListeners();
     },
     updateSortHeaders() {
         document.querySelectorAll('.sortable-header').forEach(header => {
@@ -294,19 +290,17 @@ const UI = {
             }
         }
         Object.entries(teamQualities).sort(([, a], [, b]) => b - a).forEach(([team, quality]) => {
-            const qualityFloor = Math.floor(quality / 5) * 5;
             const qualityBar = document.createElement('div');
+            qualityBar.className = 'workload-bar-wrapper';
+            const qualityFloor = Math.floor(quality);
             let colorClass = qualityFloor < 90 ? 'red' : String(qualityFloor);
             qualityBar.innerHTML = `<div class="team-quality-label team-summary-trigger" data-team-name="${team}" title="${team}">${team}</div><div class="workload-bar"><div class="workload-bar-inner quality-bar-${colorClass}" style="width:${quality.toFixed(2)}%;">${quality.toFixed(2)}%</div></div>`;
             teamQualityContainer.appendChild(qualityBar);
         });
-
         const fix4Container = document.getElementById('fix4-breakdown-container');
         fix4Container.innerHTML = '';
-
         const selectedTeams = Array.from(document.querySelectorAll('#team-filter-container input:checked')).map(cb => cb.dataset.team);
         const getTeamName = (techId) => Object.keys(AppState.teamSettings).find(team => AppState.teamSettings[team].some(id => id.toUpperCase() === techId.toUpperCase())) || null;
-
         const fix4CategoryCounts = {};
         Object.values(techStats).forEach(tech => {
             if (tech.fix4 && tech.fix4.length > 0) {
@@ -316,2219 +310,1369 @@ const UI = {
                 });
             }
         });
-
         const filteredFix4 = Object.entries(fix4CategoryCounts).filter(([techId]) => {
+            if (selectedTeams.length === 0) return true;
             const teamName = getTeamName(techId);
-            return selectedTeams.length === 0 || selectedTeams.includes(teamName);
+            return teamName && selectedTeams.includes(teamName);
         });
-
         if (filteredFix4.length > 0) {
-            fix4Container.innerHTML = `<h3 class="text-lg font-bold text-white border-t border-brand-700 pt-4">Fix Category 4 (Breakdown)</h3>`;
-            const table = document.createElement('table');
-            table.className = 'min-w-full text-sm mt-2';
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th class="text-left py-2 px-2 bg-brand-700/50">ID</th>
-                        <th class="text-center py-2 px-2 bg-brand-700/50">C4-1</th>
-                        <th class="text-center py-2 px-2 bg-brand-700/50">C4-2</th>
-                        <th class="text-center py-2 px-2 bg-brand-700/50">C4-3</th>
-                        <th class="text-center py-2 px-2 bg-brand-700/50">C4-4</th>
-                    </tr>
-                </thead>
-                <tbody id="fix4-breakdown-tbody">
-                    ${filteredFix4.map(([techId, counts]) => `
-                        <tr>
-                            <td class="py-1 px-2 font-semibold text-white">${techId}</td>
-                            <td class="text-center py-1 px-2">${counts['4-1'] || 0}</td>
-                            <td class="text-center py-1 px-2">${counts['4-2'] || 0}</td>
-                            <td class="text-center py-1 px-2">${counts['4-3'] || 0}</td>
-                            <td class="text-center py-1 px-2">${counts['4-4'] || 0}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            `;
-            fix4Container.appendChild(table);
-        } else if (Object.keys(techStats).length > 0) {
-            fix4Container.innerHTML = `<h3 class="text-lg font-bold text-white border-t border-brand-700 pt-4">Fix Category 4 (Breakdown)</h3><p class="text-brand-400 mt-2">No category 4 fixes found in this project for the selected teams.</p>`;
+            fix4Container.innerHTML = filteredFix4.map(([techId, categories]) => {
+                const rows = Object.entries(categories).sort(([a], [b]) => parseInt(a) - parseInt(b)).map(([cat, count]) => `<tr><td class="p-2">Category ${cat}</td><td class="p-2">${count}</td></tr>`).join('');
+                return `<div class="table-container text-sm mb-4"><table class="min-w-full"><thead class="bg-brand-900/50"><tr><th colspan="2" class="p-2 text-left font-bold text-white">${techId}</th></tr><tr><th class="p-2 text-left">Category</th><th class="p-2 text-left">Count</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+            }).join('');
+        } else {
+            fix4Container.innerHTML = `<p class="text-brand-400 text-sm">No Fix4 data for selected filters.</p>`;
         }
     },
     updateQuickSummary(techStats) {
-        // Implementation remains the same
         const container = document.getElementById('quick-summary-container');
-        if (!container) return;
-        const totalPoints = Object.values(techStats).reduce((sum, tech) => sum + tech.points, 0);
-        const totalPayout = Object.values(techStats).reduce((sum, tech) => sum + tech.payout, 0);
-        const totalFixTasks = Object.values(techStats).reduce((sum, tech) => sum + tech.fixTasks, 0);
-        const totalRefixTasks = Object.values(techStats).reduce((sum, tech) => sum + tech.refixTasks, 0);
-        const totalWarnings = Object.values(techStats).reduce((sum, tech) => sum + tech.warnings.length, 0);
-        const totalDenominator = totalFixTasks + totalRefixTasks + totalWarnings;
-        const overallQuality = totalDenominator > 0 ? (totalFixTasks / totalDenominator) * 100 : 0;
-
-        const bonusMultiplier = parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1;
-
-        const summaryItems = [
-            { label: 'Total Points', value: totalPoints.toFixed(2), color: 'text-accent' },
-            { label: 'Total Payout', value: totalPayout.toFixed(2), color: 'text-status-green' },
-            { label: 'Total Fix Tasks', value: totalFixTasks, color: 'text-white' },
-            { label: 'Overall Quality', value: `${overallQuality.toFixed(2)}%`, color: overallQuality >= 95 ? 'text-status-green' : overallQuality >= 85 ? 'text-status-orange' : 'text-status-red' },
-            { label: 'Total Refix Tasks', value: totalRefixTasks, color: totalRefixTasks > 0 ? 'text-status-red' : 'text-white' },
-            { label: 'Total Warnings', value: totalWarnings, color: totalWarnings > 0 ? 'text-status-red' : 'text-white' },
-            { label: 'GSD Value', value: AppState.lastUsedGsdValue.toUpperCase(), color: 'text-brand-400' },
-            { label: 'Bonus Multiplier', value: `x${bonusMultiplier.toFixed(2)}`, color: 'text-brand-400' },
-        ];
-
-        container.innerHTML = summaryItems.map(item => `
-            <div class="p-3 bg-brand-700/50 rounded-lg">
-                <p class="text-sm font-medium text-brand-400">${item.label}</p>
-                <p class="text-xl font-bold ${item.color}">${item.value}</p>
-            </div>
-        `).join('');
-    },
-    
-    // --- START NEW BREAKDOWN FUNCTIONS ---
-
-    initBreakdownListeners() {
-        const resultsTbody = document.getElementById('tech-results-tbody');
-        if (!resultsTbody) return;
-        
-        // Use event delegation on the table body to handle clicks
-        // Remove listener first to prevent multiple event bindings on re-calculation
-        resultsTbody.removeEventListener('click', UI.handleBreakdownClick); 
-        resultsTbody.addEventListener('click', UI.handleBreakdownClick);
-    },
-    
-    handleBreakdownClick(e) {
-        const target = e.target.closest('.breakdown-trigger');
-        if (!target) return;
-        
-        const techId = target.dataset.techId;
-        const metric = target.dataset.metric;
-        
-        if (techId && metric) {
-            UI.openMetricBreakdownModal(techId, metric);
-        }
-    },
-
-    openMetricBreakdownModal(techId, metricType) {
-        const tech = AppState.currentTechStats[techId];
-        if (!tech) return;
-
-        let title = `${techId} - ${metricType.charAt(0).toUpperCase() + metricType.slice(1)} Breakdown`;
-        let contentHTML = '<p class="text-brand-400">Could not generate breakdown details.</p>';
-        const currentGsd = AppState.lastUsedGsdValue;
-
-        try {
-            switch (metricType) {
-                case 'points':
-                    title = `${techId} - Total Points Breakdown (GSD: ${currentGsd.toUpperCase()})`;
-                    contentHTML = UI.generatePointsBreakdown(tech);
-                    break;
-                case 'fixTasks':
-                    title = `${techId} - Successful Fix Tasks Breakdown`;
-                    contentHTML = UI.generateFixTasksBreakdown(tech);
-                    break;
-                case 'refixTasks':
-                    title = `${techId} - Refix Tasks Breakdown`;
-                    contentHTML = UI.generateRefixTasksBreakdown(tech);
-                    break;
-                default:
-                    break;
-            }
-        } catch (error) {
-            console.error("Error generating metric breakdown:", error);
-        }
-
-        document.getElementById('metric-breakdown-modal-title').textContent = title;
-        document.getElementById('metric-breakdown-modal-body').innerHTML = contentHTML;
-        document.getElementById('metric-breakdown-modal').classList.remove('hidden');
-    },
-
-    generatePointsBreakdown(tech) {
-        const calc = AppState.calculationSettings;
-        const gsd = AppState.lastUsedGsdValue;
-        // Sums points from the tech.projectPoints array (successful fixes)
-        const fixPoints = tech.projectPoints.reduce((sum, p) => sum + p.points, 0);
-        const qcPoints = tech.qcTasks * (calc.points.qc || 0);
-        const i3qaPoints = tech.i3qaTasks * (calc.points.i3qa || 0);
-        // Note: tech.rvPoints is already the total points for RV tasks
-        const rvPoints = tech.rvPoints || 0; 
-
-        let html = `
-            <h4 class="text-xl font-bold mb-4">Total Points Calculation</h4>
-            <div class="space-y-3 p-4 rounded-lg bg-brand-900 border border-brand-700">
-                <div class="summary-item flex justify-between">
-                    <span>Base Fix Points (Cat. 1-9):</span>
-                    <span class="font-mono text-white">${fixPoints.toFixed(3)} pts</span>
-                </div>
-                <div class="summary-item flex justify-between">
-                    <span>QC Tasks (${tech.qcTasks} tasks):</span>
-                    <span class="font-mono text-white">${tech.qcTasks} x ${(calc.points.qc || 0).toFixed(3)} = ${(qcPoints).toFixed(3)} pts</span>
-                </div>
-                <div class="summary-item flex justify-between">
-                    <span>i3QA Tasks (${tech.i3qaTasks} tasks):</span>
-                    <span class="font-mono text-white">${tech.i3qaTasks} x ${(calc.points.i3qa || 0).toFixed(3)} = ${(i3qaPoints).toFixed(3)} pts</span>
-                </div>
-                <div class="summary-item flex justify-between">
-                    <span>RV Tasks (${tech.rvTasks} tasks):</span>
-                    <span class="font-mono text-white">${(rvPoints).toFixed(3)} pts</span>
-                </div>
-                <div class="border-t border-brand-700 pt-3 flex justify-between font-bold text-lg text-accent">
-                    <span>TOTAL POINTS:</span>
-                    <span>${tech.points.toFixed(3)} pts</span>
-                </div>
-            </div>
-            <p class="text-brand-400 mt-4">Total Points = Base Fix Points + QC Points + i3QA Points + RV Points. Base Fix Points are derived from the Fix Category points, weighted by the GSD value (${gsd.toUpperCase()}), and may include the IR modifier (${calc.irModifierValue}x).</p>
-        `;
-        return html;
-    },
-
-    generateFixTasksBreakdown(tech) {
-        let fixListHTML = '';
-        if (tech.projectPoints && tech.projectPoints.length > 0) {
-            // Group successful fixes by category for a cleaner view
-            const categorizedPoints = tech.projectPoints.reduce((acc, p) => {
-                const key = `Category ${p.category}${p.isIR ? ' (IR)' : ''}`;
-                acc[key] = (acc[key] || 0) + 1;
-                return acc;
-            }, {});
-
-            fixListHTML = Object.entries(categorizedPoints).map(([category, count]) => {
-                return `<li class="flex justify-between items-center py-1 border-b border-brand-700/50">
-                    <span class="text-brand-400">${category}:</span>
-                    <span class="font-mono text-white">${count} fix${count > 1 ? 'es' : ''}</span>
-                </li>`;
-            }).join('');
-
-            fixListHTML += `<li class="flex justify-between items-center py-1 font-bold text-white bg-brand-700/50 mt-2">
-                <span>Total Unique Fixes (contributing to fixTasks):</span>
-                <span class="font-mono">${tech.fixTasks}</span>
-            </li>`;
-
-        } else {
-            fixListHTML = '<li class="text-center py-4 text-brand-400">No successful fix tasks recorded.</li>';
-        }
-
-        let html = `
-            <h4 class="text-xl font-bold mb-4">Successful Fix Tasks (${tech.fixTasks} Total)</h4>
-            <p class="mb-4 text-brand-400">This metric represents the number of fixes that were counted as successful after excluding fixes that triggered a **Refix, Miss, or Warning** that negates the fix (i.e., this is the **numerator** of your Quality calculation).</p>
-            <ul class="space-y-1 p-4 rounded-lg bg-brand-900 border border-brand-700">
-                ${fixListHTML}
-            </ul>
-        `;
-        return html;
-    },
-
-    generateRefixTasksBreakdown(tech) {
-        // Find Refix-triggering warnings
-        const refixTriggers = tech.warnings ? tech.warnings.filter(w => w.isRefix) : [];
-        let refixListHTML = '';
-        
-        if (tech.refixTasks > 0) {
-            if (refixTriggers.length > 0) {
-                refixListHTML = refixTriggers.map((warning, index) => {
-                    const column = warning.column || 'N/A Column';
-                    const label = warning.label || 'i';
-                    return `<li class="flex justify-between items-center py-1 border-b border-brand-700/50">
-                        <span class="text-brand-400">Refix Trigger: ${column}</span>
-                        <span class="font-mono text-red-400">Label: ${label}</span>
-                    </li>`;
-                }).join('');
-            } else {
-                 refixListHTML = `<li class="text-center py-4 text-brand-400">Refix count is ${tech.refixTasks}, but detailed line-item breakdown is unavailable in the current session data.</li>`;
-            }
-        } else {
-            refixListHTML = '<li class="text-center py-4 text-brand-400">No refix tasks recorded. Excellent work!</li>';
-        }
-
-        let html = `
-            <h4 class="text-xl font-bold mb-4 text-red-400">Refix Tasks Breakdown (${tech.refixTasks} Total)</h4>
-            <p class="mb-4 text-brand-400">This metric tracks fixes that were flagged with a **Refix-triggering label** ('i') in the RV columns (rv1_label, rv2_label, rv3_label). Each Refix adds to the **denominator** of your Quality calculation.</p>
-            <ul class="space-y-1 p-4 rounded-lg bg-brand-900 border border-brand-700">
-                ${refixListHTML}
-            </ul>
-        `;
-        return html;
-    },
-
-    // --- END NEW BREAKDOWN FUNCTIONS ---
-    
-    openTeamSummaryModal(teamName) {
-        // Implementation remains the same
-        const modal = document.getElementById('team-summary-modal');
-        const title = document.getElementById('team-summary-modal-title');
-        const body = document.getElementById('team-summary-modal-body');
-        if (!modal || !title || !body) return;
-        
-        const teamTechs = AppState.teamSettings[teamName] || [];
-        const techStats = teamTechs.map(id => AppState.currentTechStats[id]).filter(Boolean);
-        
-        title.textContent = `${teamName} Summary (${techStats.length} Members)`;
-        body.innerHTML = '';
-
-        if (techStats.length === 0) {
-            body.innerHTML = `<p class="text-brand-400">No calculation data available for team members in the current results.</p>`;
-            modal.classList.remove('hidden');
+        const summarySection = document.getElementById('quick-summary-section');
+        const techArray = Object.values(techStats);
+        if (techArray.length === 0) {
+            summarySection.classList.add('hidden');
             return;
         }
+        const createSummaryCard = (title, tech, value) => `<div class="summary-card"><div class="summary-card-title">${title}</div><div class="summary-card-tech">${tech}</div><div class="summary-card-value">${value}</div></div>`;
+        const findTopTech = (metric, compareFn) => techArray.reduce((top, tech) => !top || compareFn(tech, top) ? tech : top, null);
 
-        const teamSummary = techStats.reduce((acc, tech) => {
-            acc.totalPoints += tech.points;
-            acc.totalPayout += tech.payout;
-            acc.totalFixTasks += tech.fixTasks;
-            acc.totalRefixTasks += tech.refixTasks;
-            acc.totalWarnings += tech.warnings.length;
-            return acc;
-        }, { totalPoints: 0, totalPayout: 0, totalFixTasks: 0, totalRefixTasks: 0, totalWarnings: 0 });
-
-        const denominator = teamSummary.totalFixTasks + teamSummary.totalRefixTasks + teamSummary.totalWarnings;
-        const overallQuality = denominator > 0 ? (teamSummary.totalFixTasks / denominator) * 100 : 0;
+        const topPoints = findTopTech('points', (a, b) => a.points > b.points);
+        const topTasks = findTopTech('fixTasks', (a, b) => a.fixTasks > b.fixTasks);
+        const mostRefix = findTopTech('refixTasks', (a, b) => a.refixTasks > b.refixTasks);
         
-        let detailTable = `<h4 class="text-lg font-bold text-white mb-2">Member Performance</h4><div class="overflow-x-auto custom-scrollbar"><table class="min-w-full text-sm"><thead><tr><th>ID</th><th>Points</th><th>Tasks</th><th>Refix</th><th>Quality</th><th>Payout</th></tr></thead><tbody>`;
-        techStats.sort((a, b) => b.payout - a.payout).forEach(tech => {
-            detailTable += `
-                <tr>
-                    <td class="font-semibold text-white">${tech.id}</td>
-                    <td>${tech.points.toFixed(2)}</td>
-                    <td>${tech.fixTasks}</td>
-                    <td class="${tech.refixTasks > 0 ? 'text-red-400' : ''}">${tech.refixTasks}</td>
-                    <td><span class="quality-pill ${tech.quality >= 95 ? 'quality-pill-green' : tech.quality >= 85 ? 'quality-pill-orange' : 'quality-pill-red'}">${tech.quality.toFixed(2)}%</span></td>
-                    <td class="payout-amount">${tech.payout.toFixed(2)}</td>
-                </tr>
-            `;
+        const techArrayWithQuality = techArray.map(tech => {
+            const quality = (tech.fixTasks + tech.refixTasks + tech.warnings.length) > 0 ? (tech.fixTasks / (tech.fixTasks + tech.refixTasks + tech.warnings.length)) * 100 : 0;
+            return { ...tech, quality };
         });
-        detailTable += `</tbody></table></div>`;
 
-        body.innerHTML = `
-            <div class="space-y-3 p-4 rounded-lg bg-brand-900 border border-brand-700 mb-6">
-                <h4 class="text-xl font-bold text-accent">Team Totals</h4>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div class="summary-item"><span>Total Points:</span> <span class="font-bold text-white">${teamSummary.totalPoints.toFixed(2)}</span></div>
-                    <div class="summary-item"><span>Total Payout:</span> <span class="font-bold text-status-green">${teamSummary.totalPayout.toFixed(2)}</span></div>
-                    <div class="summary-item"><span>Total Fix Tasks:</span> <span class="font-bold text-white">${teamSummary.totalFixTasks}</span></div>
-                    <div class="summary-item"><span>Overall Quality:</span> <span class="font-bold ${overallQuality >= 95 ? 'text-status-green' : overallQuality >= 85 ? 'text-status-orange' : 'text-status-red'}">${overallQuality.toFixed(2)}%</span></div>
-                </div>
-            </div>
-            ${detailTable}
-        `;
+        const maxQuality = Math.max(...techArrayWithQuality.map(t => t.quality), 0);
+        const topQualityTechs = techArrayWithQuality.filter(t => t.quality === maxQuality);
 
-        modal.classList.remove('hidden');
-    },
-    openTechSummaryModal(techId) {
-        // Implementation remains the same
-        const modal = document.getElementById('tech-summary-modal');
-        const title = document.getElementById('tech-summary-modal-title');
-        const body = document.getElementById('tech-summary-modal-body');
-        if (!modal || !title || !body) return;
+        container.innerHTML = createSummaryCard('Top Points', topPoints.id, `${topPoints.points.toFixed(2)} pts`);
+        container.innerHTML += createSummaryCard('Most Tasks', topTasks.id, `${topTasks.fixTasks} tasks`);
+        container.innerHTML += createSummaryCard('Best Quality', topQualityTechs.map(t => t.id).join(', '), `${maxQuality.toFixed(2)}%`);
+        container.innerHTML += createSummaryCard('Most Refixes', mostRefix.refixTasks > 0 ? mostRefix.id : 'N/A', mostRefix.refixTasks > 0 ? `${mostRefix.refixTasks} refixes` : '-');
         
-        const tech = AppState.currentTechStats[techId];
-        if (!tech) {
-            UI.showNotification(`No data found for Tech ID ${techId}.`, true);
-            return;
-        }
-
-        const totalDenominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
-        const totalProjectPoints = tech.projectPoints.reduce((sum, p) => sum + p.points, 0);
-        const teamName = Object.keys(AppState.teamSettings).find(team => AppState.teamSettings[team].includes(techId)) || 'N/A';
-
-        title.textContent = `Performance Details: ${techId}`;
-        
-        let warningsHtml = '';
-        if (tech.warnings.length > 0) {
-            warningsHtml = `
-                <h4 class="text-lg font-bold text-status-red mt-4 border-t border-brand-700 pt-4">Warnings/Penalties (${tech.warnings.length})</h4>
-                <ul class="list-disc list-inside space-y-1 text-sm">
-                    ${tech.warnings.map(w => {
-                        const type = w.isRefix ? 'Refix' : w.isMiss ? 'Miss' : 'Warning';
-                        const severity = w.isRefix ? 'text-status-red' : w.isMiss ? 'text-status-red' : 'text-status-orange';
-                        return `<li class="${severity}"><span class="text-white">${type}</span>: Label '${w.label}' in column <span class="font-mono">${w.column}</span></li>`;
-                    }).join('')}
-                </ul>
-            `;
-        } else {
-             warningsHtml = `<p class="text-status-green font-semibold mt-4 border-t border-brand-700 pt-4">No critical warnings or penalties recorded!</p>`;
-        }
-
-        body.innerHTML = `
-            <div class="grid grid-cols-2 gap-4 mb-6 p-4 rounded-lg bg-brand-900 border border-brand-700">
-                <div class="summary-item"><span>Team:</span> <span class="font-bold text-white">${teamName}</span></div>
-                <div class="summary-item"><span>Project Points (Base):</span> <span class="font-bold text-white">${totalProjectPoints.toFixed(2)}</span></div>
-                <div class="summary-item"><span>Total Points (Final):</span> <span class="font-bold text-accent">${tech.points.toFixed(2)}</span></div>
-                <div class="summary-item"><span>Total Payout:</span> <span class="font-bold text-status-green">${tech.payout.toFixed(2)}</span></div>
-                <div class="summary-item"><span>Fix Tasks:</span> <span class="font-bold text-white">${tech.fixTasks}</span></div>
-                <div class="summary-item"><span>Refix Tasks:</span> <span class="font-bold ${tech.refixTasks > 0 ? 'text-status-red' : 'text-white'}">${tech.refixTasks}</span></div>
-                <div class="summary-item col-span-2"><span>Quality:</span> <span class="quality-pill ${tech.quality >= 95 ? 'quality-pill-green' : tech.quality >= 85 ? 'quality-pill-orange' : 'quality-pill-red'} font-bold">${tech.quality.toFixed(2)}%</span></div>
-            </div>
-
-            <h4 class="text-lg font-bold text-white">Task Summary</h4>
-            <div class="grid grid-cols-3 gap-3 text-sm mt-2">
-                <div class="p-2 bg-brand-900 rounded">QC: ${tech.qcTasks}</div>
-                <div class="p-2 bg-brand-900 rounded">i3QA: ${tech.i3qaTasks}</div>
-                <div class="p-2 bg-brand-900 rounded">RV: ${tech.rvTasks}</div>
-            </div>
-            
-            ${warningsHtml}
-        `;
-
-        modal.classList.remove('hidden');
+        summarySection.classList.remove('hidden');
     },
-    closeModal(id) {
-        // Implementation remains the same
-        const modal = document.getElementById(id);
-        if (modal) modal.classList.add('hidden');
+    applyFilters() {
+        const searchValue = document.getElementById('search-tech-id').value.toUpperCase();
+        const selectedTeams = Array.from(document.querySelectorAll('#team-filter-container input:checked')).map(cb => cb.dataset.team);
+        const getTeamName = (techId) => Object.keys(AppState.teamSettings).find(team => AppState.teamSettings[team].some(id => id.toUpperCase() === techId.toUpperCase())) || 'N/A';
+        
+        const filteredStats = {};
+        for (const techId in AppState.currentTechStats) {
+            const tech = AppState.currentTechStats[techId];
+            const teamName = getTeamName(tech.id);
+            if (tech.id.toUpperCase().includes(searchValue) && (selectedTeams.length === 0 || selectedTeams.includes(teamName))) {
+                filteredStats[techId] = tech;
+            }
+        }
+        this.displayResults(filteredStats);
+        this.updateLeaderboard(filteredStats);
+        this.updateTLSummary(filteredStats);
+        this.updateQuickSummary(filteredStats);
     },
     showNotification(message, isError = false) {
-        // Implementation remains the same
-        const notification = document.getElementById('update-notification');
-        if (!notification) return;
-        notification.textContent = message;
-        notification.classList.remove('hidden', 'bg-accent', 'bg-status-red');
-        notification.classList.add(isError ? 'bg-status-red' : 'bg-accent');
-        setTimeout(() => {
-            notification.classList.add('hidden');
-        }, 3000);
-    },
-    populateInfoModal() {
-        // Implementation remains the same
-        const tierTbody = document.getElementById('bonus-tier-info-tbody');
-        const pointsTbody = document.getElementById('category-points-info-tbody');
-        if (!tierTbody || !pointsTbody) return;
-
-        // Populate Bonus Tiers
-        tierTbody.innerHTML = '';
-        const sortedTiers = [...AppState.bonusTiers].sort((a, b) => b.quality - a.quality);
-        for (let i = 0; i < sortedTiers.length; i += 2) {
-            const tier1 = sortedTiers[i];
-            const tier2 = sortedTiers[i+1];
-            let rowHtml = `<tr><td>${tier1.quality}%</td><td>${tier1.bonus}x</td>`;
-            if (tier2) {
-                 rowHtml += `<td>${tier2.quality}%</td><td>${tier2.bonus}x</td>`;
-            } else {
-                 rowHtml += `<td></td><td></td>`;
-            }
-            rowHtml += `</tr>`;
-            tierTbody.insertAdjacentHTML('beforeend', rowHtml);
-        }
-
-        // Populate Category Points (using 3in GSD as default display)
-        pointsTbody.innerHTML = '';
-        const categories = Object.keys(AppState.calculationSettings.categoryValues).sort((a, b) => parseInt(a) - parseInt(b));
-        const categoryValues = AppState.calculationSettings.categoryValues;
-        for (let i = 0; i < categories.length; i += 2) {
-            const cat1 = categories[i];
-            const cat2 = categories[i+1];
-            let rowHtml = `<tr><td>Cat ${cat1}</td><td>${categoryValues[cat1]['3in'].toFixed(2)}</td>`;
-            if (cat2) {
-                 rowHtml += `<td>Cat ${cat2}</td><td>${categoryValues[cat2]['3in'].toFixed(2)}</td>`;
-            } else {
-                 rowHtml += `<td></td><td></td>`;
-            }
-            rowHtml += `</tr>`;
-            pointsTbody.insertAdjacentHTML('beforeend', rowHtml);
+        const el = document.getElementById('update-notification');
+        if (el) {
+            el.textContent = message;
+            el.classList.toggle('bg-status-red', isError);
+            el.classList.toggle('bg-accent', !isError);
+            el.classList.remove('hidden', 'opacity-0', 'translate-y-2');
+            setTimeout(() => {
+                el.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => el.classList.add('hidden'), 500);
+            }, 3000);
         }
     },
-    initListeners() {
-        // Implementation remains the same
-        const listen = (id, event, handler) => {
-            const element = document.getElementById(id);
-            if (element) element.addEventListener(event, handler.bind(App));
-        };
-
-        // UI Listeners
-        window.addEventListener('resize', UI.setPanelHeights);
-
-        // Project/Data Panel
-        listen('project-select', 'change', App.handleProjectSelectChange);
-        listen('save-project-btn', 'click', App.saveProject);
-        listen('clear-data-btn-local', 'click', App.clearLocalData);
-        listen('delete-project-btn', 'click', App.deleteSelectedProject);
-        listen('refresh-projects-btn', 'click', App.loadLocalProjects);
-        listen('edit-data-btn', 'click', App.editSelectedProject);
+    openModal(modalId) { const modal = document.getElementById(modalId); if(modal) modal.classList.remove('hidden'); },
+    closeModal(modalId) { const modal = document.getElementById(modalId); if(modal) modal.classList.add('hidden'); },
+    generateTechBreakdownHTML(tech) {
+        const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
+        const fixQuality = denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0;
+        const qualityModifier = Calculator.calculateQualityModifier(fixQuality);
+        const finalPayout = tech.points * (parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1) * qualityModifier;
         
-        // Calculation Controls
-        listen('calculate-btn', 'click', App.calculateAll);
-        listen('calculate-combined-btn', 'click', App.calculateCombined);
-        listen('customize-calc-all-cb', 'change', App.handleCustomizeCalcToggle);
+        let projectBreakdownHTML = '';
+        if (tech.isCombined || tech.projectName) {
+            let projectRows = '';
+            const breakdownSource = tech.isCombined ? tech.pointsBreakdownByProject : { [tech.projectName]: { points: tech.points, fixTasks: tech.fixTasks, refixTasks: tech.refixTasks, warnings: tech.warnings.length } };
+            for (const projectName in breakdownSource) {
+                const projectData = breakdownSource[projectName];
+                projectRows += `<tr><td class="p-2 font-semibold">${projectName}</td><td class="p-2 text-center">${projectData.points.toFixed(3)}</td><td class="p-2 text-center">${projectData.fixTasks}</td><td class="p-2 text-center">${projectData.refixTasks}</td><td class="p-2 text-center">${projectData.warnings}</td></tr>`;
+            }
+            projectBreakdownHTML = `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4 mb-4"><h4 class="font-semibold text-base text-white mb-2">Project Contribution</h4><div class="table-container text-sm"><table class="min-w-full"><thead class="bg-brand-900/50"><tr><th class="p-2 text-left">Project</th><th class="p-2 text-center">Points</th><th class="p-2 text-center">Fix</th><th class="p-2 text-center">Refix</th><th class="p-2 text-center">Warn</th></tr></thead><tbody>${projectRows}</tbody></table></div></div>`;
+        }
 
-        // Results/Filter/Sort
-        listen('tech-results-tbody', 'click', App.handleTechDetailClick); // Existing Tech Detail Modal
-        listen('team-filter-container', 'change', App.handleTeamFilterChange);
-        listen('filter-reset-btn', 'click', App.resetFiltersAndSearch);
-        listen('tech-search-input', 'input', App.handleSearchInput);
-        listen('export-csv-btn', 'click', App.exportToCSV);
-        document.querySelectorAll('.sortable-header').forEach(header => {
-            header.addEventListener('click', App.handleSortClick.bind(App));
+        let summaryCategoryItems = '';
+        let totalCategoryPoints = 0;
+        let hasCategoryData = false;
+        for (let i = 1; i <= 9; i++) {
+            const counts = tech.categoryCounts[i];
+            const primaryTasks = (counts.primary || 0) + (counts.i3qa || 0) + (counts.afp || 0);
+            if (primaryTasks > 0) {
+                hasCategoryData = true;
+                const pointValue = AppState.calculationSettings.categoryValues[i]?.[AppState.lastUsedGsdValue] || 0;
+                const categoryPoints = primaryTasks * pointValue;
+                totalCategoryPoints += categoryPoints;
+                summaryCategoryItems += `<div class="summary-item summary-cat-${i}">Category ${i}:<span class="font-mono">${primaryTasks} x ${pointValue.toFixed(2)} = ${categoryPoints.toFixed(2)} pts</span></div>`;
+            }
+        }
+        
+        const qcPoints = tech.qcTasks * AppState.calculationSettings.points.qc;
+        const i3qaPoints = tech.i3qaTasks * AppState.calculationSettings.points.i3qa;
+        const rvPoints = tech.pointsBreakdown.rv;
+
+        const categoryBreakdownHTML = hasCategoryData ? `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4"><h4 class="font-semibold text-base text-white mb-2">Primary Fix Points</h4><div class="space-y-2">${summaryCategoryItems}<div class="summary-item summary-total">Total from Categories:<span class="font-mono">${totalCategoryPoints.toFixed(2)} pts</span></div></div></div>` : '';
+        const qcBreakdownHTML = tech.qcTasks > 0 ? `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4"><h4 class="font-semibold text-base text-white mb-2">QC Tasks</h4><div class="space-y-2"><div class="summary-item">QC Tasks:<span class="font-mono">${tech.qcTasks} x ${AppState.calculationSettings.points.qc.toFixed(3)} = ${qcPoints.toFixed(3)} pts</span></div></div></div>` : '';
+        const i3qaBreakdownHTML = tech.i3qaTasks > 0 ? `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4"><h4 class="font-semibold text-base text-white mb-2">i3qa Tasks</h4><div class="space-y-2"><div class="summary-item">i3qa Tasks:<span class="font-mono">${tech.i3qaTasks} x ${AppState.calculationSettings.points.i3qa.toFixed(3)} = ${i3qaPoints.toFixed(3)} pts</span></div></div></div>` : '';
+        const rvBreakdownHTML = tech.rvTasks > 0 ? `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4"><h4 class="font-semibold text-base text-white mb-2">RV Tasks</h4><div class="space-y-2"><div class="summary-item">RV Tasks:<span class="font-mono">${tech.rvTasks} tasks = ${rvPoints.toFixed(3)} pts</span></div></div></div>` : '';
+
+        return `<div class="space-y-4 text-sm">${projectBreakdownHTML}<div class="p-3 bg-accent/10 rounded-lg border border-accent/50"><h4 class="font-semibold text-base text-accent mb-2">Final Payout</h4><div class="flex justify-between font-bold text-lg"><span class="text-white">Payout (PHP):</span><span class="text-accent font-mono">${finalPayout.toFixed(2)}</span></div></div>${categoryBreakdownHTML}${qcBreakdownHTML}${i3qaBreakdownHTML}${rvBreakdownHTML}<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700"><h4 class="font-semibold text-base text-white mb-2">Points Breakdown</h4><div class="space-y-1 font-mono"><div class="flex justify-between"><span class="text-brand-400">Fix Tasks:</span><span>${tech.pointsBreakdown.fix.toFixed(3)}</span></div><div class="flex justify-between"><span class="text-brand-400">QC Tasks:</span><span>${tech.pointsBreakdown.qc.toFixed(3)}</span></div><div class="flex justify-between"><span class="text-brand-400">i3qa Tasks:</span><span>${tech.pointsBreakdown.i3qa.toFixed(3)}</span></div><div class="flex justify-between"><span class="text-brand-400">RV Tasks:</span><span>${tech.pointsBreakdown.rv.toFixed(3)}</span></div>${tech.pointsBreakdown.qcTransfer > 0 ? `<div class="flex justify-between"><span class="text-brand-400">QC Transfers:</span><span>+${tech.pointsBreakdown.qcTransfer.toFixed(3)}</span></div>` : ''}<div class="flex justify-between border-t border-brand-600 mt-1 pt-1"><span class="text-white font-bold">Total Points:</span><span class="text-white font-bold">${tech.points.toFixed(3)}</span></div></div></div><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700"><h4 class="font-semibold text-base text-white mb-2">Core Stats & Quality</h4><div class="grid grid-cols-2 gap-4"><div><span class="text-brand-400">Primary Fix:</span><span class="font-bold stat-orange">${tech.fixTasks}</span></div><div><span class="text-brand-400">AFP (AA):</span><span class="font-bold stat-green">${tech.afpTasks}</span></div><div><span class="text-brand-400">Refix:</span><span class="font-bold stat-red">${tech.refixTasks}</span></div><div><span class="text-brand-400">Warnings:</span><span class="font-bold stat-red">${tech.warnings.length}</span></div></div><div class="flex justify-between mt-4 pt-4 border-t border-brand-700"><span class="text-brand-400">Fix Quality %:</span><span class="font-mono font-bold">${fixQuality.toFixed(2)}%</span></div></div></div>`;
+    },
+    generateTeamBreakdownHTML(teamName, teamTechs, allTechStats, currentProjectName) {
+        const projectBreakdown = {};
+        let totalTeamPoints = 0;
+        const isSingleProject = !Object.values(allTechStats)[0]?.isCombined;
+
+        teamTechs.forEach(techId => {
+            const tech = allTechStats[techId];
+            if (!tech) return;
+            totalTeamPoints += tech.points;
+            if (isSingleProject) {
+                if (!projectBreakdown[currentProjectName]) projectBreakdown[currentProjectName] = { points: 0, fixTasks: 0, refixTasks: 0, warnings: 0 };
+                projectBreakdown[currentProjectName].points += tech.points;
+                projectBreakdown[currentProjectName].fixTasks += tech.fixTasks;
+                projectBreakdown[currentProjectName].refixTasks += tech.refixTasks;
+                projectBreakdown[currentProjectName].warnings += tech.warnings.length;
+            } else { // Combined
+                for (const projectName in tech.pointsBreakdownByProject) {
+                    const data = tech.pointsBreakdownByProject[projectName];
+                    if (!projectBreakdown[projectName]) projectBreakdown[projectName] = { points: 0, fixTasks: 0, refixTasks: 0, warnings: 0 };
+                    projectBreakdown[projectName].points += data.points;
+                    projectBreakdown[projectName].fixTasks += data.fixTasks;
+                    projectBreakdown[projectName].refixTasks += data.refixTasks;
+                    projectBreakdown[projectName].warnings += data.warnings;
+                }
+            }
         });
 
-        // Leaderboard/TL Summary
-        listen('leaderboard-sort-select', 'change', App.handleLeaderboardSortChange);
-        listen('leaderboard-refresh-btn', 'click', App.handleLeaderboardSortChange);
-        listen('tl-summary-card', 'click', App.handleTeamSummaryTrigger);
-        listen('tl-refresh-btn', 'click', App.calculateAll);
-
-        // Main Menu Modals
-        listen('main-menu-btn', 'click', App.toggleMainMenu);
-        listen('manage-teams-btn', 'click', App.openManageTeamsModal);
-        listen('add-team-btn', 'click', () => UI.addTeamCard('', []));
-        listen('save-teams-btn', 'click', App.saveTeams);
-        listen('reset-teams-btn', 'click', App.resetTeamsToDefault);
-        listen('advance-settings-btn', 'click', App.openAdvanceSettingsModal);
-        listen('save-advance-settings-btn', 'click', App.saveAdvanceSettings);
-        listen('reset-advance-settings-btn', 'click', App.resetAdvanceSettings);
-        listen('clear-data-btn', 'click', App.confirmClearAllData);
-        listen('important-info-btn', 'click', App.openImportantInfoModal);
-        listen('guided-setup-btn', 'click', App.openGuidedSetupModal);
+        if (Object.keys(projectBreakdown).length === 0) return `<p class="text-brand-400">No data available for this team in the current calculation.</p>`;
         
-        // Modal Close Buttons
-        document.querySelectorAll('.modal-close-btn').forEach(button => {
-            button.addEventListener('click', e => {
-                const modal = e.target.closest('.fixed');
-                if (modal) modal.classList.add('hidden');
+        const projectRows = Object.entries(projectBreakdown).map(([name, data]) => `<tr><td class="p-2 font-semibold">${name}</td><td class="p-2 text-center">${data.points.toFixed(3)}</td><td class="p-2 text-center">${data.fixTasks}</td><td class="p-2 text-center">${data.refixTasks}</td><td class="p-2 text-center">${data.warnings}</td></tr>`).join('');
+        return `<div class="space-y-4 text-sm"><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700"><h4 class="font-semibold text-base text-white mb-2">Project Contribution</h4><div class="table-container text-sm"><table class="min-w-full"><thead class="bg-brand-900/50"><tr><th class="p-2 text-left">Project</th><th class="p-2 text-center">Points</th><th class="p-2 text-center">Fix</th><th class="p-2 text-center">Refix</th><th class="p-2 text-center">Warn</th></tr></thead><tbody>${projectRows}</tbody></table></div></div><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700"><h4 class="font-semibold text-base text-white mb-2">Total Team Points</h4><div class="flex justify-between font-bold text-lg"><span class="text-white">Total Points:</span><span class="text-accent font-mono">${totalTeamPoints.toFixed(3)}</span></div></div></div>`;
+    },
+    openTeamSummaryModal(teamName) {
+        const teamTechs = AppState.teamSettings[teamName];
+        if (!teamTechs) return;
+        const currentProjectName = document.getElementById('results-title').textContent.replace('Bonus Payouts for: ', '');
+        const modalBody = this.generateTeamBreakdownHTML(teamName, teamTechs, AppState.currentTechStats, currentProjectName);
+        document.getElementById('team-summary-modal-title').textContent = `Summary for ${teamName}`;
+        document.getElementById('team-summary-modal-body').innerHTML = modalBody;
+        this.openModal('team-summary-modal');
+    },
+    openTechSummaryModal(techId) {
+        const tech = AppState.currentTechStats[techId];
+        if (!tech) return;
+        document.getElementById('tech-summary-modal-title').textContent = `Summary for ${techId}`;
+        document.getElementById('tech-summary-modal-body').innerHTML = this.generateTechBreakdownHTML(tech);
+        this.openModal('tech-summary-modal');
+    },
+    resetUIForNewCalculation() {
+        ['#bonus-payout-section', '#tl-summary-card', '#quick-summary-section'].forEach(s => document.querySelector(s)?.classList.add('hidden'));
+        const resultsTitle = document.getElementById('results-title');
+        if (resultsTitle) resultsTitle.textContent = 'Bonus Payouts';
+        if (!document.getElementById('project-select').value) {
+            document.getElementById('project-name').value = '';
+            document.getElementById('techData').value = '';
+            Handlers.loadProjectIntoForm("");
+        }
+    },
+    resetMergeModal() {
+        document.getElementById('merge-file-list').innerHTML = '';
+        document.getElementById('merge-project-name').value = '';
+        document.getElementById('merge-options').classList.add('hidden');
+        document.getElementById('merge-save-btn').disabled = true;
+    },
+    showLoading(button) { button.disabled = true; const loader = document.createElement('span'); loader.className = 'loader'; button.prepend(loader); },
+    hideLoading(button) { button.disabled = false; button.querySelector('.loader')?.remove(); }
+};
+
+const Calculator = {
+    createNewTechStat(isCombined = false, projectName = null) {
+        const categoryCounts = {};
+        for (let i = 1; i <= 9; i++) categoryCounts[i] = { primary: 0, i3qa: 0, afp: 0, rv: 0 };
+        const baseStat = {
+            id: '', points: 0, fixTasks: 0, afpTasks: 0, refixTasks: 0, qcTasks: 0, i3qaTasks: 0, rvTasks: 0, warnings: [],
+            fix4: [], refixDetails: [], missedCategories: [], approvedByRQA: [],
+            categoryCounts: categoryCounts,
+            pointsBreakdown: { fix: 0, qc: 0, i3qa: 0, rv: 0, qcTransfer: 0 },
+            isCombined: isCombined,
+            projectName: projectName
+        };
+        if (isCombined) baseStat.pointsBreakdownByProject = {};
+        return baseStat;
+    },
+    parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Data", gsdForCalculation = "3in") {
+        const techStats = {};
+        const lines = data.split('\n').filter(line => line.trim());
+        if (lines.length < 1) return null;
+
+        const headers = lines[0].split('\t').map(h => h.trim().toLowerCase());
+        const headerMap = Object.fromEntries(headers.map((h, i) => [h, i]));
+        
+        const allTechs = new Set();
+        const dataLines = lines.slice(1);
+        dataLines.forEach(line => {
+            const values = line.split('\t');
+            headers.forEach((h, i) => {
+                if (h.endsWith('_id')) {
+                    const techId = values[i]?.trim().toUpperCase();
+                    if (techId && CONSTANTS.TECH_ID_REGEX.test(techId)) allTechs.add(techId);
+                }
+            });
+        });
+        allTechs.forEach(techId => {
+            techStats[techId] = this.createNewTechStat(false, currentProjectName);
+            techStats[techId].id = techId;
+        });
+
+        const { triggers, taskColumns } = AppState.countingSettings;
+        dataLines.forEach(line => {
+            const values = line.split('\t');
+            const get = (col) => values[headerMap[col]];
+            const isComboIR = get('combo?') === 'Y';
+
+            const fixIds = [get('fix1_id'), get('fix2_id'), get('fix3_id'), get('fix4_id')].map(id => id?.trim().toUpperCase());
+
+            // Helper for awarding points (used for fix tasks and the transfer)
+            const processFixTech = (techId, catSources) => {
+                if (!techId || !techStats[techId]) return;
+                let techPoints = 0;
+                let techCategories = 0;
+                catSources.forEach(source => {
+                    if (source.isRQA && source.sourceType === 'afp') techStats[techId].afpTasks++;
+                    const labelValue = source.label ? get(source.label)?.trim().toUpperCase() : null;
+                    if (source.condition && !source.condition(labelValue)) return;
+                    const catValue = parseInt(get(source.cat));
+                    if (!isNaN(catValue) && catValue >= 1 && catValue <= 9) {
+                        techCategories++;
+                        techPoints += AppState.calculationSettings.categoryValues[catValue]?.[gsdForCalculation] || 0;
+                        if(techStats[techId].categoryCounts[catValue]) techStats[techId].categoryCounts[catValue][source.sourceType]++;
+                    }
+                });
+                techStats[techId].fixTasks += techCategories;
+                let pointsToAdd = techPoints * (isFixTaskIR ? AppState.calculationSettings.irModifierValue : 1);
+                techStats[techId].points += pointsToAdd;
+                techStats[techId].pointsBreakdown.fix += pointsToAdd;
+            };
+
+            // Helper for non-fix tasks (QC, i3QA, RV)
+            const addPointsForTask = (techId, points, field, taskType) => {
+                if (techId && techStats[techId]) {
+                    techStats[techId].points += points;
+                    techStats[techId].pointsBreakdown[field] += points;
+                    if (taskType) {
+                        techStats[techId][`${taskType}Tasks`] += 1;
+                    }
+                }
+            };
+
+            // Helper to check for refix trigger
+            const isRefixTriggered = (reviewLabelCol, fixIndex) => {
+                const label = get(reviewLabelCol)?.trim().toLowerCase();
+                if (label && triggers.refix.labels.some(l => label.includes(l))) {
+                    return !!fixIds[fixIndex]; // Only trigger if the original fix ID column has a tech
+                }
+                return false;
+            };
+
+            // Mapping for fix, category column, and review column for conditional point calculation and refix logic
+            const fixPointMap = [
+                { cat: 'category', review: 'rv1_label', refixTechIndex: 1, afpStat: 'afp1_stat', afpCat: 'afp1_cat', i3qaCat: 'i3qa_cat', isPrimary: true }, // FIX1 reviewed by RV1
+                { cat: 'rv1_cat', review: 'rv2_label', refixTechIndex: 2, afpStat: 'afp2_stat', afpCat: 'afp2_cat' }, // FIX2 reviewed by RV2
+                { cat: 'rv2_cat', review: 'rv3_label', refixTechIndex: 3, afpStat: 'afp3_stat', afpCat: 'afp3_cat' }, // FIX3 reviewed by RV3
+                { cat: 'rv3_cat', review: null, refixTechIndex: null } // FIX4 (no review to trigger refix transfer)
+            ];
+
+            fixPointMap.forEach((fix, i) => {
+                const fixTechId = fixIds[i];
+                
+                if (!fixTechId) return; 
+
+                // Determine if this fix (fixTechId) is being penalized by the next reviewer (fix.review)
+                const refixTriggered = fix.review && isRefixTriggered(fix.review, i);
+                
+                // --- 1. Original Fixer Point Awarding (ONLY if no refix) ---
+                if (!refixTriggered) {
+                    let catSources = [];
+
+                    if (fix.afpStat && get(fix.afpStat)?.trim().toUpperCase() === 'AA') {
+                        // AFP tasks are always awarded regardless of refix status as it's RQA
+                        catSources.push({ cat: fix.afpCat, isRQA: true, sourceType: 'afp' });
+                    } 
+                    
+                    if (fix.isPrimary) { // FIX1 logic
+                        catSources.push({ cat: fix.cat, sourceType: 'primary' });
+                        // Add I3QA points only if the i3qa_label is a MISS (m) or CORRECT (c)
+                        catSources.push({ cat: fix.i3qaCat, label: 'i3qa_label', condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'i3qa' });
+                    } else if (fix.cat) { // FIX2, FIX3, FIX4 RV logic
+                        // Add RV points only if the RV label is a MISS (m) or CORRECT (c)
+                        const reviewCol = i === 1 ? 'rv1_label' : i === 2 ? 'rv2_label' : 'rv3_label';
+                        catSources.push({ cat: fix.cat, label: reviewCol, condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'rv' });
+                    }
+
+                    processFixTech(fixTechId, catSources);
+                }
+
+                // --- 2. Refix Penalty and Point Transfer (ONLY if refix is triggered) ---
+                if (refixTriggered) {
+                    // a) Penalize original tech (refixTasks++)
+                    //techStats[fixTechId].refixTasks++;
+                    if (techStats[fixTechId]) { // ADDED CHECK: Ensure the stat object is initialized
+                         techStats[fixTechId].refixTasks++;
+                        } else {
+                     // Optional: Log a warning if a tech ID is found but not initialized.
+                     console.warn(`Tech ID ${fixTechId} not initialized for refix penalty.`);
+                    }
+                    // b) Award points and fix task to the refix tech (FIX2, FIX3, FIX4)
+                    const refixTechId = fixIds[fix.refixTechIndex];
+                    const catValue = parseInt(get(fix.cat)); 
+                    
+                    if (refixTechId && techStats[refixTechId] && !isNaN(catValue) && catValue >= 1 && catValue <= 9) {
+                        const pointValue = AppState.calculationSettings.categoryValues[catValue]?.[gsdForCalculation] || 0;
+                        const pointsToTransfer = pointValue * (isFixTaskIR ? AppState.calculationSettings.irModifierValue : 1);
+                        
+                        techStats[refixTechId].points += pointsToTransfer;
+                        techStats[refixTechId].pointsBreakdown.fix += pointsToTransfer;
+                        techStats[refixTechId].fixTasks++;
+                        
+                        if(techStats[refixTechId].categoryCounts[catValue]) {
+                            // The transferred points are counted as a primary fix in category breakdown.
+                            techStats[refixTechId].categoryCounts[catValue]['primary']++; 
+                        }
+                    }
+                }
+            });
+            
+            // Non-Fix ID tasks (QC, i3QA, RV) are handled below, independent of the above refix logic.
+            taskColumns.qc.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.qc, 'qc', 'qc'));
+            taskColumns.i3qa.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.i3qa, 'i3qa', 'i3qa'));
+            taskColumns.rv1.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), isComboIR ? AppState.calculationSettings.points.rv1_combo : AppState.calculationSettings.points.rv1, 'rv', 'rv'));
+            taskColumns.rv2.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.rv2, 'rv', 'rv'));
+            
+            // QC Penalty Logic (unchanged)
+            if (triggers.qcPenalty.columns.some(c => triggers.qcPenalty.labels.includes(get(c)?.trim().toLowerCase()))) {
+                const i3qaTechId = get('i3qa_id')?.trim().toUpperCase();
+                if (i3qaTechId && techStats[i3qaTechId]) {
+                    let pointsToTransfer = 0;
+                    taskColumns.qc.forEach(c => {
+                        const qcTechId = get(c)?.trim().toUpperCase();
+                        if (qcTechId && techStats[qcTechId]) {
+                            techStats[qcTechId].points -= AppState.calculationSettings.points.qc;
+                            techStats[qcTechId].pointsBreakdown.qc -= AppState.calculationSettings.points.qc;
+                            pointsToTransfer += AppState.calculationSettings.points.qc;
+                        }
+                    });
+                    if (pointsToTransfer > 0) {
+                        techStats[i3qaTechId].points += pointsToTransfer;
+                        techStats[i3qaTechId].pointsBreakdown.qcTransfer += pointsToTransfer;
+                    }
+                }
+            }
+            
+            // Warning Logic (Fix is now fixed to 'i' instead of 'i+1')
+            triggers.warning.columns.forEach((c, i) => {
+                if (triggers.warning.labels.includes(get(c)?.trim().toLowerCase())) {
+                    const fixTechId = fixIds[i]; // Corrected index
+                    if (fixTechId && techStats[fixTechId]) techStats[fixTechId].warnings.push({});
+                }
+            });
+            
+            // Fix4 Logic (unchanged)
+            const fix4Id = get('fix4_id')?.trim().toUpperCase();
+            if (fix4Id && techStats[fix4Id]) {
+                const cat = parseInt(get('rv3_cat'));
+                if (!isNaN(cat) && get('rv3_cat')?.trim()) techStats[fix4Id].fix4.push({ category: cat });
+            }
+        });
+        return { techStats };
+    },
+    calculateQualityModifier(qualityRate) {
+        return AppState.bonusTiers.find(tier => qualityRate >= tier.quality)?.bonus || 0;
+    }
+};
+
+const Handlers = {
+    async initializeApp() {
+        await DB.open();
+        
+        dayjs.extend(window.dayjs_plugin_relativeTime);
+
+        Handlers.setupEventListeners();
+        document.body.classList.toggle('light-theme', localStorage.getItem('theme') === 'light');
+        this.initializeFirebase();
+
+        await Promise.all([ Handlers.fetchProjectListSummary(), Handlers.loadTeamSettings(), Handlers.loadBonusTiers(), Handlers.loadCalculationSettings(), Handlers.loadCountingSettings() ]);
+        
+        const hasBeenSetup = await DB.get('settings', 'hasBeenSetup');
+        if (!hasBeenSetup) {
+            this.startGuidedSetup();
+        }
+
+        UI.setPanelHeights();
+        window.UI = UI; 
+    },
+    initializeFirebase() {
+        if (window.firebaseTools) {
+            AppState.firebase.tools = window.firebaseTools;
+            this.checkAdminAuthState();
+            this.listenForUpdates();
+            this.logVisitor();
+        } else {
+            console.error("Firebase is not initialized. Make sure the config script is in index.html");
+        }
+    },
+    async handleAdminLogin() {
+        const { auth, provider, signInWithPopup } = AppState.firebase.tools;
+        try {
+            const result = await signInWithPopup(auth, provider);
+           // FIX: Check if the user's email is IN the ADMIN_EMAIL array.
+        if (CONSTANTS.ADMIN_EMAIL.includes(result.user.email)) { 
+            AppState.firebase.isAdmin = true; 
+            this.updateAdminUI(true); 
+        } else { 
+            alert("Access Denied: This account is not authorized for admin access."); 
+            auth.signOut(); 
+        }
+        } catch (error) {
+            console.error("Admin login error:", error);
+            alert("An error occurred during sign-in.");
+        }
+    },
+    handleAdminLogout() {
+        AppState.firebase.tools.auth.signOut();
+    },
+    checkAdminAuthState() {
+        const { auth, onAuthStateChanged } = AppState.firebase.tools;
+        onAuthStateChanged(auth, (user) => {
+            // FIX: Check if the user's email is IN the ADMIN_EMAIL array.
+        const isAdmin = user && CONSTANTS.ADMIN_EMAIL.includes(user.email);
+        AppState.firebase.isAdmin = isAdmin; 
+        this.updateAdminUI(isAdmin);
+        });
+    },
+    updateAdminUI(isAdmin) {
+        document.getElementById('admin-login-view').classList.toggle('hidden', isAdmin);
+        document.getElementById('admin-panel-view').classList.toggle('hidden', !isAdmin);
+        if (isAdmin) {
+            this.loadVisitorLog();
+            this.loadAdminProjectList();
+        }
+    },
+    async loadVisitorLog() {
+        const { db, collection, getDocs, query, orderBy } = AppState.firebase.tools;
+        const logTbody = document.getElementById('visitor-log-tbody');
+        logTbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Loading logs...</td></tr>';
+        
+        try {
+            const q = query(collection(db, "visitors"), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) {
+                logTbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">No visitor logs found.</td></tr>';
+                return;
+            }
+
+            const parser = new UAParser();
+            let logsHTML = '';
+            
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const timestamp = data.timestamp ? data.timestamp.toDate() : new Date();
+                const userAgent = data.userAgent;
+
+                parser.setUA(userAgent);
+                const result = parser.getResult();
+                const browser = `${result.browser.name || 'N/A'} ${result.browser.version || ''}`;
+                const os = `${result.os.name || 'N/A'} ${result.os.version || ''}`;
+
+                const timeAgo = dayjs(timestamp).fromNow();
+
+                logsHTML += `
+                    <tr>
+                        <td class="p-2">${timeAgo}</td>
+                        <td class="p-2">${browser.trim()}</td>
+                        <td class="p-2">${os.trim()}</td>
+                    </tr>
+                `;
+            });
+            logTbody.innerHTML = logsHTML;
+
+        } catch (error) {
+            console.error("Error loading visitor log:", error);
+            logTbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-red-400">Error: Could not load logs.</td></tr>`;
+        }
+    },
+    async logVisitor() {
+        try {
+            const { db, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } = AppState.firebase.tools;
+            
+            await addDoc(collection(db, "visitors"), {
+                timestamp: new Date(),
+                userAgent: navigator.userAgent
+            });
+
+            const q = query(collection(db, "visitors"), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.size > 10) {
+                const deletePromises = [];
+                for (let i = 10; i < querySnapshot.docs.length; i++) {
+                    const docToDelete = querySnapshot.docs[i];
+                    deletePromises.push(deleteDoc(doc(db, "visitors", docToDelete.id)));
+                }
+                await Promise.all(deletePromises);
+            }
+
+        } catch (error) {
+            console.error("Error logging visitor:", error);
+        }
+    },
+    async listenForUpdates() {
+        const { db, collection, query, orderBy, limit, onSnapshot } = AppState.firebase.tools;
+        const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"), limit(1));
+        
+        onSnapshot(q, (snapshot) => {
+            if (!snapshot.empty) {
+                const latestUpdate = snapshot.docs[0].data();
+                latestUpdate.id = snapshot.docs[0].id;
+                const acceptedUpdateId = localStorage.getItem('acceptedUpdateId');
+                
+                if (latestUpdate.id !== acceptedUpdateId) {
+                    const banner = document.getElementById('user-update-banner');
+                    document.getElementById('update-banner-text').textContent = latestUpdate.message;
+                    banner.classList.remove('hidden');
+                }
+            }
+        });
+    },
+    async loadBonusTiers() {
+        const saved = await DB.get('bonusTiers', 'customTiers');
+        AppState.bonusTiers = (saved && saved.tiers.length > 0) ? saved.tiers : CONSTANTS.DEFAULT_BONUS_TIERS;
+    },
+    async loadCalculationSettings() {
+        const saved = await DB.get('calculationSettings', 'customSettings');
+        AppState.calculationSettings = saved ? saved.settings : JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CALCULATION_SETTINGS));
+    },
+    async loadCountingSettings() {
+        const saved = await DB.get('countingSettings', 'customCounting');
+        AppState.countingSettings = saved ? { ...CONSTANTS.DEFAULT_COUNTING_SETTINGS, ...saved.settings, triggers: { ...CONSTANTS.DEFAULT_COUNTING_SETTINGS.triggers, ...saved.settings.triggers } } : JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_COUNTING_SETTINGS));
+    },
+    async saveAdvanceSettings() {
+        const getValues = id => document.getElementById(id).value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        const newTiers = Array.from(document.querySelectorAll('#bonus-tier-editor-container .tier-row')).map(row => ({ quality: parseFloat(row.querySelector('.tier-quality-input').value), bonus: parseFloat(row.querySelector('.tier-bonus-input').value) / 100 })).filter(t => !isNaN(t.quality) && !isNaN(t.bonus)).sort((a, b) => b.quality - a.quality);
+        const newCalcSettings = {
+            irModifierValue: parseFloat(document.getElementById('setting-ir-modifier').value),
+            points: { qc: parseFloat(document.getElementById('setting-qc-points').value), i3qa: parseFloat(document.getElementById('setting-i3qa-points').value), rv1: parseFloat(document.getElementById('setting-rv1-points').value), rv1_combo: parseFloat(document.getElementById('setting-rv1-combo-points').value), rv2: parseFloat(document.getElementById('setting-rv2-points').value) },
+            categoryValues: Object.fromEntries(Array.from({length: 9}, (_, i) => [i + 1, { "3in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="3in"]`).value), "4in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="4in"]`).value), "6in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="6in"]`).value), "9in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="9in"]`).value) }]))
+        };
+        const newCountingSettings = {
+            taskColumns: { qc: getValues('setting-qc-cols'), i3qa: getValues('setting-i3qa-cols'), rv1: getValues('setting-rv1-cols'), rv2: getValues('setting-rv2-cols'), },
+            triggers: { refix: { labels: getValues('setting-refix-labels'), columns: getValues('setting-refix-cols') }, miss: { labels: getValues('setting-miss-labels'), columns: getValues('setting-miss-cols') }, warning: { labels: getValues('setting-warning-labels'), columns: getValues('setting-warning-cols') }, qcPenalty: { labels: getValues('setting-qc-penalty-labels'), columns: getValues('setting-qc-penalty-cols') } }
+        };
+        await Promise.all([ DB.put('bonusTiers', { id: 'customTiers', tiers: newTiers }), DB.put('calculationSettings', { id: 'customSettings', settings: newCalcSettings }), DB.put('countingSettings', { id: 'customCounting', settings: newCountingSettings }) ]);
+        [AppState.bonusTiers, AppState.calculationSettings, AppState.countingSettings] = [newTiers, newCalcSettings, newCountingSettings];
+        UI.showNotification("Advance settings saved."); UI.closeModal('advance-settings-modal');
+    },
+    populateAdvanceSettingsEditor() {
+        const container = document.getElementById('advance-settings-body');
+        container.innerHTML = `<div class="flex items-center gap-2 border-b border-brand-700 mb-4"><button class="tab-button active" data-tab="bonus-tiers">Bonus Tiers</button><button class="tab-button" data-tab="points">Points</button><button class="tab-button" data-tab="counting">Counting Logic</button></div><div id="tab-bonus-tiers" class="tab-content active"><div id="bonus-tier-editor-container" class="space-y-2"></div><button id="add-tier-btn" class="btn-secondary mt-4">Add Tier</button></div><div id="tab-points" class="tab-content"><div class="space-y-4"><div><label for="setting-ir-modifier">IR Modifier</label><input type="number" step="0.1" id="setting-ir-modifier" class="input-field w-full mt-1"></div><div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div><label for="setting-qc-points">QC</label><input type="number" step="0.01" id="setting-qc-points" class="input-field w-full mt-1"></div><div><label for="setting-i3qa-points">i3QA</label><input type="number" step="0.01" id="setting-i3qa-points" class="input-field w-full mt-1"></div><div><label for="setting-rv1-points">RV1</label><input type="number" step="0.01" id="setting-rv1-points" class="input-field w-full mt-1"></div><div><label for="setting-rv1-combo-points">RV1 Combo</label><input type="number" step="0.01" id="setting-rv1-combo-points" class="input-field w-full mt-1"></div><div><label for="setting-rv2-points">RV2</label><input type="number" step="0.01" id="setting-rv2-points" class="input-field w-full mt-1"></div></div><div class="table-container text-sm border border-brand-700 rounded-md"><table class="min-w-full"><thead class="bg-brand-800"><tr><th>Category</th><th>3in</th><th>4in</th><th>6in</th><th>9in</th></tr></thead><tbody id="category-points-tbody"></tbody></table></div></div></div><div id="tab-counting" class="tab-content"><div class="space-y-4"><div><h4 class="font-semibold">Task Columns</h4><div class="grid grid-cols-2 gap-4"><div><label>QC</label><input type="text" id="setting-qc-cols" class="input-field w-full mt-1"></div><div><label>i3QA</label><input type="text" id="setting-i3qa-cols" class="input-field w-full mt-1"></div><div><label>RV1</label><input type="text" id="setting-rv1-cols" class="input-field w-full mt-1"></div><div><label>RV2</label><input type="text" id="setting-rv2-cols" class="input-field w-full mt-1"></div></div></div><div><h4 class="font-semibold">Trigger Conditions</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label>Refix Labels</label><input type="text" id="setting-refix-labels" class="input-field w-full mt-1"></div><div><label>Refix Columns</label><input type="text" id="setting-refix-cols" class="input-field w-full mt-1"></div><div><label>Miss Labels</label><input type="text" id="setting-miss-labels" class="input-field w-full mt-1"></div><div><label>Miss Columns</label><input type="text" id="setting-miss-cols" class="input-field w-full mt-1"></div><div><label>Warning Labels</label><input type="text" id="setting-warning-labels" class="input-field w-full mt-1"></div><div><label>Warning Columns</label><input type="text" id="setting-warning-cols" class="input-field w-full mt-1"></div><div><label>QC Penalty Labels</label><input type="text" id="setting-qc-penalty-labels" class="input-field w-full mt-1"></div><div><label>QC Penalty Columns</label><input type="text" id="setting-qc-penalty-cols" class="input-field w-full mt-1"></div></div></div></div></div>`;
+        const tierContainer = document.getElementById('bonus-tier-editor-container');
+        tierContainer.innerHTML = `<div class="grid grid-cols-3 gap-4 font-semibold text-gray-400 pb-2 border-b border-gray-600"><span>Min. Quality %</span><span>Bonus Earned %</span><span>Action</span></div>`;
+        AppState.bonusTiers.forEach(t => this.addBonusTierRow(t.quality, t.bonus * 100));
+        document.getElementById('add-tier-btn').addEventListener('click', () => this.addBonusTierRow());
+        document.getElementById('setting-ir-modifier').value = AppState.calculationSettings.irModifierValue;
+        Object.keys(AppState.calculationSettings.points).forEach(k => {
+            const pointInput = document.getElementById(`setting-${k.replace('_','-')}-points`);
+            if (pointInput) {
+                pointInput.value = AppState.calculationSettings.points[k];
+            }
+        });
+        document.getElementById('category-points-tbody').innerHTML = Object.entries(AppState.calculationSettings.categoryValues).map(([cat, gsd]) => `<tr data-category="${cat}"><td>Cat ${cat}</td>${Object.entries(gsd).map(([size, val]) => `<td><input type="number" step="0.01" class="input-field w-full p-1" data-gsd="${size}" value="${val}"></td>`).join('')}</tr>`).join('');
+        Object.keys(AppState.countingSettings.taskColumns).forEach(k => {
+            const taskColInput = document.getElementById(`setting-${k}-cols`);
+            if (taskColInput) {
+                taskColInput.value = AppState.countingSettings.taskColumns[k].join(', ');
+            }
+        });
+        Object.keys(AppState.countingSettings.triggers).forEach(k => {
+            const kebabCaseKey = k.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
+            const labelsInput = document.getElementById(`setting-${kebabCaseKey}-labels`);
+            if (labelsInput) {
+                labelsInput.value = AppState.countingSettings.triggers[k].labels.join(', ');
+            }
+            const colsInput = document.getElementById(`setting-${kebabCaseKey}-cols`);
+            if (colsInput) {
+                colsInput.value = AppState.countingSettings.triggers[k].columns.join(', ');
+            }
+        });
+        container.querySelectorAll('.tab-button').forEach(tab => tab.addEventListener('click', () => { container.querySelectorAll('.tab-button, .tab-content').forEach(el => el.classList.remove('active')); tab.classList.add('active'); document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active'); }));
+    },
+    addBonusTierRow(quality = '', bonus = '') {
+        const row = document.createElement('div');
+        row.className = 'tier-row grid grid-cols-3 gap-4 items-center';
+        row.innerHTML = `<input type="number" step="0.5" class="tier-quality-input w-full p-2 input-field" value="${quality}"><input type="number" step="1" class="tier-bonus-input w-full p-2 input-field" value="${bonus}"><button class="delete-tier-btn bg-red-600/80 text-white rounded-lg hover:bg-red-700 text-sm p-2">Delete</button>`;
+        document.getElementById('bonus-tier-editor-container').appendChild(row);
+        row.querySelector('.delete-tier-btn').addEventListener('click', () => row.remove());
+    },
+    async loadTeamSettings() {
+        const teamsData = await DB.get('teams', 'teams');
+        AppState.teamSettings = (teamsData && Object.keys(teamsData.settings).length > 0) ? teamsData.settings : CONSTANTS.DEFAULT_TEAMS;
+        UI.populateTeamFilters();
+        UI.populateAdminTeamManagement();
+    },
+    async saveTeamSettings(containerId = 'team-list-container') {
+        const newSettings = {};
+        document.querySelectorAll(`#${containerId} .team-card`).forEach(div => {
+            const teamName = div.querySelector('.team-name-input').value.trim();
+            if (teamName) newSettings[teamName] = Array.from(div.querySelectorAll('.tech-tag')).map(tag => tag.dataset.techId);
+        });
+        await DB.put('teams', { id: 'teams', settings: newSettings });
+        UI.showNotification("Team settings saved.");
+        AppState.teamSettings = newSettings;
+        UI.populateTeamFilters();
+        UI.closeModal('manage-teams-modal');
+    },
+    async saveProjectToIndexedDB(projectData) {
+        try {
+            await DB.put('projects', { ...projectData, projectOrder: projectData.projectOrder || Date.now() });
+        } catch (error) {
+            console.error("Error saving project:", error);
+            UI.showNotification("Error saving project.", true);
+        }
+    },
+    async fetchProjectListSummary() {
+        const projects = await DB.getAll('projects');
+        UI.populateProjectSelect(projects.map(p => ({ id: p.id, name: p.name })).sort((a, b) => (b.projectOrder || 0) - (a.projectOrder || 0)));
+    },
+    async fetchFullProjectData(projectId) {
+        const data = await DB.get('projects', projectId);
+        if (data && data.rawData) {
+            const binary_string = atob(data.rawData);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary_string.charCodeAt(i);
+            }
+            data.rawData = pako.inflate(bytes, { to: 'string' });
+            return data;
+        }
+        return null;
+    },
+    async deleteProjectFromIndexedDB(projectId) {
+        if (confirm("Delete this project? This cannot be undone.")) {
+            await DB.delete('projects', projectId);
+            await this.fetchProjectListSummary();
+            UI.showNotification("Project deleted.");
+            this.loadProjectIntoForm("");
+        }
+    },
+    async loadProjectIntoForm(projectId) {
+        const refreshBtn = document.getElementById('refresh-projects-btn');
+        if (refreshBtn) {
+            refreshBtn.classList.add('spinning');
+            refreshBtn.disabled = true;
+        }
+        try {
+            const projectData = projectId ? await this.fetchFullProjectData(projectId) : null;
+            document.getElementById('techData').value = projectData?.rawData || '';
+            document.getElementById('techData').readOnly = !!projectData;
+            document.getElementById('project-name').value = projectData?.name || '';
+            document.getElementById('project-name').readOnly = !!projectData;
+            document.getElementById('is-ir-project-checkbox').checked = projectData?.isIRProject || false;
+            document.getElementById('is-ir-project-checkbox').disabled = !!projectData;
+            document.getElementById('gsd-value-select').value = projectData?.gsdValue || '3in';
+            document.getElementById('gsd-value-select').disabled = !!projectData;
+            document.getElementById('edit-data-btn').classList.toggle('hidden', !projectData);
+            document.getElementById('save-project-btn').disabled = !!projectData;
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            const irBadge = document.getElementById('project-ir-badge');
+            irBadge.classList.toggle('hidden', !projectData);
+            if(projectData) {
+                irBadge.textContent = projectData.isIRProject ? 'IR' : 'Non-IR';
+                irBadge.className = `project-info-badge ${projectData.isIRProject ? 'is-ir' : 'is-not-ir'}`;
+            }
+        } finally {
+            if (refreshBtn) {
+                refreshBtn.classList.remove('spinning');
+                refreshBtn.disabled = false;
+            }
+        }
+    },
+    async handleDroppedFiles(files) {
+        document.getElementById('project-select').value = '';
+        UI.resetUIForNewCalculation();
+        const fileGroups = {};
+        for (const file of files) {
+            const baseName = file.name.split('.')[0];
+            fileGroups[baseName] = fileGroups[baseName] || {};
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (['shp', 'dbf'].includes(ext)) fileGroups[baseName][ext] = file;
+        }
+        let allFeatures = [];
+        let count = 0;
+        
+        // --- START BUG FIX: ADD TRY/CATCH & FEATURE CHECK ---
+        for (const group of Object.values(fileGroups)) {
+            if (group.shp && group.dbf) {
+                try {
+                    const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
+                    
+                    // Ensure geojson is valid and contains features before pushing
+                    if (geojson && geojson.features && geojson.features.length > 0) {
+                        allFeatures.push(...geojson.features);
+                        count++;
+                    } else if (geojson && geojson.features && geojson.features.length === 0) {
+                        // Log a warning if a file was read but was empty
+                        console.warn(`Shapefile pair for ${group.shp.name.split('.')[0]} was successfully parsed but contained no features.`);
+                    }
+                } catch (e) {
+                    // If parsing fails for one pair, show a notification but continue the loop
+                    console.error("Error parsing shapefile pair:", e);
+                    UI.showNotification(`Error processing file pair ${group.shp.name.split('.')[0]}. Please check file integrity.`, true);
+                }
+            }
+        }
+        // --- END BUG FIX ---
+        
+        if (allFeatures.length > 0) {
+            const allKeys = new Set();
+            allFeatures.forEach(feature => {
+                if (feature.properties) {
+                    Object.keys(feature.properties).forEach(key => allKeys.add(key));
+                }
+            });
+            const headers = Array.from(allKeys);
+            let tsv = headers.join('\t') + '\n';
+            allFeatures.forEach(feature => {
+                const row = headers.map(header => {
+                    return feature.properties ? (feature.properties[header] ?? '') : '';
+                });
+                tsv += row.join('\t') + '\n';
+            });
+
+            document.getElementById('techData').value = tsv;
+            // FIX: Explicitly ensure the IR checkbox is unchecked after processing files
+            document.getElementById('is-ir-project-checkbox').checked = false; 
+            UI.showNotification(`${count} shapefile set(s) processed.`);
+        } else {
+           alert("No valid .shp/.dbf pairs found, or all valid files contained no data.");
+        }
+    },
+    async handleAdminDroppedFiles(files) {
+        const fileGroups = {};
+        for (const file of files) {
+            const baseName = file.name.split('.')[0];
+            fileGroups[baseName] = fileGroups[baseName] || {};
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (['shp', 'dbf'].includes(ext)) fileGroups[baseName][ext] = file;
+        }
+        let allFeatures = [];
+        let count = 0;
+        for (const group of Object.values(fileGroups)) {
+            if (group.shp && group.dbf) {
+                // --- START BUG FIX: ADD TRY/CATCH & FEATURE CHECK ---
+                try {
+                    const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
+                    if (geojson && geojson.features && geojson.features.length > 0) { 
+                        allFeatures.push(...geojson.features); 
+                        count++; 
+                    } else if (geojson && geojson.features && geojson.features.length === 0) {
+                        console.warn(`Admin: Shapefile pair for ${group.shp.name.split('.')[0]} was successfully parsed but contained no features.`);
+                    }
+                } catch (e) {
+                    console.error("Admin: Error parsing shapefile pair:", e);
+                    UI.showNotification(`Admin: Error processing file pair ${group.shp.name.split('.')[0]}.`, true);
+                }
+                // --- END BUG FIX ---
+            }
+        }
+        if (allFeatures.length > 0) {
+            const allKeys = new Set();
+            allFeatures.forEach(feature => {
+                if (feature.properties) {
+                    Object.keys(feature.properties).forEach(key => allKeys.add(key));
+                }
+            });
+            const headers = Array.from(allKeys);
+            let tsv = headers.join('\t') + '\n';
+            allFeatures.forEach(feature => {
+                const row = headers.map(header => {
+                    return feature.properties ? (feature.properties[header] ?? '') : '';
+                });
+                tsv += row.join('\t') + '\n';
+            });
+
+            document.getElementById('admin-project-data').value = tsv;
+            UI.showNotification(`${count} shapefile set(s) processed for admin upload.`);
+        } else {
+           alert("No valid .shp/.dbf pairs found.");
+        }
+    },
+    async clearAllData() {
+        if (confirm("Clear ALL data? This deletes projects and resets all settings to their defaults.")) {
+            if (AppState.db) {
+                AppState.db.close();
+            }
+            const req = indexedDB.deleteDatabase('BonusCalculatorDB');
+            req.onsuccess = async () => {
+                alert("All data has been cleared. The application will now reset.");
+                localStorage.clear();
+                window.location.reload();
+            };
+            req.onerror = () => alert("Error clearing data. Please close all other tabs with this application open and try again.");
+            req.onblocked = () => alert("Could not clear data. Please close all other tabs with this application open and try again.");
+        }
+    },
+    async resetAdvanceSettingsToDefaults() {
+        if (confirm("Are you sure you want to reset all advanced settings to their original defaults? This will apply to all users on next refresh.")) {
+            AppState.bonusTiers = CONSTANTS.DEFAULT_BONUS_TIERS;
+            AppState.calculationSettings = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CALCULATION_SETTINGS));
+            AppState.countingSettings = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_COUNTING_SETTINGS));
+            
+            await Promise.all([
+                DB.delete('bonusTiers', 'customTiers'),
+                DB.delete('calculationSettings', 'customSettings'),
+                DB.delete('countingSettings', 'customCounting')
+            ]);
+
+            this.populateAdvanceSettingsEditor();
+            UI.showNotification("Settings have been reset to defaults locally.");
+        }
+    },
+    startGuidedSetup() {
+        AppState.guidedSetup.currentStep = 1;
+        this.updateGuidedSetupView();
+        
+        const teamContainer = document.getElementById('setup-team-list');
+        teamContainer.innerHTML = '';
+        Object.entries(AppState.teamSettings).forEach(([teamName, techIds]) => UI.addTeamCard(teamName, techIds, 'setup-team-list'));
+
+        UI.openModal('guided-setup-modal');
+    },
+    updateGuidedSetupView() {
+        const { currentStep, totalSteps } = AppState.guidedSetup;
+        const indicatorContainer = document.getElementById('setup-step-indicator');
+        indicatorContainer.innerHTML = '';
+        for (let i = 1; i <= totalSteps; i++) {
+            const item = document.createElement('div');
+            item.className = 'step-indicator-item';
+            if (i < currentStep) item.classList.add('completed');
+            if (i === currentStep) item.classList.add('active');
+            item.textContent = i;
+            indicatorContainer.appendChild(item);
+        }
+        
+        document.querySelectorAll('.setup-step').forEach(step => step.classList.remove('active'));
+        document.querySelector(`.setup-step[data-step="${currentStep}"]`).classList.add('active');
+
+        document.getElementById('setup-prev-btn').classList.toggle('hidden', currentStep === 1);
+        document.getElementById('setup-next-btn').classList.toggle('hidden', currentStep === totalSteps);
+        document.getElementById('setup-finish-btn').classList.toggle('hidden', currentStep !== totalSteps);
+
+        if (currentStep === 3) {
+            UI.closeModal('guided-setup-modal');
+            this.startInteractiveTour();
+        }
+    },
+    startInteractiveTour() {
+        AppState.guidedSetup.tourElements = [
+            { id: 'drop-zone', text: 'First, paste your raw data here, or drag and drop your shapefiles onto this area.' },
+            { id: 'bonusMultiplierDirect', text: 'Next, enter the bonus multiplier for this calculation.' },
+            { id: 'calculate-btn', text: 'Finally, click here to calculate the bonus payouts. The results will appear at the bottom of the page.' }
+        ];
+        AppState.guidedSetup.tourStep = 0;
+        this.runTourStep();
+    },
+    runTourStep() {
+        const { tourStep, tourElements } = AppState.guidedSetup;
+        this.clearSpotlight();
+        if (tourStep >= tourElements.length) {
+            AppState.guidedSetup.currentStep = 4;
+            this.updateGuidedSetupView();
+            UI.openModal('guided-setup-modal');
+            return;
+        }
+        const { id, text } = tourElements[tourStep];
+        const element = document.getElementById(id);
+        this.spotlightElement(element, text);
+    },
+    spotlightElement(element, text) {
+        const overlay = document.getElementById('spotlight-overlay');
+        overlay.classList.remove('hidden');
+        element.classList.add('spotlight');
+
+        const tooltip = document.createElement('div');
+        tooltip.id = 'spotlight-tooltip';
+        tooltip.className = 'spotlight-tooltip bottom';
+        tooltip.innerHTML = `${text}<div class="flex justify-end mt-4 gap-2"><button id="tour-next-btn" class="btn-primary">Next</button></div>`;
+        
+        document.body.appendChild(tooltip);
+        
+        const rect = element.getBoundingClientRect();
+        tooltip.style.left = `${rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2)}px`;
+        tooltip.style.top = `${rect.bottom + 10}px`;
+        
+        document.getElementById('tour-next-btn').onclick = () => {
+            AppState.guidedSetup.tourStep++;
+            this.runTourStep();
+        };
+    },
+    clearSpotlight() {
+        document.getElementById('spotlight-overlay').classList.add('hidden');
+        document.querySelector('.spotlight')?.classList.remove('spotlight');
+        document.getElementById('spotlight-tooltip')?.remove();
+    },
+    async finishGuidedSetup() {
+        await this.saveTeamSettings('setup-team-list');
+        await DB.put('settings', { id: 'hasBeenSetup', value: true });
+        UI.closeModal('guided-setup-modal');
+        UI.showNotification("Setup complete. Welcome!");
+    },
+    async loadAdminProjectList() {
+        const { db, collection, getDocs, query, orderBy } = AppState.firebase.tools;
+        const tbody = document.getElementById('admin-project-list-tbody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading projects...</td></tr>';
+        
+        try {
+            const q = query(collection(db, "projects"), orderBy("projectOrder", "desc"));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">No cloud projects found.</td></tr>';
+                return;
+            }
+
+            let projectsHTML = '';
+            querySnapshot.forEach(doc => {
+                const project = { id: doc.id, ...doc.data() };
+
+                // --- NEW RELEASE STATUS LOGIC ---
+                const isReleased = project.isReleased || false;
+                const releaseText = isReleased ? 'Released' : 'Draft'; 
+                const releaseClass = isReleased ? 'bg-status-green hover:bg-status-green/80' : 'bg-status-orange hover:bg-status-orange/80';
+                // --------------------------------
+
+                projectsHTML += `
+                    <tr data-project-id="${project.id}">
+                        <td class="p-2">${project.name}</td>
+                        <td class="p-2">${project.gsdValue}</td>
+                        <td class="p-2 text-center">${project.isIRProject ? 'Yes' : 'No'}</td>
+                        <td class="p-2 text-center">
+                            <button class="admin-release-project-btn btn-primary text-xs py-1 px-2 ${releaseClass}" data-project-id="${project.id}" data-is-released="${isReleased}">${releaseText}</button>
+                        </td>
+                        <td class="p-2 text-center">
+                            <button class="admin-edit-project-btn btn-secondary text-xs py-1 px-2" data-project-id="${project.id}">Edit</button>
+                            <button class="admin-delete-project-btn btn-primary bg-red-600 hover:bg-red-700 text-xs py-1 px-2" data-project-id="${project.id}">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = projectsHTML;
+
+        } catch (error) {
+            console.error("Error loading admin project list:", error);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Error loading projects.</td></tr>';
+        }
+    },
+    resetAdminProjectForm() {
+        document.getElementById('admin-form-title').textContent = 'Add New Project';
+        document.getElementById('admin-project-id').value = '';
+        document.getElementById('admin-project-name').value = '';
+        document.getElementById('admin-project-data').value = '';
+        document.getElementById('admin-gsd-select').value = '3in';
+        document.getElementById('admin-is-ir-checkbox').checked = false;
+        document.getElementById('admin-save-project-btn').textContent = 'Save Project';
+        document.getElementById('admin-cancel-edit-btn').classList.add('hidden');
+    },
+    setupEventListeners() {
+        const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
+        
+        // --- FIX FOR IR PROJECT CHECKBOX BUG: Clear Project Context and IR Checkbox on manual input ---
+        listen('techData', 'input', () => {
+            const projectSelect = document.getElementById('project-select');
+            // Forcefully remove the selected project context if it exists
+            if (projectSelect.value !== '') {
+                projectSelect.value = '';
+                projectSelect.selectedIndex = 0; // Explicitly reset selected index
+                this.loadProjectIntoForm(""); // Resets to a blank form, enabling text areas
+            }
+            // Explicitly set IR checkbox to unchecked and enabled for pasted data
+            document.getElementById('is-ir-project-checkbox').checked = false; 
+            document.getElementById('is-ir-project-checkbox').disabled = false;
+            document.getElementById('project-name').value = ''; // Clear project name on paste
+        });
+        // --- END FIX ---
+        
+        listen('admin-portal-btn', 'click', () => UI.openModal('admin-portal-modal'));
+        listen('guided-setup-btn', 'click', this.startGuidedSetup.bind(this));
+        listen('manage-teams-btn', 'click', () => { UI.populateAdminTeamManagement(); UI.openModal('manage-teams-modal'); });
+        listen('advance-settings-btn', 'click', () => { this.populateAdvanceSettingsEditor(); UI.openModal('advance-settings-modal'); });
+        listen('toggle-theme-btn', 'click', () => { document.body.classList.toggle('light-theme'); localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark'); });
+        listen('save-advance-settings-btn', 'click', this.saveAdvanceSettings);
+        listen('important-info-btn', 'click', () => UI.openModal('important-info-modal'));
+        
+        // --- REPORT A BUG FIX: Using window.open for Gmail URL ---
+        const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=ev.lorens.ebrado@gmail.com&su=PCS%20Bonus%20Calculator%20Bug%20Report';
+        listen('bug-report-btn', 'click', () => window.open(gmailUrl, '_blank'));
+        // --------------------------------------------------------
+        
+        listen('clear-data-btn', 'click', this.clearAllData);
+
+        listen('setup-next-btn', 'click', () => { AppState.guidedSetup.currentStep++; this.updateGuidedSetupView(); });
+        listen('setup-prev-btn', 'click', () => { AppState.guidedSetup.currentStep--; this.updateGuidedSetupView(); });
+        listen('setup-finish-btn', 'click', this.finishGuidedSetup.bind(this));
+        listen('setup-add-team-btn', 'click', () => UI.addTeamCard('', [], 'setup-team-list'));
+        
+        document.body.addEventListener('click', e => {
+            const techIcon = e.target.closest('.tech-summary-icon');
+            if (techIcon) UI.openTechSummaryModal(techIcon.dataset.techId);
+            const teamLabel = e.target.closest('.team-summary-trigger');
+            if (teamLabel) UI.openTeamSummaryModal(teamLabel.dataset.teamName);
+            const sortHeader = e.target.closest('.sortable-header');
+            if (sortHeader) {
+                const column = sortHeader.dataset.sort;
+                AppState.currentSort.direction = AppState.currentSort.column === column && AppState.currentSort.direction === 'desc' ? 'asc' : 'desc';
+                AppState.currentSort.column = column;
+                UI.applyFilters();
+            }
+        });
+        
+        document.body.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'reset-defaults-btn') {
+                this.resetAdvanceSettingsToDefaults();
+            }
+        });
+
+        listen('refresh-projects-btn', 'click', this.fetchProjectListSummary);
+        listen('project-select', 'change', e => this.loadProjectIntoForm(e.target.value));
+        listen('delete-project-btn', 'click', () => { const id = document.getElementById('project-select').value; if(id) this.deleteProjectFromIndexedDB(id); });
+        listen('edit-data-btn', 'click', () => {
+            ['techData', 'project-name', 'is-ir-project-checkbox', 'gsd-value-select'].forEach(id => document.getElementById(id).disabled = false);
+            document.getElementById('techData').readOnly = false; document.getElementById('project-name').readOnly = false;
+            document.getElementById('edit-data-btn').classList.add('hidden');
+            document.getElementById('save-project-btn').disabled = false;
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        });
+        listen('cancel-edit-btn', 'click', () => this.loadProjectIntoForm(document.getElementById('project-select').value));
+        listen('save-project-btn', 'click', async e => {
+            const button = e.target;
+            UI.showLoading(button);
+            const name = document.getElementById('project-name').value.trim();
+            const data = document.getElementById('techData').value.trim();
+            if (!name || !data) {
+                alert("Project Name and Data are required.");
+                UI.hideLoading(button);
+                return;
+            }
+            const existingId = document.getElementById('project-select').value;
+            const projectId = existingId ? existingId : `${name.replace(/\W/g, '_').toLowerCase()}_${Date.now()}`;
+            
+            const compressed = pako.deflate(new TextEncoder().encode(data));
+            let binary = '';
+            const len = compressed.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(compressed[i]);
+            }
+            const base64Data = btoa(binary);
+
+            const projectData = { id: projectId, name: name, rawData: base64Data, isIRProject: document.getElementById('is-ir-project-checkbox').checked, gsdValue: document.getElementById('gsd-value-select').value };
+            await this.saveProjectToIndexedDB(projectData);
+            await this.fetchProjectListSummary();
+            document.getElementById('project-select').value = projectData.id;
+            await this.loadProjectIntoForm(projectData.id);
+            UI.hideLoading(button);
+        });
+        const runCalculation = async (isCombined, projectIds) => {
+            let combinedStats = {};
+            if (isCombined) {
+                for (const id of projectIds) {
+                    const project = await this.fetchFullProjectData(id);
+                    if (!project) continue;
+                    const parsed = Calculator.parseRawData(project.rawData, project.isIRProject, project.name, project.gsdValue);
+                    if (!parsed) continue;
+                    for (const [techId, stat] of Object.entries(parsed.techStats)) {
+                        if (!combinedStats[techId]) combinedStats[techId] = Calculator.createNewTechStat(true);
+                        combinedStats[techId].id = techId;
+                        Object.keys(stat.pointsBreakdown).forEach(k => combinedStats[techId].pointsBreakdown[k] += stat.pointsBreakdown[k]);
+                        ['points', 'fixTasks', 'afpTasks', 'refixTasks'].forEach(k => combinedStats[techId][k] += stat[k]);
+                        ['warnings', 'fix4'].forEach(k => combinedStats[techId][k].push(...stat[k]));
+                        if (!combinedStats[techId].pointsBreakdownByProject[project.name]) combinedStats[techId].pointsBreakdownByProject[project.name] = { points: 0, fixTasks: 0, refixTasks: 0, warnings: 0 };
+                        const projBreakdown = combinedStats[techId].pointsBreakdownByProject[project.name];
+                        projBreakdown.points += stat.points; projBreakdown.fixTasks += stat.fixTasks; projBreakdown.refixTasks += stat.refixTasks; projBreakdown.warnings += stat.warnings.length;
+                    }
+                }
+            } else {
+                const project = projectIds.length > 0 ? await this.fetchFullProjectData(projectIds[0]) : null;
+                const data = project ? project.rawData : document.getElementById('techData').value.trim();
+                const name = project ? project.name : 'Pasted Data';
+                const isIR = project ? project.isIRProject : document.getElementById('is-ir-project-checkbox').checked;
+                const gsd = project ? project.gsdValue : document.getElementById('gsd-value-select').value;
+                if (!data) return alert("No data to calculate.");
+                AppState.lastUsedGsdValue = gsd;
+                const parsed = Calculator.parseRawData(data, isIR, name, gsd);
+                if (parsed) combinedStats = parsed.techStats;
+            }
+            AppState.currentTechStats = combinedStats;
+            UI.applyFilters();
+            let title = 'Bonus Payouts for: ';
+            if (isCombined) title += projectIds.length > 1 ? 'All Projects / Specific' : (await this.fetchFullProjectData(projectIds[0]))?.name || '...';
+            else title += projectIds.length > 0 ? (await this.fetchFullProjectData(projectIds[0]))?.name : 'Pasted Data';
+            document.getElementById('results-title').textContent = title;
+        };
+        listen('calculate-btn', 'click', async e => {
+            const button = e.target; UI.showLoading(button);
+            const projectId = document.getElementById('project-select').value;
+            await runCalculation(false, projectId ? [projectId] : []);
+            UI.hideLoading(button);
+        });
+        listen('calculate-all-btn', 'click', async e => {
+            const button = e.target; UI.showLoading(button);
+            const selectEl = document.getElementById('project-select');
+            const isCustom = document.getElementById('customize-calc-all-cb').checked;
+            const allProjectIds = (await DB.getAll('projects')).map(p => p.id);
+            const selectedIds = Array.from(selectEl.selectedOptions).map(opt => opt.value);
+            const idsToRun = isCustom ? selectedIds : allProjectIds;
+            if (isCustom && idsToRun.length === 0) alert("Select projects from the list to calculate.");
+            else if (idsToRun.length > 0) await runCalculation(true, idsToRun);
+            UI.hideLoading(button);
+        });
+        listen('customize-calc-all-cb', 'change', e => {
+            const selectEl = document.getElementById('project-select');
+            const isChecked = e.target.checked;
+            selectEl.multiple = isChecked; selectEl.size = isChecked ? 6 : 1;
+            document.getElementById('calculate-btn').disabled = isChecked;
+        });
+        listen('search-tech-id', 'input', UI.applyFilters.bind(UI));
+        listen('team-filter-container', 'change', UI.applyFilters.bind(UI));
+        listen('refresh-teams-btn', 'click', this.loadTeamSettings);
+        listen('leaderboard-sort-select', 'change', () => UI.applyFilters());
+        listen('add-team-btn', 'click', () => UI.addTeamCard());
+        listen('save-teams-btn', 'click', () => this.saveTeamSettings());
+        
+        // Admin Portal Listeners
+        listen('admin-google-signin-btn', 'click', this.handleAdminLogin.bind(this));
+        document.querySelectorAll('#admin-panel-view .tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('#admin-panel-view .tab-button, .admin-tab-content').forEach(el => el.classList.remove('active'));
+                button.classList.add('active');
+                document.getElementById(`tab-${button.dataset.tab}`).classList.add('active');
+                if(button.dataset.tab === 'admin-visitors') this.loadVisitorLog();
+                if(button.dataset.tab === 'admin-projects') this.loadAdminProjectList();
             });
         });
 
-        // Guided Setup
-        listen('setup-next-btn', 'click', App.nextGuidedStep);
-        listen('setup-prev-btn', 'click', App.prevGuidedStep);
-
-        // Admin Portal
-        listen('admin-portal-btn', 'click', App.openAdminPortalModal);
-        listen('admin-save-project-btn', 'click', App.saveProjectToCloud);
-        listen('admin-reset-form-btn', 'click', App.resetAdminProjectForm);
-        document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
-        document.getElementById('admin-projects').classList.add('active');
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', App.handleAdminTabSwitch.bind(App));
+        listen('accept-update-btn', 'click', async () => {
+            await this.resetAdvanceSettingsToDefaults();
+            const { db, collection, query, orderBy, limit, getDocs } = AppState.firebase.tools;
+            const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"), limit(1));
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) {
+                const latestUpdateId = snapshot.docs[0].id;
+                localStorage.setItem('acceptedUpdateId', latestUpdateId);
+            }
+            document.getElementById('user-update-banner').classList.add('hidden');
+            window.location.reload();
         });
-        listen('admin-users-tab', 'click', App.loadUserManagement);
-
-        // Firebase Update Banner
-        listen('accept-update-btn', 'click', App.acceptLatestSettings);
-        listen('update-online-btn', 'click', App.syncProjects);
         
-        // Chatbot
-        listen('chatbot-bubble', 'click', App.toggleChatbot);
-        listen('chatbot-close-btn', 'click', App.toggleChatbot);
-        listen('chatbot-input', 'keydown', App.handleChatbotInput);
+        listen('admin-send-update-btn', 'click', async () => {
+            const message = document.getElementById('admin-update-text').value.trim();
+            if (message && AppState.firebase.isAdmin) {
+                try {
+                    const { db, collection, addDoc } = AppState.firebase.tools;
+                    await addDoc(collection(db, "notifications"), { message, timestamp: new Date() });
+                    UI.showNotification("Update notification sent to all users.");
+                    document.getElementById('admin-update-text').value = '';
+                } catch (error) {
+                    console.error("Error sending notification:", error);
+                    UI.showNotification("Error sending notification.", true);
+                }
+            }
+        });
 
+        listen('update-online-btn', 'click', async (e) => {
+            const button = e.currentTarget;
+            const icon = document.getElementById('update-online-icon');
+            icon.classList.add('spinning');
+            button.disabled = true;
 
-        // Custom Tailwing Theme Toggler
-        listen('toggle-theme-btn', 'click', App.toggleTheme);
+            try {
+                // Ensure 'where' is available from firebaseTools
+                const { db, collection, getDocs, query, where } = AppState.firebase.tools;
+
+                const lastSync = localStorage.getItem('lastProjectSync');
+                const lastSyncTime = lastSync ? parseInt(lastSync, 10) : 0;
         
-        // Merge FP Modal
-        listen('edit-data-btn', 'click', App.openMergeFPModal);
-        listen('execute-merge-btn', 'click', App.executeMerge);
-        listen('merge-fp-modal', 'click', e => {
-            if (e.target.id === 'merge-fp-modal') UI.closeModal('merge-fp-modal');
+                // Fetch projects that are RELEASED AND have been modified since last sync
+                const q = query(
+                    collection(db, "projects"), 
+                    where("isReleased", "==", true), // <-- Only sync released projects
+                    where("lastModified", ">", lastSyncTime)
+                );
+                
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    // FIX: Change message to be more accurate when no new released projects are found.
+                    UI.showNotification("No new project updates found.");
+                    // Still update the timestamp to now even if no new projects
+                    localStorage.setItem('lastProjectSync', Date.now().toString());
+                    return;
+                }
+
+                let successCount = 0;
+                for (const doc of querySnapshot.docs) {
+                    await this.saveProjectToIndexedDB({ id: doc.id, ...doc.data() });
+                    successCount++;
+                }
+
+                if (successCount > 0) {
+                    await this.fetchProjectListSummary();
+                    UI.showNotification(`${successCount} project(s) synced from the cloud.`);
+                }
+                
+                localStorage.setItem('lastProjectSync', Date.now().toString());
+
+            } catch (error) {
+                console.error("Error updating online projects:", error);
+                UI.showNotification("Failed to sync online projects.", true);
+            } finally {
+                icon.classList.remove('spinning');
+                button.disabled = false;
+            }
+        });
+
+        listen('admin-cancel-edit-btn', 'click', this.resetAdminProjectForm);
+        
+        document.getElementById('admin-project-list-tbody').addEventListener('click', async (e) => {
+            const editTarget = e.target.closest('.admin-edit-project-btn');
+            if (editTarget) {
+                const projectId = editTarget.dataset.projectId;
+                const { db, doc, getDoc } = AppState.firebase.tools;
+                const docRef = doc(db, "projects", projectId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const project = docSnap.data();
+                    document.getElementById('admin-form-title').textContent = `Editing: ${project.name}`;
+                    document.getElementById('admin-project-id').value = projectId;
+                    document.getElementById('admin-project-name').value = project.name;
+                    document.getElementById('admin-gsd-select').value = project.gsdValue;
+                    document.getElementById('admin-is-ir-checkbox').checked = project.isIRProject;
+                    
+                    const binary_string = atob(project.rawData);
+                    const len = binary_string.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binary_string.charCodeAt(i);
+                    }
+                    const decompressedData = pako.inflate(bytes, { to: 'string' });
+                    document.getElementById('admin-project-data').value = decompressedData;
+
+                    document.getElementById('admin-save-project-btn').textContent = 'Update Project';
+                    document.getElementById('admin-cancel-edit-btn').classList.remove('hidden');
+                }
+            }
+
+            const deleteTarget = e.target.closest('.admin-delete-project-btn');
+            if (deleteTarget) {
+                const projectId = deleteTarget.dataset.projectId;
+                if (confirm("Are you sure you want to delete this project from the cloud? This cannot be undone.")) {
+                    const { db, doc, deleteDoc } = AppState.firebase.tools;
+                    await deleteDoc(doc(db, "projects", projectId));
+                    UI.showNotification("Project deleted from cloud.");
+                    this.loadAdminProjectList();
+                }
+            }
+            
+            // --- NEW: Release Button Handler ---
+            const releaseTarget = e.target.closest('.admin-release-project-btn');
+            if (releaseTarget) {
+                const projectId = releaseTarget.dataset.projectId;
+                const currentStatus = releaseTarget.dataset.isReleased === 'true';
+                const newStatus = !currentStatus;
+                
+                if (confirm(`Are you sure you want to change the release status of project ${projectId} to ${newStatus ? 'RELEASED' : 'DRAFT'}? This will affect its availability for client sync.`)) {
+                    const { db, doc, setDoc } = AppState.firebase.tools;
+                    await setDoc(doc(db, "projects", projectId), { isReleased: newStatus, lastModified: Date.now() }, { merge: true });
+                    UI.showNotification(`Project status updated to ${newStatus ? 'RELEASED' : 'DRAFT'}.`);
+                    this.loadAdminProjectList(); // Refresh the list to update button state
+                }
+            }
+        });
+
+        listen('admin-save-project-btn', 'click', async (e) => {
+            const button = e.target;
+            UI.showLoading(button);
+            const name = document.getElementById('admin-project-name').value.trim();
+            const data = document.getElementById('admin-project-data').value.trim();
+            const existingId = document.getElementById('admin-project-id').value;
+
+            if (!name || !data) {
+                alert("Project Name and Data are required.");
+                UI.hideLoading(button);
+                return;
+            }
+
+            const compressed = pako.deflate(new TextEncoder().encode(data));
+            let binary = '';
+            const len = compressed.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(compressed[i]);
+            }
+            const base64Data = btoa(binary);
+
+            // Base fields for both new and existing projects
+            const projectFields = { 
+                name, rawData: base64Data,
+                isIRProject: document.getElementById('admin-is-ir-checkbox').checked,
+                gsdValue: document.getElementById('admin-gsd-select').value,
+                projectOrder: Date.now(),
+                lastModified: Date.now()
+            };
+
+            try {
+                const { db, collection, addDoc, doc, setDoc } = AppState.firebase.tools;
+                if (existingId) {
+                    // Update existing project, preserving 'isReleased' status via merge
+                    await setDoc(doc(db, "projects", existingId), projectFields, { merge: true });
+                    UI.showNotification("Project updated successfully.");
+                } else {
+                    // Add new project, default 'isReleased' to false
+                    await addDoc(collection(db, "projects"), { ...projectFields, isReleased: false });
+                    UI.showNotification("Project saved to the cloud.");
+                }
+                this.resetAdminProjectForm();
+                this.loadAdminProjectList();
+            } catch (error) {
+                 console.error("Error saving project to cloud:", error);
+                 UI.showNotification("Error saving project.", true);
+            } finally {
+                UI.hideLoading(button);
+            }
         });
         
         // Main Drop Zone
         listen('drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.add('bg-brand-700'); });
         listen('drop-zone', 'dragleave', e => e.target.closest('#drop-zone').classList.remove('bg-brand-700'));
-        listen('drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.remove('bg-brand-700'); App.handleDroppedFiles(e.dataTransfer.files); });
+        listen('drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.remove('bg-brand-700'); this.handleDroppedFiles(e.dataTransfer.files); });
 
         // Admin Portal Drop Zone
         listen('admin-drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#admin-drop-zone').classList.add('bg-brand-700'); });
         listen('admin-drop-zone', 'dragleave', e => e.target.closest('#admin-drop-zone').classList.remove('bg-brand-700'));
-        listen('admin-drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#admin-drop-zone').classList.remove('bg-brand-700'); App.handleAdminDroppedFiles(e.dataTransfer.files); });
-
-        // Merge FP Drop Zone
-        listen('merge-drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#merge-drop-zone').classList.add('border-accent'); });
-        listen('merge-drop-zone', 'dragleave', e => e.target.closest('#merge-drop-zone').classList.remove('border-accent'));
-        listen('merge-drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#merge-drop-zone').classList.remove('border-accent'); App.handleMergeDroppedFiles(e.dataTransfer.files); });
-
-        // Initial set heights
-        UI.setPanelHeights();
+        listen('admin-drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#admin-drop-zone').classList.remove('bg-brand-700'); this.handleAdminDroppedFiles(e.dataTransfer.files); });
     }
 };
 
-const Calculator = {
-    // This function calculates the points for a single row of data
-    calculateRowPoints(row, gsd, isIR, customSettings) {
-        // Implementation remains the same
-        const settings = customSettings || AppState.calculationSettings;
-        const categoryValues = settings.categoryValues;
-        const irModifier = settings.irModifierValue || 1;
-        
-        const category = row.fix_category;
-        const isFix = row.fix_count > 0 && row.fix_label === 'f'; 
-
-        if (!isFix || !category || category === '0') {
-            return { points: 0, category: '0', isIR: false, isFix: false };
-        }
-
-        const gsdKey = gsd || AppState.lastUsedGsdValue;
-        let points = 0;
-        let finalIR = isIR || false; // Use project IR status unless row indicates otherwise
-
-        // Base points from category table
-        if (categoryValues[category] && categoryValues[category][gsdKey]) {
-            points = categoryValues[category][gsdKey];
-        } else {
-            return { points: 0, category: category, isIR: finalIR, isFix: true }; // Category not found or 0 points
-        }
-        
-        // Apply IR multiplier if applicable
-        if (finalIR && category !== '7') { // Category 7 (RV) does not get IR modifier
-            points *= irModifier;
-        }
-
-        return {
-            points: points,
-            category: category,
-            isIR: finalIR,
-            isFix: true
-        };
-    },
-    // This function aggregates all data and calculates final tech stats
-    calculateTechStats(data, customSettings, projectGsd, techIdOverride) {
-        // Implementation remains the same
-        const settings = customSettings || AppState.calculationSettings;
-        const counting = AppState.countingSettings;
-        const techStats = {};
-        const gsd = projectGsd || AppState.lastUsedGsdValue;
-        
-        const isIRProject = data.isIR || false;
-
-        const initTech = (id) => ({
-            id,
-            points: 0,
-            fixTasks: 0,
-            refixTasks: 0,
-            qcTasks: 0,
-            i3qaTasks: 0,
-            rvTasks: 0,
-            rvPoints: 0,
-            warnings: [],
-            projectPoints: [], // Detailed list of points from fixes (for breakdown)
-            fix4: [], // Detailed list of cat 4 fixes
-            payout: 0, quality: 0, bonusEarned: 0
-        });
-
-        const uniqueFixes = {}; // key: techId_taskKey_category
-        const uniqueQCTasks = {};
-        const uniqueI3QATasks = {};
-        const uniqueRVTasks = {};
-
-        data.content.forEach(row => {
-            const techId = techIdOverride || String(row.tech_id).toUpperCase();
-            if (!techId || !CONSTANTS.TECH_ID_REGEX.test(techId)) return; // Skip invalid tech IDs
-
-            if (!techStats[techId]) {
-                techStats[techId] = initTech(techId);
-            }
-            const tech = techStats[techId];
-            
-            // --- 1. Calculate Points from Fixes ---
-            const fixResult = Calculator.calculateRowPoints(row, gsd, isIRProject, settings);
-            if (fixResult.isFix) {
-                tech.projectPoints.push(fixResult);
-                
-                // Track Cat 4 fixes separately
-                if (String(fixResult.category) === '4') {
-                     const cat4Key = row.fix_type;
-                     if (cat4Key) tech.fix4.push({ category: cat4Key, rowId: row.gid });
-                }
-            }
-
-            // --- 2. Tally Warning/Penalty Metrics (Denominator) ---
-
-            const rowWarnings = [];
-            const checkWarning = (column, label, isRefix = false, isMiss = false) => {
-                if (label && label !== 'na' && label !== 'f') {
-                    rowWarnings.push({ column, label, isRefix, isMiss });
-                }
-            };
-            
-            // Check Refix/Miss (rv1_label, rv2_label, rv3_label, i3qa_label)
-            counting.triggers.refix.columns.forEach(col => checkWarning(col, row[col], true));
-            counting.triggers.miss.columns.forEach(col => checkWarning(col, row[col], false, true));
-
-            // Check General Warnings (r1_warn, r2_warn, r3_warn, r4_warn)
-            counting.triggers.warning.columns.forEach(col => checkWarning(col, row[col]));
-            
-            // Apply unique warning logic
-            rowWarnings.forEach(warning => {
-                const isRefixTrigger = counting.triggers.refix.labels.includes(warning.label) && counting.triggers.refix.columns.includes(warning.column);
-                const isMissTrigger = counting.triggers.miss.labels.includes(warning.label) && counting.triggers.miss.columns.includes(warning.column);
-                const isWarningTrigger = counting.triggers.warning.labels.includes(warning.label) && counting.triggers.warning.columns.includes(warning.column);
-
-                // Use a combination of these checks to determine if it's a quality penalty
-                if (isRefixTrigger || isMissTrigger || isWarningTrigger) {
-                    // Check if a warning for this column/label combination has already been recorded for this tech
-                    const warningKey = `${techId}_${warning.column}_${warning.label}`;
-                    if (!tech.warnings.some(w => w.column === warning.column && w.label === warning.label)) {
-                        tech.warnings.push({ 
-                            column: warning.column, 
-                            label: warning.label, 
-                            isRefix: isRefixTrigger, 
-                            isMiss: isMissTrigger
-                        });
-                        if (isRefixTrigger) tech.refixTasks++;
-                    }
-                }
-            });
-
-
-            // --- 3. Tally Task/Points Metrics (Numerator components) ---
-
-            // Fix Tasks (Successful Fixes)
-            // A fix is counted if it has a category and is labeled 'f' and is not negated by a refix/miss/warning
-            if (fixResult.isFix) {
-                const fixKey = `${techId}_${row.fix_id}_${row.fix_category}`;
-                // Only count the fix task if it hasn't already been counted and there are no critical warnings (refix/miss) on this row
-                const isCriticalPenaltyOnRow = rowWarnings.some(w => w.isRefix || w.isMiss);
-                if (!uniqueFixes[fixKey] && !isCriticalPenaltyOnRow) {
-                    uniqueFixes[fixKey] = true;
-                    tech.fixTasks++;
-                }
-            }
-
-            // QC Tasks
-            if (row.qc_id && row.qc_id !== 'na') {
-                const qcKey = `${techId}_${row.qc_id}`;
-                if (!uniqueQCTasks[qcKey]) {
-                    uniqueQCTasks[qcKey] = true;
-                    tech.qcTasks++;
-                    // Apply QC penalty check
-                    const isQCPenalty = counting.triggers.qcPenalty.labels.includes(row.i3qa_label) && counting.triggers.qcPenalty.columns.includes('i3qa_label');
-                    if (isQCPenalty) {
-                        // QC task is penalized, count it as a negative warning
-                        const warningKey = `${techId}_qc_penalty_${row.qc_id}`;
-                        if (!tech.warnings.some(w => w.column === 'qc_penalty' && w.fixId === row.qc_id)) {
-                             tech.warnings.push({ column: 'qc_penalty', label: row.i3qa_label, fixId: row.qc_id });
-                        }
-                    }
-                }
-            }
-            
-            // i3QA Tasks
-            if (row.i3qa_id && row.i3qa_id !== 'na') {
-                const i3qaKey = `${techId}_${row.i3qa_id}`;
-                if (!uniqueI3QATasks[i3qaKey]) {
-                    uniqueI3QATasks[i3qaKey] = true;
-                    tech.i3qaTasks++;
-                }
-            }
-
-            // RV Tasks (RV1, RV2) - We count any task with an RV ID
-            if (row.rv1_id && row.rv1_id !== 'na') {
-                 const rvKey = `${techId}_${row.rv1_id}`;
-                 if (!uniqueRVTasks[rvKey]) {
-                    uniqueRVTasks[rvKey] = true;
-                    tech.rvTasks++;
-                    tech.rvPoints += (settings.points.rv1 || 0);
-                 }
-            }
-            if (row.rv2_id && row.rv2_id !== 'na') {
-                 const rvKey = `${techId}_${row.rv2_id}`;
-                 if (!uniqueRVTasks[rvKey]) {
-                    uniqueRVTasks[rvKey] = true;
-                    tech.rvTasks++;
-                    tech.rvPoints += (settings.points.rv2 || 0);
-                 }
-            }
-            // RV1 Combo Points
-            if (row.rv1_id && row.rv1_id !== 'na' && row.rv2_id && row.rv2_id !== 'na') {
-                 const rvKey = `${techId}_${row.rv1_id}_combo`;
-                 if (uniqueRVTasks[rvKey]) { /* Do nothing - already applied */ }
-                 else if (uniqueRVTasks[`${techId}_${row.rv1_id}`] && uniqueRVTasks[`${techId}_${row.rv2_id}`]) {
-                    uniqueRVTasks[rvKey] = true;
-                    tech.rvPoints += (settings.points.rv1_combo || 0);
-                 }
-            }
-        });
-
-        // --- 4. Final Aggregation ---
-        Object.values(techStats).forEach(tech => {
-            // Sum all project points (base fixes)
-            const baseFixPoints = tech.projectPoints.reduce((sum, p) => sum + p.points, 0);
-            // Add other task points
-            tech.points = baseFixPoints
-                + (tech.qcTasks * (settings.points.qc || 0))
-                + (tech.i3qaTasks * (settings.points.i3qa || 0))
-                + tech.rvPoints; // rvPoints is already summed up during the row loop
-        });
-
-        return techStats;
-    },
-    calculateQualityModifier(qualityPercentage) {
-        // Implementation remains the same
-        const tiers = AppState.bonusTiers;
-        // Sort tiers from highest quality to lowest
-        const sortedTiers = tiers.sort((a, b) => b.quality - a.quality);
-        
-        // Find the matching or closest lower tier
-        for (const tier of sortedTiers) {
-            if (qualityPercentage >= tier.quality) {
-                return tier.bonus;
-            }
-        }
-        
-        // If quality is below the lowest defined tier, return 0 or the lowest tier's bonus
-        return (sortedTiers[sortedTiers.length - 1] && qualityPercentage < sortedTiers[sortedTiers.length - 1].quality) 
-               ? sortedTiers[sortedTiers.length - 1].bonus // Return lowest defined bonus
-               : 0; // If tiers are empty or something unexpected
-    },
-    parseRawData(data, fileName, techIdOverride = null) {
-        // Implementation remains the same
-        const isFixFolder = data.includes('fix_category') && data.includes('tech_id');
-        const isShapefileData = Array.isArray(data);
-
-        if (isFixFolder) {
-            // TSV/CSV Logic (assuming TSV for simplicity as it's common in this domain)
-            const lines = data.trim().split('\n');
-            if (lines.length < 2) throw new Error("File contains no data rows.");
-            const headers = lines[0].toLowerCase().split('\t');
-            if (!headers.includes('fix_category') || !headers.includes('tech_id')) {
-                throw new Error("Missing required columns: 'fix_category' and 'tech_id'.");
-            }
-            const content = lines.slice(1).map(line => {
-                const values = line.split('\t');
-                const row = {};
-                headers.forEach((header, i) => {
-                    row[header.trim()] = values[i] ? values[i].trim().toLowerCase() : '';
-                });
-                // Ensure tech_id is processed correctly if override is used
-                if (techIdOverride) row.tech_id = techIdOverride;
-                return row;
-            });
-            
-            return {
-                id: fileName,
-                name: fileName.replace(/\.[^/.]+$/, "") || 'Untitled Project',
-                content: content,
-                gsd: '3in', // Default GSD, will be overridden by UI/project settings
-                isIR: fileName.toLowerCase().includes('ir')
-            };
-
-        } else if (isShapefileData) {
-            // Shapefile/DBF Parsed Data Logic (Array of objects)
-            if (data.length === 0) throw new Error("Shapefile data contains no records.");
-            // Assuming required fields are present and lowercased by the parser
-            if (!data[0].fix_category || !data[0].tech_id) {
-                throw new Error("Shapefile data missing required properties: 'fix_category' and 'tech_id'.");
-            }
-            return {
-                id: fileName,
-                name: fileName.replace(/\.[^/.]+$/, "") || 'Untitled Project',
-                content: data.map(row => {
-                    if (techIdOverride) row.tech_id = techIdOverride;
-                    return Object.fromEntries(
-                        Object.entries(row).map(([k, v]) => [k.toLowerCase(), String(v).toLowerCase()])
-                    );
-                }),
-                gsd: '3in', // Default GSD
-                isIR: fileName.toLowerCase().includes('ir')
-            };
-        } else {
-            throw new Error("Data format not recognized. Please use TSV/CSV or Fix Folder files.");
-        }
-    },
-    mergeProjectData(projects) {
-        // Implementation remains the same
-         if (!Array.isArray(projects) || projects.length === 0) {
-            return { content: [], isIR: false, gsd: '3in' };
-        }
-
-        const combinedContent = projects.flatMap(p => p.content || []);
-        
-        // Determine combined IR status (true if any project is IR)
-        const combinedIR = projects.some(p => p.isIR);
-
-        // Determine GSD (use the GSD of the first project as a convention)
-        const combinedGsd = projects[0].gsd || '3in';
-
-        return {
-            content: combinedContent,
-            isIR: combinedIR,
-            gsd: combinedGsd
-        };
-    },
-    parseDbf(buffer) {
-        // Implementation remains the same
-         return new Promise((resolve, reject) => {
-            const worker = new Worker('dbf-worker.js'); // Assuming a web worker for dbf parsing
-            worker.onmessage = (e) => {
-                if (e.data.error) {
-                    reject(e.data.error);
-                } else {
-                    resolve(e.data.data);
-                }
-            };
-            worker.onerror = (e) => reject(new Error('DBF Worker error: ' + e.message));
-            worker.postMessage({ buffer }, [buffer]);
-        });
-    },
-    parseShp(buffer) {
-        // Implementation remains the same
-         return new Promise((resolve, reject) => {
-            shapefile.openShp(buffer).then(source => {
-                const records = [];
-                let hasError = false;
-                source.read().then(function log(result) {
-                    if (result.done) return records;
-                    records.push(result.value);
-                    return source.read().then(log);
-                }).then(records => {
-                    if (!hasError) resolve(records);
-                }).catch(error => {
-                    if (!hasError) reject(error);
-                    hasError = true;
-                });
-            }).catch(reject);
-        });
-    }
-};
-
-const App = {
-    // Implementation remains the same
-    init() {
-        DB.open().then(() => {
-            App.loadSettings().then(() => {
-                App.loadLocalProjects();
-                UI.populateTeamFilters();
-                UI.populateInfoModal();
-            });
-            App.initFirebase();
-            App.logVisit();
-        }).catch(err => {
-            console.error("Initialization failed:", err);
-            UI.showNotification("Failed to initialize database. Data may not save.", true);
-        });
-    },
-    initFirebase() {
-        // Implementation remains the same
-        const firebaseConfig = {
-            // (Your Firebase config)
-        };
-        try {
-            AppState.firebase.app = firebase.initializeApp(firebaseConfig);
-            AppState.firebase.auth = firebase.auth();
-            AppState.firebase.db = firebase.firestore();
-            AppState.firebase.tools = firebase.firestore.FieldValue;
-            AppState.firebase.auth.onAuthStateChanged(user => {
-                if (user) {
-                    App.handleUserLogin(user);
-                } else {
-                    App.signInAnonymously();
-                }
-            });
-        } catch (e) {
-            console.warn("Firebase initialization failed:", e.message);
-            // This is acceptable if running locally without an internet connection
-        }
-    },
-    signInAnonymously() {
-        // Implementation remains the same
-        AppState.firebase.auth.signInAnonymously().catch(error => {
-            console.error("Anonymous sign-in failed:", error.code, error.message);
-        });
-    },
-    async handleUserLogin(user) {
-        // Implementation remains the same
-        if (user.email && CONSTANTS.ADMIN_EMAIL.includes(user.email)) {
-            AppState.firebase.isAdmin = true;
-            document.getElementById('admin-portal-btn').classList.remove('hidden');
-        } else {
-            AppState.firebase.isAdmin = false;
-            document.getElementById('admin-portal-btn').classList.add('hidden');
-        }
-        App.checkForUpdates();
-    },
-    async checkForUpdates() {
-        // Implementation remains the same
-        if (!AppState.firebase.db) return;
-        const localVersion = (await DB.get('settings', 'version'))?.value || 0;
-
-        AppState.firebase.db.collection('settings').doc('latest').get().then(doc => {
-            if (doc.exists) {
-                const latest = doc.data();
-                if (latest.version > localVersion) {
-                    document.getElementById('update-banner-text').textContent = `New calculation settings v${latest.version} are available.`;
-                    document.getElementById('user-update-banner').classList.remove('hidden');
-                } else {
-                    document.getElementById('user-update-banner').classList.add('hidden');
-                }
-            }
-        }).catch(error => {
-            console.error("Error checking for updates:", error);
-        });
-    },
-    async acceptLatestSettings() {
-        // Implementation remains the same
-        if (!AppState.firebase.db) return;
-        try {
-            const doc = await AppState.firebase.db.collection('settings').doc('latest').get();
-            if (doc.exists) {
-                const latest = doc.data();
-                await DB.put('calculationSettings', { id: 'main', value: latest.calculationSettings });
-                await DB.put('bonusTiers', { id: 'main', value: latest.bonusTiers });
-                await DB.put('countingSettings', { id: 'main', value: latest.countingSettings });
-                await DB.put('settings', { id: 'version', value: latest.version });
-                
-                // Reload the application state with new settings
-                await App.loadSettings();
-
-                document.getElementById('user-update-banner').classList.add('hidden');
-                UI.showNotification(`Settings updated to v${latest.version}!`);
-                UI.populateInfoModal();
-            }
-        } catch (error) {
-            console.error("Error accepting update:", error);
-            UI.showNotification("Error accepting update.", true);
-        }
-    },
-    async logVisit() {
-        // Implementation remains the same
-         if (!AppState.firebase.db || !AppState.firebase.auth || !AppState.firebase.auth.currentUser) return;
-        try {
-            const parser = new UAParser();
-            const result = parser.getResult();
-            await AppState.firebase.db.collection('logs').add({
-                userId: AppState.firebase.auth.currentUser.uid,
-                timestamp: AppState.firebase.tools.serverTimestamp(),
-                userAgent: navigator.userAgent,
-                browser: result.browser.name || 'Unknown',
-                os: result.os.name || 'Unknown',
-                device: result.device.type || 'desktop'
-            });
-        } catch (error) {
-            console.warn("Error logging visit:", error);
-        }
-    },
-    async loadSettings() {
-        // Implementation remains the same
-        const defaultSettings = {
-            bonusTiers: CONSTANTS.DEFAULT_BONUS_TIERS,
-            teamSettings: CONSTANTS.DEFAULT_TEAMS,
-            calculationSettings: CONSTANTS.DEFAULT_CALCULATION_SETTINGS,
-            countingSettings: CONSTANTS.DEFAULT_COUNTING_SETTINGS
-        };
-        
-        const tiers = (await DB.get('bonusTiers', 'main'))?.value;
-        const teams = (await DB.get('teams', 'main'))?.value;
-        const calc = (await DB.get('calculationSettings', 'main'))?.value;
-        const count = (await DB.get('countingSettings', 'main'))?.value;
-
-        AppState.bonusTiers = tiers || defaultSettings.bonusTiers;
-        AppState.teamSettings = teams || defaultSettings.teamSettings;
-        AppState.calculationSettings = calc || defaultSettings.calculationSettings;
-        AppState.countingSettings = count || defaultSettings.countingSettings;
-    },
-    async loadLocalProjects() {
-        // Implementation remains the same
-        const projects = await DB.getAll('projects');
-        const select = document.getElementById('project-select');
-        const combinedSelect = document.getElementById('project-combined-select');
-        
-        AppState.projectListCache = projects;
-        
-        UI.populateProjectSelect(projects);
-
-        // Populate combined select
-        const combinedCurrent = Array.from(combinedSelect.options).filter(o => o.selected).map(o => o.value);
-        combinedSelect.innerHTML = '';
-        projects.forEach(p => {
-            const option = document.createElement('option');
-            option.value = p.id;
-            option.textContent = p.name;
-            if (combinedCurrent.includes(p.id)) option.selected = true;
-            combinedSelect.appendChild(option);
-        });
-
-        App.handleProjectSelectChange(); // Update UI for the currently selected project
-    },
-    handleProjectSelectChange() {
-        // Implementation remains the same
-        const select = document.getElementById('project-select');
-        const projectId = select.value;
-        const project = AppState.projectListCache.find(p => p.id === projectId);
-        const dataTextArea = document.getElementById('project-data');
-        const nameInput = document.getElementById('project-name');
-        const gsdSelect = document.getElementById('gsd-value-select');
-        const irCheckbox = document.getElementById('is-ir-project-checkbox');
-        const irBadge = document.getElementById('project-ir-badge');
-        const editBtn = document.getElementById('edit-data-btn');
-        const deleteBtn = document.getElementById('delete-project-btn');
-        const combinedSelect = document.getElementById('project-combined-select');
-        const calculateCombinedBtn = document.getElementById('calculate-combined-btn');
-        
-        if (projectId && project) {
-            // Display data for editing
-            dataTextArea.value = JSON.stringify(project.content[0], null, 2); // Show first row as sample
-            dataTextArea.placeholder = `Data loaded for ${project.content.length} rows. Scroll up to see the first row, or start typing to replace data.`;
-            nameInput.value = project.name;
-            gsdSelect.value = project.gsd || '3in';
-            irCheckbox.checked = project.isIR || false;
-            irBadge.classList.toggle('hidden', !project.isIR);
-            irBadge.textContent = 'IR';
-            editBtn.classList.remove('hidden');
-            deleteBtn.classList.remove('hidden');
-            
-            // Auto-select this project in the combined list
-            Array.from(combinedSelect.options).forEach(option => {
-                option.selected = option.value === projectId;
-            });
-            calculateCombinedBtn.disabled = false;
-
-        } else {
-            // Clear fields for new project entry
-            dataTextArea.value = '';
-            dataTextArea.placeholder = 'Paste data or drag & drop Fix folder files here...';
-            nameInput.value = '';
-            gsdSelect.value = '3in';
-            irCheckbox.checked = false;
-            irBadge.classList.add('hidden');
-            editBtn.classList.add('hidden');
-            deleteBtn.classList.add('hidden');
-            
-            // Clear combined selection
-            Array.from(combinedSelect.options).forEach(option => option.selected = false);
-            calculateCombinedBtn.disabled = true;
-        }
-        App.updateCombinedProjectInfo();
-    },
-    updateCombinedProjectInfo() {
-        // Implementation remains the same
-        const combinedSelect = document.getElementById('project-combined-select');
-        const infoContainer = document.getElementById('combined-project-info');
-        const calculateCombinedBtn = document.getElementById('calculate-combined-btn');
-        const selectedIds = Array.from(combinedSelect.options).filter(o => o.selected).map(o => o.value);
-        
-        if (selectedIds.length > 0) {
-            const selectedProjects = selectedIds.map(id => AppState.projectListCache.find(p => p.id === id)).filter(Boolean);
-            const totalRows = selectedProjects.reduce((sum, p) => sum + (p.content ? p.content.length : 0), 0);
-            const isIR = selectedProjects.some(p => p.isIR);
-            const gsd = selectedProjects[0] ? selectedProjects[0].gsd : 'N/A';
-            const name = selectedProjects.map(p => p.name).join(' + ');
-
-            infoContainer.innerHTML = `Combining: ${selectedProjects.length} project(s) | ${totalRows} total rows | GSD: ${gsd.toUpperCase()} | IR: ${isIR ? 'Yes' : 'No'}`;
-            infoContainer.classList.remove('hidden');
-            calculateCombinedBtn.disabled = false;
-        } else {
-            infoContainer.classList.add('hidden');
-            calculateCombinedBtn.disabled = true;
-        }
-    },
-    editSelectedProject() {
-        // Implementation remains the same
-        const select = document.getElementById('project-select');
-        const projectId = select.value;
-        const project = AppState.projectListCache.find(p => p.id === projectId);
-        
-        if (project) {
-            const modal = document.getElementById('merge-fp-modal');
-            const fileList = document.getElementById('merge-file-list');
-            document.getElementById('execute-merge-btn').disabled = true;
-            fileList.innerHTML = `<li class="text-brand-400">Editing/Merging data for project: **${project.name}**</li>`;
-            document.getElementById('merge-info-container').classList.remove('hidden');
-            modal.classList.remove('hidden');
-        }
-    },
-    async saveProject() {
-        // Implementation remains the same
-        const dataTextArea = document.getElementById('project-data');
-        const nameInput = document.getElementById('project-name');
-        const gsdSelect = document.getElementById('gsd-value-select');
-        const irCheckbox = document.getElementById('is-ir-project-checkbox');
-        const select = document.getElementById('project-select');
-        const techIdOverride = document.getElementById('tech-id-override').value.trim().toUpperCase() || null;
-        
-        const rawData = dataTextArea.value.trim();
-        const projectName = nameInput.value.trim();
-        const projectId = select.value || `local:${Date.now()}`;
-
-        if (!rawData || !projectName) {
-            UI.showNotification("Project name and data cannot be empty.", true);
-            return;
-        }
-
-        try {
-            // Attempt to parse the data
-            let parsedData;
-            try {
-                parsedData = Calculator.parseRawData(rawData, projectId, techIdOverride);
-            } catch (jsonErr) {
-                // If text parsing fails, assume the user pasted JSON and try to parse it
-                try {
-                    const content = JSON.parse(rawData);
-                    if (!Array.isArray(content)) throw new Error('Not an array');
-                    parsedData = {
-                         id: projectId,
-                         name: projectName,
-                         content: content,
-                         gsd: gsdSelect.value,
-                         isIR: irCheckbox.checked
-                    };
-                } catch (finalErr) {
-                    throw new Error("Invalid data format. Please paste TSV/CSV or correct JSON.");
-                }
-            }
-
-            const projectToSave = {
-                id: projectId,
-                name: projectName,
-                content: parsedData.content,
-                gsd: gsdSelect.value,
-                isIR: irCheckbox.checked,
-                lastUpdated: Date.now()
-            };
-            
-            await DB.put('projects', projectToSave);
-            UI.showNotification(`Project '${projectName}' saved successfully.`);
-            
-            // Reload projects and update selection
-            App.loadLocalProjects();
-            select.value = projectId;
-            App.handleProjectSelectChange();
-            
-        } catch (error) {
-            console.error("Error saving project:", error);
-            UI.showNotification(`Error: ${error.message}`, true);
-        }
-    },
-    async deleteSelectedProject() {
-        // Implementation remains the same
-        const select = document.getElementById('project-select');
-        const projectId = select.value;
-        const project = AppState.projectListCache.find(p => p.id === projectId);
-        
-        if (!projectId || !project) return;
-        
-        if (confirm(`Are you sure you want to delete the project '${project.name}'? This cannot be undone.`)) {
-            try {
-                await DB.delete('projects', projectId);
-                UI.showNotification(`Project '${project.name}' deleted.`);
-                App.loadLocalProjects(); // Reload projects and clear selection
-            } catch (error) {
-                console.error("Error deleting project:", error);
-                UI.showNotification("Error deleting project.", true);
-            }
-        }
-    },
-    async clearLocalData() {
-        // Implementation remains the same
-        if (confirm("Are you sure you want to clear the data text area?")) {
-            document.getElementById('project-data').value = '';
-            document.getElementById('project-name').value = '';
-            document.getElementById('project-select').value = '';
-            App.handleProjectSelectChange();
-            UI.showNotification("Data cleared from editor.");
-        }
-    },
-    async confirmClearAllData() {
-        // Implementation remains the same
-        UI.closeModal('main-menu-dropdown');
-        if (confirm("WARNING: This will delete ALL local data, including saved projects, teams, and custom settings. Are you absolutely sure?")) {
-            await DB.delete('projects', 'all'); // IndexedDB can't delete 'all' like this, need to clear stores
-            await DB.delete('teams', 'main');
-            await DB.delete('bonusTiers', 'main');
-            await DB.delete('calculationSettings', 'main');
-            await DB.delete('countingSettings', 'main');
-            await DB.delete('settings', 'version');
-            
-            // Proper way to clear all stores (requires re-opening)
-            indexedDB.deleteDatabase('BonusCalculatorDB');
-            
-            UI.showNotification("All local data has been cleared. Please refresh the page.", true);
-            setTimeout(() => window.location.reload(), 1500);
-        }
-    },
-    async calculateAll() {
-        // Implementation remains the same
-        const select = document.getElementById('project-select');
-        const projectId = select.value;
-        const techIdOverride = document.getElementById('tech-id-override').value.trim().toUpperCase() || null;
-        
-        if (!projectId) {
-            UI.showNotification("Please select a project first.", true);
-            return;
-        }
-
-        const project = AppState.projectListCache.find(p => p.id === projectId);
-        if (!project || project.content.length === 0) {
-            UI.showNotification("Selected project has no data to calculate.", true);
-            return;
-        }
-
-        const stats = Calculator.calculateTechStats({
-            content: project.content, 
-            isIR: project.isIR,
-        }, null, project.gsd, techIdOverride);
-
-        AppState.currentTechStats = stats;
-        AppState.lastUsedGsdValue = project.gsd;
-
-        UI.displayResults(stats);
-        App.filterAndDisplayResults();
-        UI.updateQuickSummary(stats);
-        UI.updateLeaderboard(stats);
-        UI.updateTLSummary(stats);
-        UI.showNotification(`Calculated results for ${project.name}.`);
-    },
-    async calculateCombined() {
-        // Implementation remains the same
-        const combinedSelect = document.getElementById('project-combined-select');
-        const selectedIds = Array.from(combinedSelect.options).filter(o => o.selected).map(o => o.value);
-        const techIdOverride = document.getElementById('tech-id-override').value.trim().toUpperCase() || null;
-
-        if (selectedIds.length === 0) {
-            UI.showNotification("Please select projects to combine.", true);
-            return;
-        }
-
-        const selectedProjects = selectedIds.map(id => AppState.projectListCache.find(p => p.id === id)).filter(Boolean);
-        if (selectedProjects.length === 0) {
-            UI.showNotification("No project data found for selection.", true);
-            return;
-        }
-
-        const combinedData = Calculator.mergeProjectData(selectedProjects);
-        
-        const stats = Calculator.calculateTechStats(combinedData, null, combinedData.gsd, techIdOverride);
-
-        AppState.currentTechStats = stats;
-        AppState.lastUsedGsdValue = combinedData.gsd;
-
-        UI.displayResults(stats);
-        App.filterAndDisplayResults();
-        UI.updateQuickSummary(stats);
-        UI.updateLeaderboard(stats);
-        UI.updateTLSummary(stats);
-        UI.showNotification(`Calculated combined results for ${selectedProjects.length} projects.`);
-        document.getElementById('results-title').textContent = "Bonus Payouts (Combined)";
-    },
-    filterAndDisplayResults() {
-        // Implementation remains the same
-        const stats = AppState.currentTechStats;
-        const allTechIds = Object.keys(stats);
-        const selectedTeams = Array.from(document.querySelectorAll('#team-filter-container input:checked'))
-            .map(cb => cb.dataset.team);
-        const searchInput = document.getElementById('tech-search-input').value.trim().toUpperCase();
-
-        let filteredIds = allTechIds;
-
-        // 1. Team Filtering
-        if (selectedTeams.length > 0) {
-            const techsInSelectedTeams = new Set();
-            selectedTeams.forEach(team => {
-                (AppState.teamSettings[team] || []).forEach(id => techsInSelectedTeams.add(id));
-            });
-            filteredIds = filteredIds.filter(id => techsInSelectedTeams.has(id));
-        }
-
-        // 2. Search Filtering
-        if (searchInput) {
-            filteredIds = filteredIds.filter(id => id.includes(searchInput));
-        }
-
-        // 3. Rebuild the techStats object for filtered display
-        const filteredStats = filteredIds.reduce((acc, id) => {
-            acc[id] = stats[id];
-            return acc;
-        }, {});
-
-        // Re-display the filtered and sorted results
-        UI.displayResults(filteredStats);
-        UI.updateTLSummary(filteredStats); // Recalculate TL summary for filtered view
-    },
-    handleTeamFilterChange() {
-        // Implementation remains the same
-        App.filterAndDisplayResults();
-    },
-    handleSearchInput() {
-        // Implementation remains the same
-        App.filterAndDisplayResults();
-    },
-    resetFiltersAndSearch() {
-        // Implementation remains the same
-        document.getElementById('tech-search-input').value = '';
-        document.querySelectorAll('#team-filter-container input').forEach(cb => cb.checked = false);
-        App.filterAndDisplayResults();
-        UI.showNotification("Filters and search reset.");
-    },
-    handleSortClick(e) {
-        // Implementation remains the same
-        const column = e.currentTarget.dataset.sort;
-        let direction = 'desc';
-
-        if (AppState.currentSort.column === column) {
-            direction = AppState.currentSort.direction === 'desc' ? 'asc' : 'desc';
-        }
-
-        AppState.currentSort = { column, direction };
-        App.filterAndDisplayResults();
-    },
-    handleTechDetailClick(e) {
-        // Implementation remains the same
-        const target = e.target.closest('.tech-summary-icon');
-        if (target) {
-            const techId = target.dataset.techId;
-            if (techId) UI.openTechSummaryModal(techId);
-        }
-    },
-    handleTeamSummaryTrigger(e) {
-        // Implementation remains the same
-        const target = e.target.closest('.team-summary-trigger');
-        if (target) {
-            const teamName = target.dataset.teamName;
-            if (teamName) UI.openTeamSummaryModal(teamName);
-        }
-    },
-    handleLeaderboardSortChange() {
-        // Implementation remains the same
-        UI.updateLeaderboard(AppState.currentTechStats);
-    },
-    toggleMainMenu() {
-        // Implementation remains the same
-        document.getElementById('main-menu-dropdown').classList.toggle('hidden');
-    },
-    async openManageTeamsModal() {
-        // Implementation remains the same
-        UI.closeModal('main-menu-dropdown');
-        UI.populateAdminTeamManagement();
-        document.getElementById('manage-teams-modal').classList.remove('hidden');
-    },
-    async saveTeams() {
-        // Implementation remains the same
-        const container = document.getElementById('team-list-container');
-        const newTeams = {};
-        let isValid = true;
-
-        container.querySelectorAll('.team-card').forEach(card => {
-            const nameInput = card.querySelector('.team-name-input');
-            const teamName = nameInput.value.trim();
-            const techList = card.querySelector('.team-tech-list');
-            const techIds = Array.from(techList.querySelectorAll('.tech-tag')).map(tag => tag.dataset.techId);
-            
-            if (!teamName) {
-                isValid = false;
-                nameInput.classList.add('border-status-red');
-                return;
-            } else {
-                 nameInput.classList.remove('border-status-red');
-            }
-            newTeams[teamName] = techIds;
-        });
-
-        if (!isValid) {
-            UI.showNotification("Please ensure all teams have a name.", true);
-            return;
-        }
-
-        try {
-            await DB.put('teams', { id: 'main', value: newTeams });
-            AppState.teamSettings = newTeams;
-            UI.showNotification("Team settings saved successfully.");
-            UI.populateTeamFilters();
-            UI.closeModal('manage-teams-modal');
-        } catch (error) {
-            console.error("Error saving teams:", error);
-            UI.showNotification("Error saving team settings.", true);
-        }
-    },
-    async resetTeamsToDefault() {
-        // Implementation remains the same
-        if (confirm("Are you sure you want to reset all team settings to the default list?")) {
-            try {
-                await DB.put('teams', { id: 'main', value: CONSTANTS.DEFAULT_TEAMS });
-                AppState.teamSettings = CONSTANTS.DEFAULT_TEAMS;
-                UI.populateAdminTeamManagement();
-                UI.populateTeamFilters();
-                UI.showNotification("Team settings reset to default.");
-            } catch (error) {
-                console.error("Error resetting teams:", error);
-                UI.showNotification("Error resetting team settings.", true);
-            }
-        }
-    },
-    async openAdvanceSettingsModal() {
-        // Implementation remains the same
-        UI.closeModal('main-menu-dropdown');
-        const body = document.getElementById('advance-settings-body');
-        const editorContent = {
-            bonusTiers: AppState.bonusTiers,
-            calculationSettings: AppState.calculationSettings,
-            countingSettings: AppState.countingSettings
-        };
-
-        body.innerHTML = `
-            <p class="text-brand-400 mb-4">Edit the raw JSON settings for advanced customization. Ensure the format is valid JSON.</p>
-            <textarea id="settings-editor" rows="30" class="input-field w-full font-mono text-xs custom-scrollbar">${JSON.stringify(editorContent, null, 2)}</textarea>
-        `;
-        document.getElementById('advance-settings-modal').classList.remove('hidden');
-    },
-    async saveAdvanceSettings() {
-        // Implementation remains the same
-        const editor = document.getElementById('settings-editor');
-        try {
-            const newSettings = JSON.parse(editor.value);
-            
-            if (newSettings.bonusTiers) {
-                await DB.put('bonusTiers', { id: 'main', value: newSettings.bonusTiers });
-                AppState.bonusTiers = newSettings.bonusTiers;
-            }
-            if (newSettings.calculationSettings) {
-                await DB.put('calculationSettings', { id: 'main', value: newSettings.calculationSettings });
-                AppState.calculationSettings = newSettings.calculationSettings;
-            }
-            if (newSettings.countingSettings) {
-                await DB.put('countingSettings', { id: 'main', value: newSettings.countingSettings });
-                AppState.countingSettings = newSettings.countingSettings;
-            }
-            
-            UI.showNotification("Advanced settings saved successfully.");
-            UI.populateInfoModal();
-            UI.closeModal('advance-settings-modal');
-
-            // Recalculate if results are displayed
-            if (Object.keys(AppState.currentTechStats).length > 0) App.calculateCombined();
-
-        } catch (error) {
-            console.error("Error saving advanced settings:", error);
-            UI.showNotification("Error saving settings. Invalid JSON format.", true);
-        }
-    },
-    async resetAdvanceSettings() {
-        // Implementation remains the same
-         if (confirm("Are you sure you want to reset all advanced calculation settings (Tiers, Calculation values, Counting logic) to the default?")) {
-            try {
-                await DB.put('bonusTiers', { id: 'main', value: CONSTANTS.DEFAULT_BONUS_TIERS });
-                await DB.put('calculationSettings', { id: 'main', value: CONSTANTS.DEFAULT_CALCULATION_SETTINGS });
-                await DB.put('countingSettings', { id: 'main', value: CONSTANTS.DEFAULT_COUNTING_SETTINGS });
-                
-                // Reload the application state with new settings
-                await App.loadSettings();
-
-                UI.showNotification("Advanced settings reset to default. Please review the modal.");
-                UI.populateInfoModal();
-                App.openAdvanceSettingsModal(); // Reopen with default content
-            } catch (error) {
-                console.error("Error resetting advanced settings:", error);
-                UI.showNotification("Error resetting settings.", true);
-            }
-        }
-    },
-    openImportantInfoModal() {
-        // Implementation remains the same
-        UI.closeModal('main-menu-dropdown');
-        UI.populateInfoModal();
-        document.getElementById('important-info-modal').classList.remove('hidden');
-    },
-    openGuidedSetupModal() {
-        // Implementation remains the same
-        UI.closeModal('main-menu-dropdown');
-        AppState.guidedSetup.currentStep = 1;
-        App.renderGuidedSetup();
-        document.getElementById('guided-setup-modal').classList.remove('hidden');
-    },
-    renderGuidedSetup() {
-        // Implementation remains the same
-        const container = document.getElementById('setup-content-container');
-        const stepIndicator = document.getElementById('setup-step-indicator');
-        const nextBtn = document.getElementById('setup-next-btn');
-        const prevBtn = document.getElementById('setup-prev-btn');
-        const step = AppState.guidedSetup.currentStep;
-        
-        stepIndicator.innerHTML = Array.from({ length: AppState.guidedSetup.totalSteps }, (_, i) => 
-            `<div class="h-2 w-1/4 rounded-full ${i + 1 === step ? 'bg-accent' : 'bg-brand-700'}"></div>`
-        ).join('');
-
-        let content = '';
-        let nextText = 'Next';
-        let nextAction = 'next';
-
-        switch (step) {
-            case 1:
-                content = `
-                    <h4 class="text-xl font-bold mb-4">Step 1: Get Your Data</h4>
-                    <p class="text-brand-400">To begin, you need to load your Fix Folder data. You can either:</p>
-                    <ul class="list-disc list-inside space-y-3 mt-4">
-                        <li>**Option A (Recommended):** Drag and drop your `.shp` and `.dbf` files into the **Data & Projects** box on the left.</li>
-                        <li>**Option B:** Copy the entire content of your raw TSV/CSV Fix Sheet and paste it into the **Data & Projects** box.</li>
-                    </ul>
-                    <p class="text-sm mt-4 text-status-orange">Make sure your data has the required columns: **tech_id**, **fix_category**, **fix_count**, **fix_label**, and RV/QC/i3QA columns.</p>
-                `;
-                prevBtn.disabled = true;
-                break;
-            case 2:
-                content = `
-                    <h4 class="text-xl font-bold mb-4">Step 2: Save and Select Project</h4>
-                    <p class="text-brand-400">Once your data is loaded into the text area:</p>
-                    <ul class="list-disc list-inside space-y-3 mt-4">
-                        <li>Enter a **Project Name** (e.g., 'March Week 3').</li>
-                        <li>Select the correct **GSD** value (e.g., '3in').</li>
-                        <li>Check **IR Project** if applicable.</li>
-                        <li>Click **Save Project**.</li>
-                    </ul>
-                    <p class="text-sm mt-4 text-brand-400">After saving, ensure your new project is selected in the **Select a project...** dropdown.</p>
-                `;
-                prevBtn.disabled = false;
-                break;
-            case 3:
-                content = `
-                    <h4 class="text-xl font-bold mb-4">Step 3: Run the Calculation</h4>
-                    <p class="text-brand-400">You are now ready to calculate the bonus payouts.</p>
-                    <ul class="list-disc list-inside space-y-3 mt-4">
-                        <li>**Individual Project:** Click **Calculate All** to process the currently selected project.</li>
-                        <li>**Multiple Projects:** Select multiple projects in the **Combine Projects** box and click **Calculate Combined**.</li>
-                    </ul>
-                    <p class="text-sm mt-4 text-accent">The results will appear in the **Bonus Payouts** table below.</p>
-                `;
-                nextText = 'View Results';
-                nextAction = 'finish';
-                break;
-            case 4:
-                content = `
-                    <h4 class="text-xl font-bold mb-4">Step 4: Analyze Results</h4>
-                    <p class="text-brand-400">Use the results table to find: </p>
-                    <ul class="list-disc list-inside space-y-3 mt-4">
-                        <li>Clickable **Points**, **Tasks**, and **Refix** metrics to see a detailed breakdown of the calculation logic.</li>
-                        <li>**Quality** percentage and **Payout** amount.</li>
-                        <li>Use the **Filter by Team** buttons to narrow the results.</li>
-                        <li>Click the **Details** button (info icon) for a full tech summary.</li>
-                    </ul>
-                    <p class="text-sm mt-4 text-brand-400">You can also check the **Leaderboard** and **Team Leader Summary** panels on the right.</p>
-                `;
-                nextText = 'Close';
-                nextAction = 'close';
-                break;
-        }
-
-        container.innerHTML = content;
-        nextBtn.textContent = nextText;
-        nextBtn.dataset.action = nextAction;
-    },
-    nextGuidedStep() {
-        // Implementation remains the same
-        const nextBtn = document.getElementById('setup-next-btn');
-        if (nextBtn.dataset.action === 'close') {
-            UI.closeModal('guided-setup-modal');
-            return;
-        }
-        if (AppState.guidedSetup.currentStep < AppState.guidedSetup.totalSteps) {
-            AppState.guidedSetup.currentStep++;
-        }
-        App.renderGuidedSetup();
-    },
-    prevGuidedStep() {
-        // Implementation remains the same
-        if (AppState.guidedSetup.currentStep > 1) {
-            AppState.guidedSetup.currentStep--;
-        }
-        App.renderGuidedSetup();
-    },
-    async handleDroppedFiles(files) {
-        // Implementation remains the same
-        const shpFile = Array.from(files).find(f => f.name.toLowerCase().endsWith('.shp'));
-        const dbfFile = Array.from(files).find(f => f.name.toLowerCase().endsWith('.dbf'));
-        const textFile = Array.from(files).find(f => f.type.startsWith('text/') || f.name.toLowerCase().endsWith('.txt') || f.name.toLowerCase().endsWith('.csv') || f.name.toLowerCase().endsWith('.tsv'));
-        const dataTextArea = document.getElementById('project-data');
-        const nameInput = document.getElementById('project-name');
-        
-        if (shpFile && dbfFile) {
-            UI.showNotification(`Processing Fix Folder: ${shpFile.name.replace('.shp', '')}...`);
-            App.processShapeFile(shpFile, dbfFile);
-        } else if (textFile) {
-            UI.showNotification(`Loading text file: ${textFile.name}...`);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                dataTextArea.value = e.target.result;
-                nameInput.value = textFile.name.replace(/\.[^/.]+$/, "");
-                UI.showNotification("Text file loaded into data editor.");
-            };
-            reader.onerror = (e) => UI.showNotification("Error reading text file.", true);
-            reader.readAsText(textFile);
-        } else {
-            UI.showNotification("Unsupported file type. Please drop TSV/CSV, or a combined .shp and .dbf file.", true);
-        }
-    },
-    async processShapeFile(shpFile, dbfFile) {
-        // Implementation remains the same
-        const name = shpFile.name.replace(/\.[^/.]+$/, "");
-        document.getElementById('project-loading-spinner').classList.remove('hidden');
-        try {
-            const shpBuffer = await shpFile.arrayBuffer();
-            const dbfBuffer = await dbfFile.arrayBuffer();
-
-            const shpRecords = await Calculator.parseShp(shpBuffer);
-            const dbfRecords = await shapefile.read(dbfBuffer, { encoding: 'utf-8' }).then(result => result.records);
-            
-            if (shpRecords.length !== dbfRecords.length) {
-                throw new Error("Shapefile and DBF record counts do not match.");
-            }
-
-            const combinedData = dbfRecords.map((dbf, index) => {
-                const combined = { ...dbf };
-                // Add properties from geometry if needed (e.g., coordinates)
-                if (shpRecords[index] && shpRecords[index].geometry) {
-                    combined.geometry_type = shpRecords[index].geometry.type;
-                    // Add first coordinate pair for reference
-                    if (shpRecords[index].geometry.coordinates && shpRecords[index].geometry.coordinates.length > 0) {
-                         combined.lon = shpRecords[index].geometry.coordinates[0];
-                         combined.lat = shpRecords[index].geometry.coordinates[1];
-                    }
-                }
-                return combined;
-            });
-
-            const dataTextArea = document.getElementById('project-data');
-            const nameInput = document.getElementById('project-name');
-            const irCheckbox = document.getElementById('is-ir-project-checkbox');
-
-            dataTextArea.value = JSON.stringify(combinedData, null, 2);
-            dataTextArea.placeholder = `Shapefile data loaded for ${combinedData.length} rows.`;
-            nameInput.value = name;
-            irCheckbox.checked = name.toLowerCase().includes('ir');
-
-            UI.showNotification(`Fix Folder '${name}' loaded successfully.`);
-        } catch (error) {
-            console.error("Error processing shapefile:", error);
-            UI.showNotification(`Error processing files: ${error.message}`, true);
-        } finally {
-            document.getElementById('project-loading-spinner').classList.add('hidden');
-        }
-    },
-    async handleAdminDroppedFiles(files) {
-        // Implementation remains the same
-        const shpFile = Array.from(files).find(f => f.name.toLowerCase().endsWith('.shp'));
-        const dbfFile = Array.from(files).find(f => f.name.toLowerCase().endsWith('.dbf'));
-        const textFile = Array.from(files).find(f => f.type.startsWith('text/') || f.name.toLowerCase().endsWith('.txt') || f.name.toLowerCase().endsWith('.csv') || f.name.toLowerCase().endsWith('.tsv'));
-        const dataTextArea = document.getElementById('admin-project-data');
-        const nameInput = document.getElementById('admin-project-name');
-        const irCheckbox = document.getElementById('admin-is-ir-checkbox');
-
-        if (shpFile && dbfFile) {
-            UI.showNotification(`Processing Fix Folder: ${shpFile.name.replace('.shp', '')}...`);
-            // Use the same processing logic but update admin fields
-            App.processShapeFileForAdmin(shpFile, dbfFile);
-        } else if (textFile) {
-            UI.showNotification(`Loading text file: ${textFile.name}...`);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                dataTextArea.value = e.target.result;
-                nameInput.value = textFile.name.replace(/\.[^/.]+$/, "");
-                irCheckbox.checked = textFile.name.toLowerCase().includes('ir');
-                UI.showNotification("Text file loaded into admin data editor.");
-            };
-            reader.onerror = (e) => UI.showNotification("Error reading text file.", true);
-            reader.readAsText(textFile);
-        } else {
-            UI.showNotification("Unsupported file type.", true);
-        }
-    },
-    async processShapeFileForAdmin(shpFile, dbfFile) {
-        // Implementation remains the same
-        const name = shpFile.name.replace(/\.[^/.]+$/, "");
-        // Simplified loading indicator for admin panel
-        const saveBtn = document.getElementById('admin-save-project-btn');
-        UI.showLoading(saveBtn);
-        try {
-            const shpBuffer = await shpFile.arrayBuffer();
-            const dbfBuffer = await dbfFile.arrayBuffer();
-
-            const shpRecords = await Calculator.parseShp(shpBuffer);
-            const dbfRecords = await shapefile.read(dbfBuffer, { encoding: 'utf-8' }).then(result => result.records);
-            
-            if (shpRecords.length !== dbfRecords.length) {
-                throw new Error("Shapefile and DBF record counts do not match.");
-            }
-
-            const combinedData = dbfRecords.map(dbf => Object.fromEntries(
-                Object.entries(dbf).map(([k, v]) => [k.toLowerCase(), String(v).toLowerCase()])
-            ));
-
-            document.getElementById('admin-project-data').value = JSON.stringify(combinedData, null, 2);
-            document.getElementById('admin-project-name').value = name;
-            document.getElementById('admin-is-ir-checkbox').checked = name.toLowerCase().includes('ir');
-
-            UI.showNotification(`Fix Folder '${name}' loaded into admin editor.`);
-        } catch (error) {
-            console.error("Error processing shapefile:", error);
-            UI.showNotification(`Error processing files: ${error.message}`, true);
-        } finally {
-            UI.hideLoading(saveBtn);
-        }
-    },
-    async openMergeFPModal() {
-        // Implementation remains the same
-         UI.closeModal('main-menu-dropdown');
-         UI.closeModal('tech-summary-modal'); // Close if open
-         UI.closeModal('team-summary-modal'); // Close if open
-         
-         const projectId = document.getElementById('project-select').value;
-         const project = AppState.projectListCache.find(p => p.id === projectId);
-
-         if (!project) {
-             UI.showNotification("Please select a project to merge data into first.", true);
-             return;
-         }
-
-         const fileList = document.getElementById('merge-file-list');
-         fileList.innerHTML = `<li class="text-brand-400">Target Project: **${project.name}** (${project.content.length} rows)</li><li class="text-status-red">Drop files to merge below.</li>`;
-         document.getElementById('merge-info-container').classList.remove('hidden');
-         document.getElementById('execute-merge-btn').disabled = true;
-         AppState.filesToMerge = [];
-
-         document.getElementById('merge-fp-modal').classList.remove('hidden');
-    },
-    async handleMergeDroppedFiles(files) {
-        // Implementation remains the same
-        const shpFiles = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.shp'));
-        const dbfFiles = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.dbf'));
-        const fileList = document.getElementById('merge-file-list');
-        const mergeBtn = document.getElementById('execute-merge-btn');
-
-        if (shpFiles.length !== dbfFiles.length || shpFiles.length === 0) {
-            UI.showNotification("Please drop pairs of .shp and .dbf files only.", true);
-            return;
-        }
-
-        AppState.filesToMerge = [];
-        fileList.innerHTML = fileList.firstElementChild.outerHTML; // Keep target project line
-
-        for (const shpFile of shpFiles) {
-            const dbfName = shpFile.name.replace('.shp', '.dbf');
-            const dbfFile = dbfFiles.find(f => f.name === dbfName);
-
-            if (dbfFile) {
-                AppState.filesToMerge.push({ shpFile, dbfFile, name: shpFile.name.replace(/\.[^/.]+$/, "") });
-                fileList.insertAdjacentHTML('beforeend', `<li class="text-white ml-5">${shpFile.name.replace('.shp', '')}</li>`);
-            } else {
-                 UI.showNotification(`Missing .dbf for ${shpFile.name}. Skipping.`, true);
-            }
-        }
-
-        if (AppState.filesToMerge.length > 0) {
-            mergeBtn.disabled = false;
-            UI.showNotification(`Ready to merge ${AppState.filesToMerge.length} files.`);
-        } else {
-            mergeBtn.disabled = true;
-            UI.showNotification("No valid file pairs found for merge.", true);
-        }
-    },
-    async executeMerge() {
-        // Implementation remains the same
-        const mergeBtn = document.getElementById('execute-merge-btn');
-        UI.showLoading(mergeBtn);
-        const projectId = document.getElementById('project-select').value;
-        const project = AppState.projectListCache.find(p => p.id === projectId);
-
-        if (!project || !AppState.filesToMerge || AppState.filesToMerge.length === 0) {
-            UI.hideLoading(mergeBtn);
-            UI.showNotification("Error: No target project or files selected.", true);
-            return;
-        }
-        
-        try {
-            let totalMergedRows = 0;
-            const newContent = [...project.content]; // Start with existing data
-            const techIdOverride = document.getElementById('tech-id-override').value.trim().toUpperCase() || null;
-
-
-            for (const filePair of AppState.filesToMerge) {
-                const shpBuffer = await filePair.shpFile.arrayBuffer();
-                const dbfBuffer = await filePair.dbfFile.arrayBuffer();
-
-                const shpRecords = await Calculator.parseShp(shpBuffer);
-                const dbfRecords = await shapefile.read(dbfBuffer, { encoding: 'utf-8' }).then(result => result.records);
-                
-                if (shpRecords.length !== dbfRecords.length) {
-                    throw new Error(`File pair ${filePair.name}: Record counts do not match.`);
-                }
-                
-                const dataFromFiles = dbfRecords.map(dbf => {
-                    const row = Object.fromEntries(
-                        Object.entries(dbf).map(([k, v]) => [k.toLowerCase(), String(v).toLowerCase()])
-                    );
-                    if (techIdOverride) row.tech_id = techIdOverride;
-                    return row;
-                });
-
-                newContent.push(...dataFromFiles);
-                totalMergedRows += dataFromFiles.length;
-            }
-
-            // Update the project data
-            const projectToSave = {
-                ...project,
-                content: newContent,
-                lastUpdated: Date.now()
-            };
-            
-            await DB.put('projects', projectToSave);
-            
-            // Reload projects and update UI
-            App.loadLocalProjects();
-            document.getElementById('project-select').value = projectId;
-            App.handleProjectSelectChange();
-            UI.closeModal('merge-fp-modal');
-            UI.showNotification(`Merged ${totalMergedRows} rows into '${project.name}'. Total rows: ${newContent.length}`);
-
-        } catch (error) {
-            console.error("Error executing merge:", error);
-            UI.showNotification(`Merge failed: ${error.message}`, true);
-        } finally {
-            UI.hideLoading(mergeBtn);
-        }
-    },
-    openAdminPortalModal() {
-        // Implementation remains the same
-        UI.closeModal('main-menu-dropdown');
-        if (!AppState.firebase.isAdmin) {
-             UI.showNotification("Access denied. Admin privileges required.", true);
-             return;
-        }
-        App.loadAdminProjectList();
-        document.getElementById('admin-portal-modal').classList.remove('hidden');
-    },
-    async loadAdminProjectList() {
-        // Implementation remains the same
-        if (!AppState.firebase.db || !AppState.firebase.isAdmin) return;
-        const tbody = document.getElementById('admin-project-list-tbody');
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-brand-400">Loading projects...</td></tr>';
-        
-        try {
-            const snapshot = await AppState.firebase.db.collection('projects').get();
-            if (snapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-brand-400">No cloud projects found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = snapshot.docs.map(doc => {
-                const p = doc.data();
-                const status = p.content && p.content.length > 0 ? `${p.content.length} Rows` : 'No Data';
-                return `
-                    <tr data-id="${doc.id}">
-                        <td>${p.name}</td>
-                        <td>${p.gsd.toUpperCase()}</td>
-                        <td>${status}</td>
-                        <td class="flex gap-2">
-                            <button class="control-btn-icon admin-edit-project" data-id="${doc.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
-                            <button class="control-btn-icon-danger admin-delete-project" data-id="${doc.id}" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            // Attach listeners to the new buttons
-            document.querySelectorAll('.admin-edit-project').forEach(btn => btn.addEventListener('click', e => App.editAdminProject(e.currentTarget.dataset.id)));
-            document.querySelectorAll('.admin-delete-project').forEach(btn => btn.addEventListener('click', e => App.deleteAdminProject(e.currentTarget.dataset.id)));
-
-        } catch (error) {
-            console.error("Error loading admin projects:", error);
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-status-red">Error loading projects.</td></tr>';
-        }
-    },
-    async editAdminProject(projectId) {
-        // Implementation remains the same
-        if (!AppState.firebase.db || !AppState.firebase.isAdmin) return;
-        try {
-            const doc = await AppState.firebase.db.collection('projects').doc(projectId).get();
-            if (!doc.exists) {
-                UI.showNotification("Project not found.", true);
-                return;
-            }
-            const p = doc.data();
-            
-            document.getElementById('admin-form-title').textContent = `Edit Project: ${p.name}`;
-            document.getElementById('admin-project-id').value = doc.id;
-            document.getElementById('admin-project-name').value = p.name;
-            document.getElementById('admin-gsd-select').value = p.gsd;
-            document.getElementById('admin-is-ir-checkbox').checked = p.isIR;
-            document.getElementById('admin-project-data').value = JSON.stringify(p.content, null, 2);
-            document.getElementById('admin-save-project-btn').textContent = 'Update Cloud Project';
-            document.getElementById('admin-reset-form-btn').classList.remove('hidden');
-
-        } catch (error) {
-            console.error("Error loading project for edit:", error);
-            UI.showNotification("Error loading project data.", true);
-        }
-    },
-    resetAdminProjectForm() {
-        // Implementation remains the same
-        document.getElementById('admin-form-title').textContent = 'Add New Project';
-        document.getElementById('admin-project-id').value = '';
-        document.getElementById('admin-project-name').value = '';
-        document.getElementById('admin-gsd-select').value = '3in';
-        document.getElementById('admin-is-ir-checkbox').checked = false;
-        document.getElementById('admin-project-data').value = '';
-        document.getElementById('admin-project-data').placeholder = 'Paste data or drag & drop Fix folder files here...';
-        document.getElementById('admin-save-project-btn').textContent = 'Save to Cloud';
-        document.getElementById('admin-reset-form-btn').classList.add('hidden');
-    },
-    async deleteAdminProject(projectId) {
-        // Implementation remains the same
-        if (!AppState.firebase.db || !AppState.firebase.isAdmin) return;
-        if (confirm(`Are you sure you want to delete this cloud project?`)) {
-            try {
-                await AppState.firebase.db.collection('projects').doc(projectId).delete();
-                UI.showNotification("Cloud project deleted.");
-                App.loadAdminProjectList();
-            } catch (error) {
-                console.error("Error deleting project from cloud:", error);
-                UI.showNotification("Error deleting project from cloud.", true);
-            }
-        }
-    },
-    async saveProjectToCloud(e) {
-        // Implementation remains the same
-        if (!AppState.firebase.db || !AppState.firebase.isAdmin) return;
-        const button = e.currentTarget;
-        UI.showLoading(button);
-
-        const projectId = document.getElementById('admin-project-id').value || AppState.firebase.db.collection('projects').doc().id;
-        const projectName = document.getElementById('admin-project-name').value.trim();
-        const gsd = document.getElementById('admin-gsd-select').value;
-        const isIR = document.getElementById('admin-is-ir-checkbox').checked;
-        const rawData = document.getElementById('admin-project-data').value.trim();
-
-        if (!projectName || !rawData) {
-            UI.showNotification("Project name and data cannot be empty.", true);
-            UI.hideLoading(button);
-            return;
-        }
-
-        try {
-            let content;
-            try {
-                // Try parsing as raw data first, then as JSON array if that fails
-                content = Calculator.parseRawData(rawData, projectName).content;
-            } catch (rawError) {
-                content = JSON.parse(rawData);
-                if (!Array.isArray(content)) throw new Error('Data must be a JSON array of rows or raw TSV/CSV.');
-            }
-
-            const projectData = {
-                name: projectName,
-                gsd: gsd,
-                isIR: isIR,
-                content: content,
-                updatedAt: AppState.firebase.tools.serverTimestamp()
-            };
-
-            await AppState.firebase.db.collection('projects').doc(projectId).set(projectData, { merge: true });
-
-            if (!document.getElementById('admin-project-id').value) {
-                UI.showNotification("Project saved to the cloud.");
-            }
-            this.resetAdminProjectForm();
-            this.loadAdminProjectList();
-        } catch (error) {
-             console.error("Error saving project to cloud:", error);
-             UI.showNotification("Error saving project: " + error.message, true);
-        } finally {
-            UI.hideLoading(button);
-        }
-    },
-    async syncProjects() {
-        // Implementation remains the same
-        if (!AppState.firebase.db) {
-            UI.showNotification("Cloud synchronization unavailable.", true);
-            return;
-        }
-        const button = document.getElementById('update-online-btn');
-        UI.showLoading(button);
-        try {
-            const snapshot = await AppState.firebase.db.collection('projects').get();
-            let syncCount = 0;
-            for (const doc of snapshot.docs) {
-                const project = doc.data();
-                const localProject = AppState.projectListCache.find(p => p.id === doc.id);
-                // Simple logic: if cloud version is newer or local version doesn't exist, save it locally.
-                if (!localProject || (project.updatedAt && localProject.lastUpdated < project.updatedAt.toDate().getTime())) {
-                    const localProjectToSave = {
-                        id: doc.id,
-                        name: project.name,
-                        content: project.content,
-                        gsd: project.gsd,
-                        isIR: project.isIR,
-                        lastUpdated: project.updatedAt ? project.updatedAt.toDate().getTime() : Date.now()
-                    };
-                    await DB.put('projects', localProjectToSave);
-                    syncCount++;
-                }
-            }
-            await App.loadLocalProjects();
-            UI.showNotification(`Successfully synced ${syncCount} projects from the cloud.`);
-        } catch (error) {
-            console.error("Error syncing projects:", error);
-            UI.showNotification("Error syncing projects from cloud.", true);
-        } finally {
-            UI.hideLoading(button);
-        }
-    },
-    async loadUserManagement() {
-        // Implementation remains the same
-        if (!AppState.firebase.db || !AppState.firebase.isAdmin) return;
-        const container = document.getElementById('user-management-container');
-        container.innerHTML = '<p class="text-brand-400">Loading user data...</p>';
-
-        try {
-            // Firestore doesn't provide a direct way to list all users' roles without a Cloud Function.
-            // We will list the last 20 visitors instead as an admin feature.
-            const snapshot = await AppState.firebase.db.collection('logs').orderBy('timestamp', 'desc').limit(20).get();
-            
-            let logTable = `<h4 class="text-lg font-bold mb-2">Last 20 Visitor Logs</h4><div class="overflow-x-auto custom-scrollbar"><table class="min-w-full text-sm"><thead><tr><th>Time</th><th>User ID</th><th>Browser (OS)</th></tr></thead><tbody>`;
-            
-            snapshot.docs.forEach(doc => {
-                const log = doc.data();
-                const time = log.timestamp ? dayjs(log.timestamp.toDate()).fromNow() : 'N/A';
-                logTable += `
-                    <tr>
-                        <td class="whitespace-nowrap">${time}</td>
-                        <td class="font-mono text-xs">${log.userId.substring(0, 10)}...</td>
-                        <td>${log.browser} (${log.os})</td>
-                    </tr>
-                `;
-            });
-
-            logTable += `</tbody></table></div>`;
-            container.innerHTML = logTable;
-
-        } catch (error) {
-            console.error("Error loading user management data:", error);
-            container.innerHTML = `<p class="text-status-red">Error loading logs: ${error.message}</p>`;
-        }
-    },
-    handleAdminTabSwitch(e) {
-        // Implementation remains the same
-        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-        document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.add('hidden'));
-        document.getElementById(e.currentTarget.dataset.tab).classList.remove('hidden');
-    },
-    exportToCSV() {
-        // Implementation remains the same
-        const techArray = Object.values(AppState.currentTechStats);
-        if (techArray.length === 0) {
-            UI.showNotification("No data to export.", true);
-            return;
-        }
-
-        const headers = ["ID", "Points", "FixTasks", "RefixTasks", "Quality", "BonusEarned", "Payout"];
-        const csvRows = [headers.join(',')];
-
-        techArray.forEach(tech => {
-            const row = [
-                tech.id,
-                tech.points.toFixed(3),
-                tech.fixTasks,
-                tech.refixTasks,
-                tech.quality.toFixed(2),
-                tech.bonusEarned.toFixed(2),
-                tech.payout.toFixed(2)
-            ].map(String).join(',');
-            csvRows.push(row);
-        });
-
-        const csvString = csvRows.join('\n');
-        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        
-        let projectName = 'results';
-        const select = document.getElementById('project-select');
-        if (select.value) {
-            const project = AppState.projectListCache.find(p => p.id === select.value);
-            if (project) projectName = project.name.replace(/\s/g, '_');
-        } else {
-             const combinedSelect = document.getElementById('project-combined-select');
-             const selectedIds = Array.from(combinedSelect.options).filter(o => o.selected);
-             if (selectedIds.length > 0) projectName = `Combined_${selectedIds.length}P`;
-        }
-
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${projectName}_bonus_results.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        UI.showNotification("Results exported to CSV.");
-    },
-    toggleTheme() {
-        // Implementation remains the same
-        document.body.classList.toggle('light-theme');
-        // This is a placeholder since the provided CSS doesn't show a full theme switch, 
-        // but it provides the mechanism for a future implementation.
-        const isLight = document.body.classList.contains('light-theme');
-        localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        UI.showNotification(`Theme set to ${isLight ? 'Light' : 'Dark'}.`);
-    },
-    handleChatbotInput(e) {
-        // Implementation remains the same
-        if (e.key === 'Enter') {
-            const input = e.target;
-            const message = input.value.trim();
-            if (message) {
-                App.sendChatbotMessage(message);
-                input.value = '';
-            }
-        }
-    },
-    sendChatbotMessage(message) {
-        // Implementation remains the same
-        const messagesContainer = document.getElementById('chatbot-messages');
-        const userMessage = document.createElement('div');
-        userMessage.className = 'chatbot-message user';
-        userMessage.textContent = message;
-        messagesContainer.appendChild(userMessage);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-        // Simulate Bot Response (simplified logic)
-        const botMessage = document.createElement('div');
-        botMessage.className = 'chatbot-message bot';
-        
-        let response = "I'm the PCS Bonus Calculator Chatbot. I can answer questions about the calculation logic, data formats, and UI features. ";
-        const lowerMessage = message.toLowerCase();
-
-        if (lowerMessage.includes('points') || lowerMessage.includes('calculate')) {
-            response = "Points are calculated as: **(Base Fix Points * GSD/IR Modifier) + (QC Tasks * 0.125) + (i3QA Tasks * 0.0833) + RV Points**. The final value is then multiplied by the Bonus Multiplier and Quality Modifier.";
-        } else if (lowerMessage.includes('quality') || lowerMessage.includes('refix')) {
-            response = "Quality is calculated as: **Fix Tasks / (Fix Tasks + Refix Tasks + Warnings)**. Check the 'Important Information' section for the full bonus tier table.";
-        } else if (lowerMessage.includes('ir') || lowerMessage.includes('gsd')) {
-             response = "IR Projects currently use a **1.5x** modifier on most fix points. GSD values (3in, 4in, 6in, 9in) change the base points for each fix category.";
-        } else if (lowerMessage.includes('tasks')) {
-            response = "Fix Tasks are the unique successful fixes. Refix Tasks, Misses, and Warnings reduce your final quality percentage.";
-        } else {
-             response += "Try asking, 'How are points calculated?' or 'What is the quality formula?'";
-        }
-
-        setTimeout(() => {
-            botMessage.innerHTML = response;
-            messagesContainer.appendChild(botMessage);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }, 800);
-    },
-    toggleChatbot() {
-        // Implementation remains the same
-        document.getElementById('chatbot-window').classList.toggle('hidden');
-        document.getElementById('spotlight-overlay').classList.toggle('hidden');
-    },
-    handleCustomizeCalcToggle(e) {
-        // Implementation remains the same
-        const isChecked = e.target.checked;
-        const multiplierInput = document.getElementById('bonusMultiplierDirect');
-        multiplierInput.classList.toggle('hidden', isChecked);
-        if (isChecked) {
-             UI.showNotification("Bonus Multiplier is now controlled by Advanced Settings.", false);
-        } else {
-             UI.showNotification("Bonus Multiplier is controlled by the input field.", false);
-        }
-    },
-    showLoading(button) {
-        // Implementation remains the same
-        button.disabled = true;
-        button.originalText = button.textContent;
-        button.innerHTML = '<div class="pulsing-spinner-small"></div> Loading...';
-    },
-    hideLoading(button) {
-        // Implementation remains the same
-        button.disabled = false;
-        if (button.originalText) {
-            button.textContent = button.originalText;
-            delete button.originalText;
-        }
-    }
-};
+document.addEventListener('DOMContentLoaded', Handlers.initializeApp.bind(Handlers));
