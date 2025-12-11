@@ -1175,11 +1175,11 @@ const App = {
         ]);
 
         // Re-load to update AppState
-        const [newTiers, newCalcSettings, newCountingSettings] = await Promise.all([
-            this.loadBonusTiers(),
-            this.loadCalculationSettings(),
-            this.loadCountingSettings()
-        ]);
+       const [reloadedTiers, reloadedCalcSettings, reloadedCountingSettings] = await Promise.all([
+    this.loadBonusTiers(),
+    this.loadCalculationSettings(),
+    this.loadCountingSettings()
+]);
         [AppState.bonusTiers, AppState.calculationSettings, AppState.countingSettings] = [newTiers, newCalcSettings, newCountingSettings];
         UI.showNotification("Advance settings saved.");
         UI.closeModal('advance-settings-modal');
