@@ -332,61 +332,108 @@ const UI = {
             summarySection.classList.add('hidden');
             return;
         }
-        const createSummaryCard = (title, tech, value) => `<div class="summary-card"><div class="summary-card-title">${title}</div><div class="summary-card-tech">${tech}</div><div class="summary-card-value">${value}</div></div>`;
-        const findTopTech = (metric, compareFn) => techArray.reduce((top, tech) => !top || compareFn(tech, top) ? tech : top, null);
+        summarySection.classList.remove('hidden');
+        this.setPanelHeights();
+        const totalPoints = techArray.reduce((sum, tech) => sum + tech.points, 0);
+        const totalFixTasks = techArray.reduce((sum, tech) => sum + tech.fixTasks, 0);
+        const totalRefixTasks = techArray.reduce((sum, tech) => sum + tech.refixTasks, 0);
+        const totalWarnings = techArray.reduce((sum, tech) => sum + tech.warnings.length, 0);
+        const totalDenominator = totalFixTasks + totalRefixTasks + totalWarnings;
+        const overallQuality = totalDenominator > 0 ? (totalFixTasks / totalDenominator) * 100 : 0;
+        const totalQCPenalty = techArray.reduce((sum, tech) => sum + tech.qcPenalty, 0);
 
-        const topPoints = findTopTech('points', (a, b) => a.points > b.points);
-        const topTasks = findTopTech('fixTasks', (a, b) => a.fixTasks > b.fixTasks);
-        const mostRefix = findTopTech('refixTasks', (a, b) => a.refixTasks > b.refixTasks);
-        
-        const techArrayWithQuality = techArray.map(tech => {
-            const quality = (tech.fixTasks + tech.refixTasks + tech.warnings.length) > 0 ? (tech.fixTasks / (tech.fixTasks + tech.refixTasks + tech.warnings.length)) * 100 : 0;
-            return { ...tech, quality };
+        const categorySummary = {};
+        techArray.forEach(tech => {
+            Object.entries(tech.categoryCounts).forEach(([cat, counts]) => {
+                categorySummary[cat] = (categorySummary[cat] || 0) + Object.values(counts).reduce((a, b) => a + b, 0);
+            });
         });
 
-        const maxQuality = Math.max(...techArrayWithQuality.map(t => t.quality), 0);
-        const topQualityTechs = techArrayWithQuality.filter(t => t.quality === maxQuality);
+        const sortedCategories = Object.entries(categorySummary)
+            .sort(([keyA], [keyB]) => parseInt(keyA) - parseInt(keyB));
+        
+        let categoriesHtml = '';
+        sortedCategories.forEach(([cat, count]) => {
+            categoriesHtml += `<div class="summary-item summary-cat-${cat}"><span class="font-medium">Category ${cat}:</span><span class="font-mono summary-item-value">${count}</span></div>`;
+        });
 
-        container.innerHTML = createSummaryCard('Top Points', topPoints.id, `${topPoints.points.toFixed(2)} pts`);
-        container.innerHTML += createSummaryCard('Most Tasks', topTasks.id, `${topTasks.fixTasks} tasks`);
-        container.innerHTML += createSummaryCard('Best Quality', topQualityTechs.map(t => t.id).join(', '), `${maxQuality.toFixed(2)}%`);
-        container.innerHTML += createSummaryCard('Most Refixes', mostRefix.refixTasks > 0 ? mostRefix.id : 'N/A', mostRefix.refixTasks > 0 ? `${mostRefix.refixTasks} refixes` : '-');
+        const bonusMultiplier = parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1;
+        const qualityModifier = Calculator.calculateQualityModifier(overallQuality);
+        const overallPayout = totalPoints * bonusMultiplier * qualityModifier;
+        const bonusEarned = qualityModifier * 100;
         
-        summarySection.classList.remove('hidden');
+        container.innerHTML = `
+            <div class="space-y-2">
+                <div class="summary-item summary-cat-total">
+                    <span class="text-white">Total Payout (PHP):</span>
+                    <span class="font-mono summary-item-value">${overallPayout.toFixed(2)}</span>
+                </div>
+                <div class="summary-item summary-cat-total">
+                    <span class="text-white">Points Earned:</span>
+                    <span class="font-mono summary-item-value">${totalPoints.toFixed(3)}</span>
+                </div>
+                <div class="summary-item summary-cat-total">
+                    <span class="text-white">Quality Modifier:</span>
+                    <span class="font-mono summary-item-value">${bonusEarned.toFixed(2)}%</span>
+                </div>
+                <div class="summary-item summary-cat-total">
+                    <span class="text-white">Overall Quality:</span>
+                    <span class="font-mono summary-item-value">${overallQuality.toFixed(2)}%</span>
+                </div>
+                <div class="h-px bg-brand-700 my-2"></div>
+                <div class="summary-item summary-cat-3">
+                    <span class="font-medium">Total Fix Tasks:</span>
+                    <span class="font-mono summary-item-value">${totalFixTasks}</span>
+                </div>
+                <div class="summary-item summary-cat-1">
+                    <span class="font-medium text-red-400">Total Refix Tasks:</span>
+                    <span class="font-mono summary-item-value">${totalRefixTasks}</span>
+                </div>
+                <div class="summary-item summary-cat-1">
+                    <span class="font-medium text-red-400">Total Warnings:</span>
+                    <span class="font-mono summary-item-value">${totalWarnings}</span>
+                </div>
+                <div class="summary-item summary-cat-1">
+                    <span class="font-medium text-red-400">Total QC Penalty:</span>
+                    <span class="font-mono summary-item-value">${totalQCPenalty.toFixed(3)} pts</span>
+                </div>
+                <div class="h-px bg-brand-700 my-2"></div>
+                <h4 class="text-lg font-semibold mt-4 mb-2">Category Breakdown</h4>
+                ${categoriesHtml}
+            </div>
+        `;
     },
-    applyFilters() {
-        const searchValue = document.getElementById('search-tech-id').value.toUpperCase();
-        const selectedTeams = Array.from(document.querySelectorAll('#team-filter-container input:checked')).map(cb => cb.dataset.team);
-        const getTeamName = (techId) => Object.keys(AppState.teamSettings).find(team => AppState.teamSettings[team].some(id => id.toUpperCase() === techId.toUpperCase())) || 'N/A';
+    generateTeamBreakdownHTML(teamName, teamTechs, techStats, projectName) {
+        let html = `<p class="text-sm text-brand-400 mb-4">Displaying results for project: <strong>${projectName || 'N/A'}</strong></p>`;
+        const techArray = teamTechs.map(id => techStats[id]).filter(Boolean);
+        if (techArray.length === 0) return html + `<p class="text-center text-brand-400">No data found for this team in the current results.</p>`;
         
-        const filteredStats = {};
-        for (const techId in AppState.currentTechStats) {
-            const tech = AppState.currentTechStats[techId];
-            const teamName = getTeamName(tech.id);
-            if (tech.id.toUpperCase().includes(searchValue) && (selectedTeams.length === 0 || selectedTeams.includes(teamName))) {
-                filteredStats[techId] = tech;
-            }
-        }
-        this.displayResults(filteredStats);
-        this.updateLeaderboard(filteredStats);
-        this.updateTLSummary(filteredStats);
-        this.updateQuickSummary(filteredStats);
+        const sortedTechs = techArray.sort((a, b) => b.points - a.points);
+        const bonusMultiplier = parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1;
+        
+        html += `<div class="table-container h-full"><table class="min-w-full"><thead class="bg-brand-900/50"><tr><th class="p-2 text-left">Tech ID</th><th class="p-2 text-left">Points</th><th class="p-2 text-left">Fix/Refix</th><th class="p-2 text-left">Quality</th><th class="p-2 text-left">Payout</th></tr></thead><tbody>`;
+        
+        sortedTechs.forEach(tech => {
+            const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
+            const quality = denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0;
+            const qualityModifier = Calculator.calculateQualityModifier(quality);
+            const payout = tech.points * bonusMultiplier * qualityModifier;
+            const qualityClass = quality >= 95 ? 'quality-pill-green' : quality >= 85 ? 'quality-pill-orange' : 'quality-pill-red';
+
+            html += `
+                <tr>
+                    <td class="p-2 font-semibold">${tech.id}</td>
+                    <td class="p-2">${tech.points.toFixed(3)}</td>
+                    <td class="p-2">${tech.fixTasks} / <span class="${tech.refixTasks > 0 ? 'text-red-400' : ''}">${tech.refixTasks}</span></td>
+                    <td class="p-2"><span class="quality-pill ${qualityClass}">${quality.toFixed(2)}%</span></td>
+                    <td class="p-2 payout-amount">${payout.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table></div>`;
+        return html;
     },
-    showNotification(message, isError = false) {
-        const el = document.getElementById('update-notification');
-        if (el) {
-            el.textContent = message;
-            el.classList.toggle('bg-status-red', isError);
-            el.classList.toggle('bg-accent', !isError);
-            el.classList.remove('hidden', 'opacity-0', 'translate-y-2');
-            setTimeout(() => {
-                el.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => el.classList.add('hidden'), 500);
-            }, 3000);
-        }
-    },
-    openModal(modalId) { const modal = document.getElementById(modalId); if(modal) modal.classList.remove('hidden'); },
-    closeModal(modalId) { const modal = document.getElementById(modalId); if(modal) modal.classList.add('hidden'); },
     generateTechBreakdownHTML(tech) {
         const denominator = tech.fixTasks + tech.refixTasks + tech.warnings.length;
         const fixQuality = denominator > 0 ? (tech.fixTasks / denominator) * 100 : 0;
@@ -397,70 +444,128 @@ const UI = {
         if (tech.isCombined || tech.projectName) {
             let projectRows = '';
             const breakdownSource = tech.isCombined ? tech.pointsBreakdownByProject : { [tech.projectName]: { points: tech.points, fixTasks: tech.fixTasks, refixTasks: tech.refixTasks, warnings: tech.warnings.length } };
-            for (const projectName in breakdownSource) {
-                const projectData = breakdownSource[projectName];
-                projectRows += `<tr><td class="p-2 font-semibold">${projectName}</td><td class="p-2 text-center">${projectData.points.toFixed(3)}</td><td class="p-2 text-center">${projectData.fixTasks}</td><td class="p-2 text-center">${projectData.refixTasks}</td><td class="p-2 text-center">${projectData.warnings}</td></tr>`;
-            }
-            projectBreakdownHTML = `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4 mb-4"><h4 class="font-semibold text-base text-white mb-2">Project Contribution</h4><div class="table-container text-sm"><table class="min-w-full"><thead class="bg-brand-900/50"><tr><th class="p-2 text-left">Project</th><th class="p-2 text-center">Points</th><th class="p-2 text-center">Fix</th><th class="p-2 text-center">Refix</th><th class="p-2 text-center">Warn</th></tr></thead><tbody>${projectRows}</tbody></table></div></div>`;
+
+            Object.entries(breakdownSource).sort(([a], [b]) => a.localeCompare(b)).forEach(([projectName, stats]) => {
+                const projectQualityDenominator = stats.fixTasks + stats.refixTasks + stats.warnings;
+                const projectQuality = projectQualityDenominator > 0 ? (stats.fixTasks / projectQualityDenominator) * 100 : 0;
+                const qualityClass = projectQuality >= 95 ? 'quality-pill-green' : projectQuality >= 85 ? 'quality-pill-orange' : 'quality-pill-red';
+                
+                projectRows += `
+                    <tr>
+                        <td class="p-2 font-semibold">${projectName}</td>
+                        <td class="p-2">${stats.points.toFixed(3)}</td>
+                        <td class="p-2">${stats.fixTasks} / <span class="${stats.refixTasks > 0 ? 'text-red-400' : ''}">${stats.refixTasks}</span></td>
+                        <td class="p-2">${stats.warnings}</td>
+                        <td class="p-2"><span class="quality-pill ${qualityClass}">${projectQuality.toFixed(2)}%</span></td>
+                    </tr>
+                `;
+            });
+            
+            projectBreakdownHTML = `
+                <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4">
+                    <h4 class="font-semibold text-base text-white mb-2">${tech.isCombined ? 'Combined Project Breakdown' : 'Project Stats'}</h4>
+                    <div class="table-container max-h-60">
+                        <table class="min-w-full">
+                            <thead class="bg-brand-900">
+                                <tr>
+                                    <th class="p-2 text-left text-xs text-brand-400">Project</th>
+                                    <th class="p-2 text-left text-xs text-brand-400">Points</th>
+                                    <th class="p-2 text-left text-xs text-brand-400">Fix/Refix</th>
+                                    <th class="p-2 text-left text-xs text-brand-400">Warnings</th>
+                                    <th class="p-2 text-left text-xs text-brand-400">Quality</th>
+                                </tr>
+                            </thead>
+                            <tbody>${projectRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
         }
 
-        let summaryCategoryItems = '';
-        let totalCategoryPoints = 0;
-        let hasCategoryData = false;
-        for (let i = 1; i <= 9; i++) {
-            const counts = tech.categoryCounts[i];
-            const primaryTasks = (counts.primary || 0) + (counts.i3qa || 0) + (counts.afp || 0);
-            if (primaryTasks > 0) {
-                hasCategoryData = true;
-                const pointValue = AppState.calculationSettings.categoryValues[i]?.[AppState.lastUsedGsdValue] || 0;
-                const categoryPoints = primaryTasks * pointValue;
-                totalCategoryPoints += categoryPoints;
-                summaryCategoryItems += `<div class="summary-item summary-cat-${i}">Category ${i}:<span class="font-mono">${primaryTasks} x ${pointValue.toFixed(2)} = ${categoryPoints.toFixed(2)} pts</span></div>`;
-            }
-        }
+        let categoryRows = '';
+        Object.entries(tech.categoryCounts).sort(([a], [b]) => parseInt(a) - parseInt(b)).forEach(([cat, counts]) => {
+            const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
+            const sources = Object.entries(counts).filter(([, count]) => count > 0).map(([source, count]) => `${source.toUpperCase()}: ${count}`).join(', ');
+            categoryRows += `<tr><td class="p-2">Category ${cat}</td><td class="p-2">${totalCount}</td><td class="p-2 text-xs text-brand-400">${sources}</td></tr>`;
+        });
+
+        const categoryBreakdownHTML = categoryRows ? `
+            <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4">
+                <h4 class="font-semibold text-base text-white mb-2">Category Totals</h4>
+                <div class="table-container max-h-60">
+                    <table class="min-w-full">
+                        <thead class="bg-brand-900">
+                            <tr>
+                                <th class="p-2 text-left text-xs text-brand-400">Category</th>
+                                <th class="p-2 text-left text-xs text-brand-400">Total Fixes</th>
+                                <th class="p-2 text-left text-xs text-brand-400">Sources</th>
+                            </tr>
+                        </thead>
+                        <tbody>${categoryRows}</tbody>
+                    </table>
+                </div>
+            </div>
+        ` : '';
         
         const qcPoints = tech.qcTasks * AppState.calculationSettings.points.qc;
         const i3qaPoints = tech.i3qaTasks * AppState.calculationSettings.points.i3qa;
-        const rvPoints = tech.pointsBreakdown.rv;
-
-        const categoryBreakdownHTML = hasCategoryData ? `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4"><h4 class="font-semibold text-base text-white mb-2">Primary Fix Points</h4><div class="space-y-2">${summaryCategoryItems}<div class="summary-item summary-total">Total from Categories:<span class="font-mono">${totalCategoryPoints.toFixed(2)} pts</span></div></div></div>` : '';
+        const rvPoints = tech.rvTasks * AppState.calculationSettings.points.rv2;
+        
         const qcBreakdownHTML = tech.qcTasks > 0 ? `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4"><h4 class="font-semibold text-base text-white mb-2">QC Tasks</h4><div class="space-y-2"><div class="summary-item">QC Tasks:<span class="font-mono">${tech.qcTasks} x ${AppState.calculationSettings.points.qc.toFixed(3)} = ${qcPoints.toFixed(3)} pts</span></div></div></div>` : '';
         const i3qaBreakdownHTML = tech.i3qaTasks > 0 ? `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4"><h4 class="font-semibold text-base text-white mb-2">i3qa Tasks</h4><div class="space-y-2"><div class="summary-item">i3qa Tasks:<span class="font-mono">${tech.i3qaTasks} x ${AppState.calculationSettings.points.i3qa.toFixed(3)} = ${i3qaPoints.toFixed(3)} pts</span></div></div></div>` : '';
         const rvBreakdownHTML = tech.rvTasks > 0 ? `<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4"><h4 class="font-semibold text-base text-white mb-2">RV Tasks</h4><div class="space-y-2"><div class="summary-item">RV Tasks:<span class="font-mono">${tech.rvTasks} tasks = ${rvPoints.toFixed(3)} pts</span></div></div></div>` : '';
 
-        return `<div class="space-y-4 text-sm">${projectBreakdownHTML}<div class="p-3 bg-accent/10 rounded-lg border border-accent/50"><h4 class="font-semibold text-base text-accent mb-2">Final Payout</h4><div class="flex justify-between font-bold text-lg"><span class="text-white">Payout (PHP):</span><span class="text-accent font-mono">${finalPayout.toFixed(2)}</span></div></div>${categoryBreakdownHTML}${qcBreakdownHTML}${i3qaBreakdownHTML}${rvBreakdownHTML}<div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700"><h4 class="font-semibold text-base text-white mb-2">Points Breakdown</h4><div class="space-y-1 font-mono"><div class="flex justify-between"><span class="text-brand-400">Fix Tasks:</span><span>${tech.pointsBreakdown.fix.toFixed(3)}</span></div><div class="flex justify-between"><span class="text-brand-400">QC Tasks:</span><span>${tech.pointsBreakdown.qc.toFixed(3)}</span></div><div class="flex justify-between"><span class="text-brand-400">i3qa Tasks:</span><span>${tech.pointsBreakdown.i3qa.toFixed(3)}</span></div><div class="flex justify-between"><span class="text-brand-400">RV Tasks:</span><span>${tech.pointsBreakdown.rv.toFixed(3)}</span></div>${tech.pointsBreakdown.qcTransfer > 0 ? `<div class="flex justify-between"><span class="text-brand-400">QC Transfers:</span><span>+${tech.pointsBreakdown.qcTransfer.toFixed(3)}</span></div>` : ''}<div class="flex justify-between border-t border-brand-600 mt-1 pt-1"><span class="text-white font-bold">Total Points:</span><span class="text-white font-bold">${tech.points.toFixed(3)}</span></div></div></div><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700"><h4 class="font-semibold text-base text-white mb-2">Core Stats & Quality</h4><div class="grid grid-cols-2 gap-4"><div><span class="text-brand-400">Primary Fix:</span><span class="font-bold stat-orange">${tech.fixTasks}</span></div><div><span class="text-brand-400">AFP (AA):</span><span class="font-bold stat-green">${tech.afpTasks}</span></div><div><span class="text-brand-400">Refix:</span><span class="font-bold stat-red">${tech.refixTasks}</span></div><div><span class="text-brand-400">Warnings:</span><span class="font-bold stat-red">${tech.warnings.length}</span></div></div><div class="flex justify-between mt-4 pt-4 border-t border-brand-700"><span class="text-brand-400">Fix Quality %:</span><span class="font-mono font-bold">${fixQuality.toFixed(2)}%</span></div></div></div>`;
-    },
-    generateTeamBreakdownHTML(teamName, teamTechs, allTechStats, currentProjectName) {
-        const projectBreakdown = {};
-        let totalTeamPoints = 0;
-        const isSingleProject = !Object.values(allTechStats)[0]?.isCombined;
-
-        teamTechs.forEach(techId => {
-            const tech = allTechStats[techId];
-            if (!tech) return;
-            totalTeamPoints += tech.points;
-            if (isSingleProject) {
-                if (!projectBreakdown[currentProjectName]) projectBreakdown[currentProjectName] = { points: 0, fixTasks: 0, refixTasks: 0, warnings: 0 };
-                projectBreakdown[currentProjectName].points += tech.points;
-                projectBreakdown[currentProjectName].fixTasks += tech.fixTasks;
-                projectBreakdown[currentProjectName].refixTasks += tech.refixTasks;
-                projectBreakdown[currentProjectName].warnings += tech.warnings.length;
-            } else { // Combined
-                for (const projectName in tech.pointsBreakdownByProject) {
-                    const data = tech.pointsBreakdownByProject[projectName];
-                    if (!projectBreakdown[projectName]) projectBreakdown[projectName] = { points: 0, fixTasks: 0, refixTasks: 0, warnings: 0 };
-                    projectBreakdown[projectName].points += data.points;
-                    projectBreakdown[projectName].fixTasks += data.fixTasks;
-                    projectBreakdown[projectName].refixTasks += data.refixTasks;
-                    projectBreakdown[projectName].warnings += data.warnings;
-                }
-            }
-        });
-
-        if (Object.keys(projectBreakdown).length === 0) return `<p class="text-brand-400">No data available for this team in the current calculation.</p>`;
-        
-        const projectRows = Object.entries(projectBreakdown).map(([name, data]) => `<tr><td class="p-2 font-semibold">${name}</td><td class="p-2 text-center">${data.points.toFixed(3)}</td><td class="p-2 text-center">${data.fixTasks}</td><td class="p-2 text-center">${data.refixTasks}</td><td class="p-2 text-center">${data.warnings}</td></tr>`).join('');
-        return `<div class="space-y-4 text-sm"><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700"><h4 class="font-semibold text-base text-white mb-2">Project Contribution</h4><div class="table-container text-sm"><table class="min-w-full"><thead class="bg-brand-900/50"><tr><th class="p-2 text-left">Project</th><th class="p-2 text-center">Points</th><th class="p-2 text-center">Fix</th><th class="p-2 text-center">Refix</th><th class="p-2 text-center">Warn</th></tr></thead><tbody>${projectRows}</tbody></table></div></div><div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700"><h4 class="font-semibold text-base text-white mb-2">Total Team Points</h4><div class="flex justify-between font-bold text-lg"><span class="text-white">Total Points:</span><span class="text-accent font-mono">${totalTeamPoints.toFixed(3)}</span></div></div></div>`;
+        return `<div class="space-y-4 text-sm">
+            ${projectBreakdownHTML}
+            <div class="p-3 bg-accent/10 rounded-lg border border-accent/50">
+                <h4 class="font-semibold text-base text-accent mb-2">Final Payout</h4>
+                <div class="flex justify-between font-bold text-lg">
+                    <span class="text-white">Payout (PHP):</span>
+                    <span class="text-accent font-mono">${finalPayout.toFixed(2)}</span>
+                </div>
+            </div>
+            <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4">
+                <h4 class="font-semibold text-base text-white mb-2">Quality Summary</h4>
+                <div class="space-y-2">
+                    <div class="summary-item">
+                        <span>Total Points:</span>
+                        <span class="font-mono">${tech.points.toFixed(3)}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Total Fix Tasks:</span>
+                        <span class="font-mono">${tech.fixTasks}</span>
+                    </div>
+                    <div class="summary-item text-red-400">
+                        <span>Total Refix Tasks:</span>
+                        <span class="font-mono">${tech.refixTasks}</span>
+                    </div>
+                    <div class="summary-item text-red-400">
+                        <span>Total Warnings:</span>
+                        <span class="font-mono">${tech.warnings.length}</span>
+                    </div>
+                    <div class="summary-item text-red-400">
+                        <span>QC Penalty:</span>
+                        <span class="font-mono">${tech.qcPenalty.toFixed(3)} pts</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Fix Quality:</span>
+                        <span class="font-mono quality-pill ${fixQuality >= 95 ? 'quality-pill-green' : fixQuality >= 85 ? 'quality-pill-orange' : 'quality-pill-red'}">${fixQuality.toFixed(2)}%</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Bonus Multiplier:</span>
+                        <span class="font-mono text-status-green">${qualityModifier.toFixed(2)}x</span>
+                    </div>
+                </div>
+            </div>
+            ${categoryBreakdownHTML}
+            ${qcBreakdownHTML}
+            ${i3qaBreakdownHTML}
+            ${rvBreakdownHTML}
+            <div class="p-3 bg-brand-900/50 rounded-lg border border-brand-700 space-y-4">
+                <h4 class="font-semibold text-base text-white mb-2">Fix4 Breakdown</h4>
+                ${tech.fix4.length > 0 ? tech.fix4.map(f => `<div class="summary-item summary-cat-${f.category}"><span>Cat ${f.category} - ${f.sourceType.toUpperCase()}</span><span class="font-mono text-xs text-brand-400">${f.id}</span></div>`).join('') : '<p class="text-brand-400 text-sm">No Fix4 items recorded.</p>'}
+            </div>
+        </div>`;
     },
     openTeamSummaryModal(teamName) {
         const teamTechs = AppState.teamSettings[teamName];
@@ -482,332 +587,488 @@ const UI = {
         ['#bonus-payout-section', '#tl-summary-card', '#quick-summary-section'].forEach(s => document.querySelector(s)?.classList.add('hidden'));
         const resultsTitle = document.getElementById('results-title');
         if (resultsTitle) resultsTitle.textContent = 'Bonus Payouts';
-        if (!document.getElementById('project-select').value) {
-            document.getElementById('project-name').value = '';
-            document.getElementById('techData').value = '';
-            Handlers.loadProjectIntoForm("");
+        if (!document.getElementById('project-data').value) {
+            document.getElementById('run-calculation-btn').disabled = true;
         }
     },
-    resetMergeModal() {
-        document.getElementById('merge-file-list').innerHTML = '';
-        document.getElementById('merge-project-name').value = '';
-        document.getElementById('merge-options').classList.add('hidden');
-        document.getElementById('merge-save-btn').disabled = true;
-    },
-    showLoading(button) { button.disabled = true; const loader = document.createElement('span'); loader.className = 'loader'; button.prepend(loader); },
-    hideLoading(button) { button.disabled = false; button.querySelector('.loader')?.remove(); }
-};
-
-const Calculator = {
-    createNewTechStat(isCombined = false, projectName = null) {
-        const categoryCounts = {};
-        for (let i = 1; i <= 9; i++) categoryCounts[i] = { primary: 0, i3qa: 0, afp: 0, rv: 0 };
-        const baseStat = {
-            id: '', points: 0, fixTasks: 0, afpTasks: 0, refixTasks: 0, qcTasks: 0, i3qaTasks: 0, rvTasks: 0, warnings: [],
-            fix4: [], refixDetails: [], missedCategories: [], approvedByRQA: [],
-            categoryCounts: categoryCounts,
-            pointsBreakdown: { fix: 0, qc: 0, i3qa: 0, rv: 0, qcTransfer: 0 },
-            isCombined: isCombined,
-            projectName: projectName
-        };
-        if (isCombined) baseStat.pointsBreakdownByProject = {};
-        return baseStat;
-    },
-    parseRawData(data, isFixTaskIR = false, currentProjectName = "Pasted Data", gsdForCalculation = "3in") {
-        const techStats = {};
-        const lines = data.split('\n').filter(line => line.trim());
-        if (lines.length < 1) return null;
-
-        const headers = lines[0].split('\t').map(h => h.trim().toLowerCase());
-        const headerMap = Object.fromEntries(headers.map((h, i) => [h, i]));
+    applyFilters() {
+        const searchValue = document.getElementById('tech-search-input').value.trim().toUpperCase();
+        const selectedTeams = Array.from(document.querySelectorAll('#team-filter-container input:checked')).map(cb => cb.dataset.team);
         
-        const allTechs = new Set();
-        const dataLines = lines.slice(1);
-        dataLines.forEach(line => {
-            const values = line.split('\t');
-            headers.forEach((h, i) => {
-                if (h.endsWith('_id')) {
-                    const techId = values[i]?.trim().toUpperCase();
-                    if (techId && CONSTANTS.TECH_ID_REGEX.test(techId)) allTechs.add(techId);
-                }
-            });
-        });
-        allTechs.forEach(techId => {
-            techStats[techId] = this.createNewTechStat(false, currentProjectName);
-            techStats[techId].id = techId;
-        });
-
-        const { triggers, taskColumns } = AppState.countingSettings;
-        dataLines.forEach(line => {
-            const values = line.split('\t');
-            const get = (col) => values[headerMap[col]];
-            const isComboIR = get('combo?') === 'Y';
-
-            const fixIds = [get('fix1_id'), get('fix2_id'), get('fix3_id'), get('fix4_id')].map(id => id?.trim().toUpperCase());
-
-            // Helper for awarding points (used for fix tasks and the transfer)
-            const processFixTech = (techId, catSources) => {
-                if (!techId || !techStats[techId]) return;
-                let techPoints = 0;
-                let techCategories = 0;
-                catSources.forEach(source => {
-                    if (source.isRQA && source.sourceType === 'afp') techStats[techId].afpTasks++;
-                    const labelValue = source.label ? get(source.label)?.trim().toUpperCase() : null;
-                    if (source.condition && !source.condition(labelValue)) return;
-                    const catValue = parseInt(get(source.cat));
-                    if (!isNaN(catValue) && catValue >= 1 && catValue <= 9) {
-                        techCategories++;
-                        techPoints += AppState.calculationSettings.categoryValues[catValue]?.[gsdForCalculation] || 0;
-                        if(techStats[techId].categoryCounts[catValue]) techStats[techId].categoryCounts[catValue][source.sourceType]++;
-                    }
-                });
-                techStats[techId].fixTasks += techCategories;
-                let pointsToAdd = techPoints * (isFixTaskIR ? AppState.calculationSettings.irModifierValue : 1);
-                techStats[techId].points += pointsToAdd;
-                techStats[techId].pointsBreakdown.fix += pointsToAdd;
-            };
-
-            // Helper for non-fix tasks (QC, i3QA, RV)
-            const addPointsForTask = (techId, points, field, taskType) => {
-                if (techId && techStats[techId]) {
-                    techStats[techId].points += points;
-                    techStats[techId].pointsBreakdown[field] += points;
-                    if (taskType) {
-                        techStats[techId][`${taskType}Tasks`] += 1;
-                    }
-                }
-            };
-
-            // Helper to check for refix trigger
-            const isRefixTriggered = (reviewLabelCol, fixIndex) => {
-                const label = get(reviewLabelCol)?.trim().toLowerCase();
-                if (label && triggers.refix.labels.some(l => label.includes(l))) {
-                    return !!fixIds[fixIndex]; // Only trigger if the original fix ID column has a tech
-                }
-                return false;
-            };
-
-            // Mapping for fix, category column, and review column for conditional point calculation and refix logic
-            const fixPointMap = [
-                { cat: 'category', review: 'rv1_label', refixTechIndex: 1, afpStat: 'afp1_stat', afpCat: 'afp1_cat', i3qaCat: 'i3qa_cat', isPrimary: true }, // FIX1 reviewed by RV1
-                { cat: 'rv1_cat', review: 'rv2_label', refixTechIndex: 2, afpStat: 'afp2_stat', afpCat: 'afp2_cat' }, // FIX2 reviewed by RV2
-                { cat: 'rv2_cat', review: 'rv3_label', refixTechIndex: 3, afpStat: 'afp3_stat', afpCat: 'afp3_cat' }, // FIX3 reviewed by RV3
-                { cat: 'rv3_cat', review: null, refixTechIndex: null } // FIX4 (no review to trigger refix transfer)
-            ];
-
-            fixPointMap.forEach((fix, i) => {
-                const fixTechId = fixIds[i];
-                
-                if (!fixTechId) return; 
-
-                // Determine if this fix (fixTechId) is being penalized by the next reviewer (fix.review)
-                const refixTriggered = fix.review && isRefixTriggered(fix.review, i);
-                
-                // --- 1. Original Fixer Point Awarding (ONLY if no refix) ---
-                if (!refixTriggered) {
-                    let catSources = [];
-
-                    if (fix.afpStat && get(fix.afpStat)?.trim().toUpperCase() === 'AA') {
-                        // AFP tasks are always awarded regardless of refix status as it's RQA
-                        catSources.push({ cat: fix.afpCat, isRQA: true, sourceType: 'afp' });
-                    } 
-                    
-                    if (fix.isPrimary) { // FIX1 logic
-                        catSources.push({ cat: fix.cat, sourceType: 'primary' });
-                        // Add I3QA points only if the i3qa_label is a MISS (m) or CORRECT (c)
-                        catSources.push({ cat: fix.i3qaCat, label: 'i3qa_label', condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'i3qa' });
-                    } else if (fix.cat) { // FIX2, FIX3, FIX4 RV logic
-                        // Add RV points only if the RV label is a MISS (m) or CORRECT (c)
-                        const reviewCol = i === 1 ? 'rv1_label' : i === 2 ? 'rv2_label' : 'rv3_label';
-                        catSources.push({ cat: fix.cat, label: reviewCol, condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), sourceType: 'rv' });
-                    }
-
-                    processFixTech(fixTechId, catSources);
-                }
-
-                // --- 2. Refix Penalty and Point Transfer (ONLY if refix is triggered) ---
-                if (refixTriggered) {
-                    // a) Penalize original tech (refixTasks++)
-                    //techStats[fixTechId].refixTasks++;
-                    if (techStats[fixTechId]) { // ADDED CHECK: Ensure the stat object is initialized
-                         techStats[fixTechId].refixTasks++;
-                        } else {
-                     // Optional: Log a warning if a tech ID is found but not initialized.
-                     console.warn(`Tech ID ${fixTechId} not initialized for refix penalty.`);
-                    }
-                    // b) Award points and fix task to the refix tech (FIX2, FIX3, FIX4)
-                    const refixTechId = fixIds[fix.refixTechIndex];
-                    const catValue = parseInt(get(fix.cat)); 
-                    
-                    if (refixTechId && techStats[refixTechId] && !isNaN(catValue) && catValue >= 1 && catValue <= 9) {
-                        const pointValue = AppState.calculationSettings.categoryValues[catValue]?.[gsdForCalculation] || 0;
-                        const pointsToTransfer = pointValue * (isFixTaskIR ? AppState.calculationSettings.irModifierValue : 1);
-                        
-                        techStats[refixTechId].points += pointsToTransfer;
-                        techStats[refixTechId].pointsBreakdown.fix += pointsToTransfer;
-                        techStats[refixTechId].fixTasks++;
-                        
-                        if(techStats[refixTechId].categoryCounts[catValue]) {
-                            // The transferred points are counted as a primary fix in category breakdown.
-                            techStats[refixTechId].categoryCounts[catValue]['primary']++; 
-                        }
-                    }
-                }
-            });
+        const getTeamName = (techId) => Object.keys(AppState.teamSettings).find(team => AppState.teamSettings[team].some(id => id.toUpperCase() === techId.toUpperCase())) || 'N/A';
+        
+        const filteredStats = {};
+        for (const techId in AppState.currentTechStats) {
+            const tech = AppState.currentTechStats[techId];
+            const teamName = getTeamName(tech.id);
             
-            // Non-Fix ID tasks (QC, i3QA, RV) are handled below, independent of the above refix logic.
-            taskColumns.qc.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.qc, 'qc', 'qc'));
-            taskColumns.i3qa.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.i3qa, 'i3qa', 'i3qa'));
-            taskColumns.rv1.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), isComboIR ? AppState.calculationSettings.points.rv1_combo : AppState.calculationSettings.points.rv1, 'rv', 'rv'));
-            taskColumns.rv2.forEach(c => addPointsForTask(get(c)?.trim().toUpperCase(), AppState.calculationSettings.points.rv2, 'rv', 'rv'));
-            
-            // QC Penalty Logic (unchanged)
-            if (triggers.qcPenalty.columns.some(c => triggers.qcPenalty.labels.includes(get(c)?.trim().toLowerCase()))) {
-                const i3qaTechId = get('i3qa_id')?.trim().toUpperCase();
-                if (i3qaTechId && techStats[i3qaTechId]) {
-                    let pointsToTransfer = 0;
-                    taskColumns.qc.forEach(c => {
-                        const qcTechId = get(c)?.trim().toUpperCase();
-                        if (qcTechId && techStats[qcTechId]) {
-                            techStats[qcTechId].points -= AppState.calculationSettings.points.qc;
-                            techStats[qcTechId].pointsBreakdown.qc -= AppState.calculationSettings.points.qc;
-                            pointsToTransfer += AppState.calculationSettings.points.qc;
-                        }
-                    });
-                    if (pointsToTransfer > 0) {
-                        techStats[i3qaTechId].points += pointsToTransfer;
-                        techStats[i3qaTechId].pointsBreakdown.qcTransfer += pointsToTransfer;
-                    }
-                }
+            if (tech.id.toUpperCase().includes(searchValue) && (selectedTeams.length === 0 || selectedTeams.includes(teamName))) {
+                filteredStats[techId] = tech;
             }
-            
-            // Warning Logic (Fix is now fixed to 'i' instead of 'i+1')
-            triggers.warning.columns.forEach((c, i) => {
-                if (triggers.warning.labels.includes(get(c)?.trim().toLowerCase())) {
-                    const fixTechId = fixIds[i]; // Corrected index
-                    if (fixTechId && techStats[fixTechId]) techStats[fixTechId].warnings.push({});
-                }
-            });
-            
-            // Fix4 Logic (unchanged)
-            const fix4Id = get('fix4_id')?.trim().toUpperCase();
-            if (fix4Id && techStats[fix4Id]) {
-                const cat = parseInt(get('rv3_cat'));
-                if (!isNaN(cat) && get('rv3_cat')?.trim()) techStats[fix4Id].fix4.push({ category: cat });
-            }
-        });
-        return { techStats };
+        }
+        
+        this.displayResults(filteredStats);
+        this.updateLeaderboard(filteredStats);
+        this.updateTLSummary(filteredStats);
+        this.updateQuickSummary(filteredStats);
     },
-    calculateQualityModifier(qualityRate) {
-        return AppState.bonusTiers.find(tier => qualityRate >= tier.quality)?.bonus || 0;
+    showNotification(message, isError = false) {
+        const el = document.getElementById('update-notification');
+        if (el) {
+            el.textContent = message;
+            el.classList.toggle('bg-status-red', isError);
+            el.classList.toggle('bg-accent', !isError);
+            el.classList.remove('hidden', 'opacity-0', 'translate-y-2');
+            setTimeout(() => {
+                el.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => el.classList.add('hidden'), 500);
+            }, 3000);
+        }
+    },
+    openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if(modal) modal.classList.remove('hidden');
+    },
+    closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if(modal) modal.classList.add('hidden');
+    },
+    showLoading(button, text = 'Processing...') {
+        button.dataset.originalText = button.innerHTML;
+        button.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>${text}`;
+        button.disabled = true;
+    },
+    hideLoading(button) {
+        if (button.dataset.originalText) {
+            button.innerHTML = button.dataset.originalText;
+            button.disabled = false;
+            delete button.dataset.originalText;
+        }
+    },
+    updateGuidedSetupView() {
+        const { currentStep, totalSteps } = AppState.guidedSetup;
+        document.querySelectorAll('.guided-step-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`guided-step-${currentStep}`).classList.remove('hidden');
+        document.getElementById('step-indicator').textContent = `Step ${currentStep} of ${totalSteps}`;
     }
 };
 
-const Handlers = {
-    async initializeApp() {
+const Calculator = {
+    createNewTechStat(isCombined = false) {
+        return {
+            id: '',
+            points: 0,
+            fixTasks: 0,
+            afpTasks: 0,
+            i3qaTasks: 0,
+            qcTasks: 0,
+            rvTasks: 0,
+            refixTasks: 0,
+            warnings: [], // { column, label, row }
+            qcPenalty: 0,
+            fix4: [], // { id, category, sourceType, row }
+            categoryCounts: { 1: { fix: 0, ir: 0, afp: 0, rv: 0 }, 2: { fix: 0, ir: 0, afp: 0, rv: 0 }, 3: { fix: 0, ir: 0, afp: 0, rv: 0 }, 4: { fix: 0, ir: 0, afp: 0, rv: 0 }, 5: { fix: 0, ir: 0, afp: 0, rv: 0 }, 6: { fix: 0, ir: 0, afp: 0, rv: 0 }, 7: { fix: 0, ir: 0, afp: 0, rv: 0 }, 8: { fix: 0, ir: 0, afp: 0, rv: 0 }, 9: { fix: 0, ir: 0, afp: 0, rv: 0 } },
+            isCombined: isCombined,
+            projectName: isCombined ? '' : null,
+            pointsBreakdown: { fix: 0, qc: 0, i3qa: 0, rv1: 0, rv2: 0 },
+            pointsBreakdownByProject: {} // Only used if isCombined is true
+        };
+    },
+    calculateQualityModifier(quality) {
+        const tier = AppState.bonusTiers.find(t => quality >= t.quality);
+        return tier ? tier.bonus : 0.00;
+    },
+    parseRawData(rawData, isIRProject, projectName, gsdForCalculation) {
+        const lines = atob(rawData).split('\n');
+        if (lines.length <= 1) return { techStats: {} };
+
+        const headers = lines[0].split('\t').map(h => h.toLowerCase().trim());
+        const dataRows = lines.slice(1).filter(line => line.trim() !== '');
+        
+        const getIndex = (colName) => headers.indexOf(colName);
+        const get = (colName) => {
+            const index = getIndex(colName);
+            return index !== -1 ? currentRow[index] : null;
+        };
+        const techStats = {};
+        const countingSettings = AppState.countingSettings;
+
+        const initTechStat = (techId) => {
+            if (!techStats[techId]) {
+                techStats[techId] = Calculator.createNewTechStat(false);
+                techStats[techId].id = techId;
+                techStats[techId].projectName = projectName;
+            }
+        };
+
+        const processFixTech = (techId, catSources) => {
+            if (!techId || !techStats[techId]) return;
+            let techPoints = 0;
+            let techCategories = 0;
+            const isFixTaskIR = isIRProject && getIndex('ir_tech_id') !== -1;
+
+            catSources.forEach(source => {
+                if (source.isRQA && source.sourceType === 'afp') techStats[techId].afpTasks++;
+                
+                const labelValue = source.label ? get(source.label)?.trim().toUpperCase() : null;
+                if (source.condition && !source.condition(labelValue)) return;
+
+                const catValue = parseInt(get(source.cat));
+                if (!isNaN(catValue) && catValue >= 1 && catValue <= 9) {
+                    techCategories++;
+                    techPoints += AppState.calculationSettings.categoryValues[catValue]?.[gsdForCalculation] || 0;
+                    
+                    if(techStats[techId].categoryCounts[catValue]) {
+                        // Ensure the sourceType exists before incrementing
+                        if (!techStats[techId].categoryCounts[catValue][source.sourceType]) {
+                             techStats[techId].categoryCounts[catValue][source.sourceType] = 0;
+                        }
+                        techStats[techId].categoryCounts[catValue][source.sourceType]++;
+                    }
+
+                    // Log Fix4 tasks
+                    if (source.sourceType === 'fix4') {
+                        const fix4Id = get('rv1_id') || get('rv2_id') || get('rv3_id');
+                        if (fix4Id) {
+                            techStats[techId].fix4.push({ id: fix4Id, category: catValue, sourceType: 'rv', row: rowNum });
+                        }
+                    }
+                }
+            });
+
+            techStats[techId].fixTasks += techCategories;
+            let pointsToAdd = techPoints * (isFixTaskIR ? AppState.calculationSettings.irModifierValue : 1);
+            techStats[techId].points += pointsToAdd;
+            techStats[techId].pointsBreakdown.fix += pointsToAdd;
+        };
+
+        // Helper for non-fix tasks (QC, i3QA, RV)
+        const addPointsForTask = (techId, points, field, taskType) => {
+            if (techId && techStats[techId]) {
+                techStats[techId].points += points;
+                techStats[techId].pointsBreakdown[field] += points;
+                if (taskType === 'qc') techStats[techId].qcTasks++;
+                if (taskType === 'i3qa') techStats[techId].i3qaTasks++;
+                if (taskType === 'rv') techStats[techId].rvTasks++;
+            }
+        };
+
+        // Loop through data rows
+        for (let rowNum = 1; rowNum < dataRows.length + 1; rowNum++) {
+            const currentRow = dataRows[rowNum - 1].split('\t');
+
+            // --- 1. Fix Task Points (All Fixes: Fix1, Fix2, Fix3, Fix4, AFP) ---
+            const fixTechId = get('fix_tech_id')?.trim().toUpperCase();
+            if (fixTechId && CONSTANTS.TECH_ID_REGEX.test(fixTechId)) {
+                initTechStat(fixTechId);
+                const catSources = [];
+                const triggers = countingSettings.triggers;
+                
+                // FIX1 (Standard Fix)
+                const fix1Cat = get('fix1_cat');
+                if (fix1Cat) catSources.push({ cat: 'fix1_cat', sourceType: 'fix' });
+
+                // AFP Fix
+                const afpTechId = get('afp_tech_id')?.trim().toUpperCase();
+                if (afpTechId === fixTechId) {
+                    const afpCat = get('afp_cat');
+                    if (afpCat) catSources.push({ cat: 'afp_cat', sourceType: 'afp', isRQA: true });
+                }
+
+                // FIX2, FIX3, FIX4 (RV/i3qa)
+                for (let i = 1; i <= 3; i++) {
+                    const fix = { cat: get(`fix${i + 1}_cat`), id: get(`rv${i}_id`) };
+                    if (!fix.cat) continue;
+
+                    const rvTechId = get(`rv${i}_tech_id`)?.trim().toUpperCase();
+                    if (rvTechId === fixTechId) {
+                        const reviewCol = `rv${i}_label`;
+                        
+                        // FIX2 is RQA (i3qa)
+                        if (i === 1 && getIndex('i3qa_label') !== -1) {
+                            catSources.push({ 
+                                cat: fix.cat, 
+                                label: 'i3qa_label', 
+                                condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())),
+                                sourceType: 'i3qa' 
+                            });
+                        } else if (fix.cat) { 
+                            // FIX3, FIX4 RV logic
+                            // Add RV points only if the RV label is a MISS (m) or CORRECT (c)
+                            const reviewCol = i === 2 ? 'rv2_label' : 'rv3_label';
+                            catSources.push({ 
+                                cat: fix.cat, 
+                                label: reviewCol, 
+                                condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), 
+                                sourceType: 'rv' 
+                            });
+
+                            // Only log fix4 for RVs that are counted as fixes (miss or correct label)
+                            if (i >= 2 && get('rv_type')?.trim().toUpperCase() === 'FIX4') {
+                                catSources.push({ 
+                                    cat: fix.cat, 
+                                    label: reviewCol, 
+                                    condition: v => v && triggers.miss.labels.some(l => v.includes(l.toUpperCase())), 
+                                    sourceType: 'fix4' 
+                                });
+                            }
+                        }
+                    }
+                }
+
+                processFixTech(fixTechId, catSources);
+            }
+
+            // --- 2. IR Fix Task Points ---
+            if (isIRProject) {
+                const irTechId = get('ir_tech_id')?.trim().toUpperCase();
+                const irCat = get('ir_cat');
+                if (irTechId && CONSTANTS.TECH_ID_REGEX.test(irTechId) && irCat) {
+                    initTechStat(irTechId);
+                    processFixTech(irTechId, [{ cat: 'ir_cat', sourceType: 'ir' }]);
+                }
+            }
+
+            // --- 3. Refix Tasks (Penalties) ---
+            const refixTechId = get('refix_tech_id')?.trim().toUpperCase();
+            if (refixTechId && CONSTANTS.TECH_ID_REGEX.test(refixTechId)) {
+                initTechStat(refixTechId);
+                const reviewCols = countingSettings.triggers.refix.columns;
+                const refixLabels = countingSettings.triggers.refix.labels;
+
+                for (const col of reviewCols) {
+                    const label = get(col)?.trim().toUpperCase();
+                    if (label && refixLabels.some(l => label.includes(l.toUpperCase()))) {
+                        techStats[refixTechId].refixTasks++;
+                        break; // Only count one refix penalty per task
+                    }
+                }
+            }
+
+            // --- 4. Warning Tasks (Penalties) ---
+            const warningTechId = get('warning_tech_id')?.trim().toUpperCase();
+            if (warningTechId && CONSTANTS.TECH_ID_REGEX.test(warningTechId)) {
+                initTechStat(warningTechId);
+                const warnCols = countingSettings.triggers.warning.columns;
+                const warnLabels = countingSettings.triggers.warning.labels;
+
+                for (const col of warnCols) {
+                    const label = get(col)?.trim().toUpperCase();
+                    if (label && warnLabels.some(l => label.includes(l.toUpperCase()))) {
+                        // Log the warning but don't break, multiple warnings can be on one task
+                        techStats[warningTechId].warnings.push({ column: col, label: label, row: rowNum });
+                    }
+                }
+            }
+
+            // --- 5. QC Penalty Points (i3qa_label 'M' or 'E') ---
+            const qcPenaltyTechId = get('i3qa_tech_id')?.trim().toUpperCase();
+            if (qcPenaltyTechId && CONSTANTS.TECH_ID_REGEX.test(qcPenaltyTechId)) {
+                initTechStat(qcPenaltyTechId);
+                const i3qaLabel = get('i3qa_label')?.trim().toUpperCase();
+                const qcPenaltyLabels = countingSettings.triggers.qcPenalty.labels;
+
+                if (i3qaLabel && qcPenaltyLabels.some(l => i3qaLabel.includes(l.toUpperCase()))) {
+                    const penalty = AppState.calculationSettings.points.qc;
+                    techStats[qcPenaltyTechId].qcPenalty += penalty;
+                    techStats[qcPenaltyTechId].points -= penalty;
+                }
+            }
+
+            // --- 6. QC Task Points ---
+            const qcTechId = get('qc_tech_id')?.trim().toUpperCase();
+            if (qcTechId && CONSTANTS.TECH_ID_REGEX.test(qcTechId)) {
+                initTechStat(qcTechId);
+                const qcPointValue = AppState.calculationSettings.points.qc;
+                addPointsForTask(qcTechId, qcPointValue, 'qc', 'qc');
+            }
+
+            // --- 7. i3QA Task Points (RQA) ---
+            const i3qaTechId = get('i3qa_tech_id')?.trim().toUpperCase();
+            if (i3qaTechId && CONSTANTS.TECH_ID_REGEX.test(i3qaTechId)) {
+                initTechStat(i3qaTechId);
+                const i3qaPointValue = AppState.calculationSettings.points.i3qa;
+                addPointsForTask(i3qaTechId, i3qaPointValue, 'i3qa', 'i3qa');
+            }
+
+            // --- 8. RV Task Points ---
+            for (let i = 1; i <= 2; i++) {
+                const rvTechId = get(`rv${i}_tech_id`)?.trim().toUpperCase();
+                if (rvTechId && CONSTANTS.TECH_ID_REGEX.test(rvTechId)) {
+                    initTechStat(rvTechId);
+                    let rvPointValue = AppState.calculationSettings.points[`rv${i}`];
+                    let rvPointField = `rv${i}`;
+
+                    // Special condition for RV1 Combo
+                    if (i === 1 && get('rv_type')?.trim().toUpperCase() === 'COMBO') {
+                        rvPointValue = AppState.calculationSettings.points.rv1_combo;
+                        rvPointField = 'rv1_combo'; // Use a special field for clarity
+                    }
+                    
+                    addPointsForTask(rvTechId, rvPointValue, rvPointField, 'rv');
+                }
+            }
+        }
+
+        return { techStats };
+    }
+};
+
+const App = {
+    async initialize() {
+        if (!window.indexedDB) {
+            alert("Your browser does not support IndexedDB. Please use a modern browser (Chrome, Firefox, Edge, Safari).");
+            return;
+        }
         await DB.open();
-        
-        dayjs.extend(window.dayjs_plugin_relativeTime);
-
-        Handlers.setupEventListeners();
-        document.body.classList.toggle('light-theme', localStorage.getItem('theme') === 'light');
-        this.initializeFirebase();
-
-        await Promise.all([ Handlers.fetchProjectListSummary(), Handlers.loadTeamSettings(), Handlers.loadBonusTiers(), Handlers.loadCalculationSettings(), Handlers.loadCountingSettings() ]);
-        
+        await this.loadSettings();
+        await this.initFirebase();
+        this.bindEventListeners();
+        this.loadInitialState();
+    },
+    async loadSettings() {
+        await Promise.all([
+            this.loadTeamSettings(),
+            this.loadBonusTiers(),
+            this.loadCalculationSettings(),
+            this.loadCountingSettings(),
+            this.fetchProjectListSummary()
+        ]);
+        const theme = localStorage.getItem('theme');
+        if (theme === 'light') document.body.classList.add('light-theme');
+    },
+    async loadInitialState() {
         const hasBeenSetup = await DB.get('settings', 'hasBeenSetup');
-        if (!hasBeenSetup) {
-            this.startGuidedSetup();
-        }
-
-        UI.setPanelHeights();
-        window.UI = UI; 
-    },
-    initializeFirebase() {
-        if (window.firebaseTools) {
-            AppState.firebase.tools = window.firebaseTools;
-            this.checkAdminAuthState();
-            this.listenForUpdates();
-            this.logVisitor();
+        if (!hasBeenSetup || !hasBeenSetup.value) {
+            UI.openModal('guided-setup-modal');
         } else {
-            console.error("Firebase is not initialized. Make sure the config script is in index.html");
+            // Check if there's a recent calculation to re-display
+            const lastCalculation = await DB.get('settings', 'lastCalculation');
+            if (lastCalculation) {
+                AppState.currentTechStats = lastCalculation.techStats;
+                document.getElementById('bonusMultiplierDirect').value = lastCalculation.bonusMultiplier || 1;
+                document.getElementById('results-title').textContent = lastCalculation.title;
+                UI.applyFilters();
+            }
+        }
+        
+        // Load chatbot state
+        if (localStorage.getItem('chatbotVisible') === 'true') {
+             document.getElementById('chatbot-window').classList.add('visible');
         }
     },
-    async handleAdminLogin() {
-        const { auth, provider, signInWithPopup } = AppState.firebase.tools;
+    async initFirebase() {
+        if (typeof firebase === 'undefined') {
+            console.warn("Firebase not loaded. Admin/Cloud features disabled.");
+            return;
+        }
+        
+        // Check for Firebase config in localStorage
+        const configStr = localStorage.getItem('firebaseConfig');
+        if (!configStr) {
+            console.warn("Firebase config not found in localStorage.");
+            return;
+        }
+        
         try {
-            const result = await signInWithPopup(auth, provider);
-           // FIX: Check if the user's email is IN the ADMIN_EMAIL array.
-        if (CONSTANTS.ADMIN_EMAIL.includes(result.user.email)) { 
-            AppState.firebase.isAdmin = true; 
-            this.updateAdminUI(true); 
-        } else { 
-            alert("Access Denied: This account is not authorized for admin access."); 
-            auth.signOut(); 
-        }
+            const firebaseConfig = JSON.parse(configStr);
+            if (!firebase.apps.length) {
+                AppState.firebase.app = firebase.initializeApp(firebaseConfig);
+            } else {
+                AppState.firebase.app = firebase.app(); // Get existing app instance
+            }
+
+            AppState.firebase.auth = firebase.auth();
+            AppState.firebase.db = firebase.firestore();
+            dayjs.extend(dayjs.plugin.relativeTime);
+
+            // Tools object for easier use
+            AppState.firebase.tools = {
+                auth: AppState.firebase.auth,
+                db: AppState.firebase.db,
+                collection: AppState.firebase.db.collection.bind(AppState.firebase.db),
+                getDocs: firebase.firestore.getDocs.bind(firebase.firestore),
+                addDoc: firebase.firestore.addDoc.bind(firebase.firestore),
+                query: firebase.firestore.query.bind(firebase.firestore),
+                orderBy: firebase.firestore.orderBy.bind(firebase.firestore),
+                limit: firebase.firestore.limit.bind(firebase.firestore),
+                onSnapshot: firebase.firestore.onSnapshot.bind(firebase.firestore),
+                doc: firebase.firestore.doc.bind(firebase.firestore),
+                getDoc: firebase.firestore.getDoc.bind(firebase.firestore),
+                updateDoc: firebase.firestore.updateDoc.bind(firebase.firestore),
+                deleteDoc: firebase.firestore.deleteDoc.bind(firebase.firestore),
+                where: firebase.firestore.where.bind(firebase.firestore),
+            };
+
+            // Setup Auth State Listener and other real-time listeners
+            AppState.firebase.auth.onAuthStateChanged(user => {
+                const adminPortalBtn = document.getElementById('admin-portal-btn');
+                if (user) {
+                    const isAdmin = CONSTANTS.ADMIN_EMAIL.includes(user.email);
+                    AppState.firebase.isAdmin = isAdmin;
+                    
+                    document.getElementById('user-email').textContent = user.email;
+                    document.getElementById('user-portal-status').textContent = isAdmin ? 'Admin' : 'User';
+                    document.getElementById('admin-login-info').classList.remove('hidden');
+                    document.getElementById('admin-google-signin-btn').classList.add('hidden');
+                    
+                    if (isAdmin) {
+                        adminPortalBtn?.classList.remove('hidden');
+                        document.getElementById('admin-project-list-tab-btn').classList.remove('hidden');
+                        document.getElementById('admin-cloud-settings-tab-btn').classList.remove('hidden');
+                        document.getElementById('admin-visitor-log-tab-btn').classList.remove('hidden');
+                        this.listenForUpdates(); // Start listening for admin updates
+                        this.logVisitor(); // Log visit
+                    } else {
+                        adminPortalBtn?.classList.add('hidden');
+                    }
+                } else {
+                    AppState.firebase.isAdmin = false;
+                    adminPortalBtn?.classList.add('hidden');
+                    document.getElementById('user-portal-status').textContent = 'Signed Out';
+                    document.getElementById('admin-login-info').classList.add('hidden');
+                    document.getElementById('admin-google-signin-btn').classList.remove('hidden');
+                    document.getElementById('admin-project-list-tab-btn')?.classList.add('hidden');
+                    document.getElementById('admin-cloud-settings-tab-btn')?.classList.add('hidden');
+                    document.getElementById('admin-visitor-log-tab-btn')?.classList.add('hidden');
+                }
+            });
+            
         } catch (error) {
-            console.error("Admin login error:", error);
-            alert("An error occurred during sign-in.");
-        }
-    },
-    handleAdminLogout() {
-        AppState.firebase.tools.auth.signOut();
-    },
-    checkAdminAuthState() {
-        const { auth, onAuthStateChanged } = AppState.firebase.tools;
-        onAuthStateChanged(auth, (user) => {
-            // FIX: Check if the user's email is IN the ADMIN_EMAIL array.
-        const isAdmin = user && CONSTANTS.ADMIN_EMAIL.includes(user.email);
-        AppState.firebase.isAdmin = isAdmin; 
-        this.updateAdminUI(isAdmin);
-        });
-    },
-    updateAdminUI(isAdmin) {
-        document.getElementById('admin-login-view').classList.toggle('hidden', isAdmin);
-        document.getElementById('admin-panel-view').classList.toggle('hidden', !isAdmin);
-        if (isAdmin) {
-            this.loadVisitorLog();
-            this.loadAdminProjectList();
+            console.error("Error initializing Firebase:", error);
         }
     },
     async loadVisitorLog() {
-        const { db, collection, getDocs, query, orderBy } = AppState.firebase.tools;
+        if (!AppState.firebase.isAdmin) return;
         const logTbody = document.getElementById('visitor-log-tbody');
-        logTbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Loading logs...</td></tr>';
-        
+        if (!logTbody) return;
+        logTbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Loading...</td></tr>';
+
         try {
+            const { db, collection, getDocs, query, orderBy } = AppState.firebase.tools;
             const q = query(collection(db, "visitors"), orderBy("timestamp", "desc"));
             const querySnapshot = await getDocs(q);
+            logTbody.innerHTML = '';
             
-            if (querySnapshot.empty) {
-                logTbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">No visitor logs found.</td></tr>';
-                return;
-            }
-
             const parser = new UAParser();
-            let logsHTML = '';
-            
-            querySnapshot.forEach(doc => {
+
+            querySnapshot.docs.forEach((doc) => {
                 const data = doc.data();
-                const timestamp = data.timestamp ? data.timestamp.toDate() : new Date();
-                const userAgent = data.userAgent;
+                const timestamp = data.timestamp.toDate();
+                const result = parser.setUA(data.userAgent).getResult();
 
-                parser.setUA(userAgent);
-                const result = parser.getResult();
-                const browser = `${result.browser.name || 'N/A'} ${result.browser.version || ''}`;
-                const os = `${result.os.name || 'N/A'} ${result.os.version || ''}`;
-
-                const timeAgo = dayjs(timestamp).fromNow();
-
-                logsHTML += `
-                    <tr>
-                        <td class="p-2">${timeAgo}</td>
-                        <td class="p-2">${browser.trim()}</td>
-                        <td class="p-2">${os.trim()}</td>
-                    </tr>
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="p-2">${dayjs(timestamp).fromNow()}</td>
+                    <td class="p-2">${result.browser.name} ${result.browser.version} (${result.os.name})</td>
+                    <td class="p-2">${result.device.vendor || 'Desktop'} ${result.device.model || ''}</td>
                 `;
+                logTbody.appendChild(row);
             });
-            logTbody.innerHTML = logsHTML;
+
+            if (querySnapshot.empty) {
+                logTbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-brand-400">No recent visitor logs.</td></tr>`;
+            }
 
         } catch (error) {
             console.error("Error loading visitor log:", error);
@@ -817,7 +1078,6 @@ const Handlers = {
     async logVisitor() {
         try {
             const { db, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } = AppState.firebase.tools;
-            
             await addDoc(collection(db, "visitors"), {
                 timestamp: new Date(),
                 userAgent: navigator.userAgent
@@ -834,7 +1094,6 @@ const Handlers = {
                 }
                 await Promise.all(deletePromises);
             }
-
         } catch (error) {
             console.error("Error logging visitor:", error);
         }
@@ -847,6 +1106,7 @@ const Handlers = {
             if (!snapshot.empty) {
                 const latestUpdate = snapshot.docs[0].data();
                 latestUpdate.id = snapshot.docs[0].id;
+                
                 const acceptedUpdateId = localStorage.getItem('acceptedUpdateId');
                 
                 if (latestUpdate.id !== acceptedUpdateId) {
@@ -866,64 +1126,129 @@ const Handlers = {
         AppState.calculationSettings = saved ? saved.settings : JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CALCULATION_SETTINGS));
     },
     async loadCountingSettings() {
-        const saved = await DB.get('countingSettings', 'customCounting');
-        AppState.countingSettings = saved ? { ...CONSTANTS.DEFAULT_COUNTING_SETTINGS, ...saved.settings, triggers: { ...CONSTANTS.DEFAULT_COUNTING_SETTINGS.triggers, ...saved.settings.triggers } } : JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_COUNTING_SETTINGS));
+        const saved = await DB.get('countingSettings', 'customSettings');
+        AppState.countingSettings = saved ? saved.settings : JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_COUNTING_SETTINGS));
     },
     async saveAdvanceSettings() {
-        const getValues = id => document.getElementById(id).value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-        const newTiers = Array.from(document.querySelectorAll('#bonus-tier-editor-container .tier-row')).map(row => ({ quality: parseFloat(row.querySelector('.tier-quality-input').value), bonus: parseFloat(row.querySelector('.tier-bonus-input').value) / 100 })).filter(t => !isNaN(t.quality) && !isNaN(t.bonus)).sort((a, b) => b.quality - a.quality);
+        const tiersContainer = document.getElementById('bonus-tier-editor-container');
+        const newTiers = Array.from(tiersContainer.querySelectorAll('.tier-row')).map(row => ({
+            quality: parseFloat(row.querySelector('.tier-quality').value),
+            bonus: parseFloat(row.querySelector('.tier-bonus').value)
+        })).filter(t => !isNaN(t.quality) && !isNaN(t.bonus) && t.quality >= 0 && t.bonus >= 0)
+          .sort((a, b) => b.quality - a.quality);
+
         const newCalcSettings = {
-            irModifierValue: parseFloat(document.getElementById('setting-ir-modifier').value),
-            points: { qc: parseFloat(document.getElementById('setting-qc-points').value), i3qa: parseFloat(document.getElementById('setting-i3qa-points').value), rv1: parseFloat(document.getElementById('setting-rv1-points').value), rv1_combo: parseFloat(document.getElementById('setting-rv1-combo-points').value), rv2: parseFloat(document.getElementById('setting-rv2-points').value) },
-            categoryValues: Object.fromEntries(Array.from({length: 9}, (_, i) => [i + 1, { "3in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="3in"]`).value), "4in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="4in"]`).value), "6in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="6in"]`).value), "9in": parseFloat(document.querySelector(`tr[data-category="${i+1}"] input[data-gsd="9in"]`).value) }]))
+            irModifierValue: parseFloat(document.getElementById('setting-ir-modifier').value) || CONSTANTS.DEFAULT_CALCULATION_SETTINGS.irModifierValue,
+            points: {
+                qc: parseFloat(document.getElementById('setting-qc-points').value) || CONSTANTS.DEFAULT_CALCULATION_SETTINGS.points.qc,
+                i3qa: parseFloat(document.getElementById('setting-i3qa-points').value) || CONSTANTS.DEFAULT_CALCULATION_SETTINGS.points.i3qa,
+                rv1: parseFloat(document.getElementById('setting-rv1-points').value) || CONSTANTS.DEFAULT_CALCULATION_SETTINGS.points.rv1,
+                rv1_combo: parseFloat(document.getElementById('setting-rv1-combo-points').value) || CONSTANTS.DEFAULT_CALCULATION_SETTINGS.points.rv1_combo,
+                rv2: parseFloat(document.getElementById('setting-rv2-points').value) || CONSTANTS.DEFAULT_CALCULATION_SETTINGS.points.rv2
+            },
+            categoryValues: JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CALCULATION_SETTINGS.categoryValues)) // Start with default structure
         };
+        document.querySelectorAll('.cat-value-input').forEach(input => {
+            const [cat, gsd] = input.id.split('-').slice(1);
+            const value = parseFloat(input.value);
+            if (!isNaN(value) && cat && gsd) {
+                if (!newCalcSettings.categoryValues[cat]) newCalcSettings.categoryValues[cat] = {};
+                newCalcSettings.categoryValues[cat][gsd] = value;
+            }
+        });
+
         const newCountingSettings = {
-            taskColumns: { qc: getValues('setting-qc-cols'), i3qa: getValues('setting-i3qa-cols'), rv1: getValues('setting-rv1-cols'), rv2: getValues('setting-rv2-cols'), },
-            triggers: { refix: { labels: getValues('setting-refix-labels'), columns: getValues('setting-refix-cols') }, miss: { labels: getValues('setting-miss-labels'), columns: getValues('setting-miss-cols') }, warning: { labels: getValues('setting-warning-labels'), columns: getValues('setting-warning-cols') }, qcPenalty: { labels: getValues('setting-qc-penalty-labels'), columns: getValues('setting-qc-penalty-cols') } }
+            taskColumns: CONSTANTS.DEFAULT_COUNTING_SETTINGS.taskColumns, // Keep default unless admin controls are added
+            triggers: JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_COUNTING_SETTINGS.triggers))
         };
-        await Promise.all([ DB.put('bonusTiers', { id: 'customTiers', tiers: newTiers }), DB.put('calculationSettings', { id: 'customSettings', settings: newCalcSettings }), DB.put('countingSettings', { id: 'customCounting', settings: newCountingSettings }) ]);
+        ['refix', 'miss', 'warning', 'qcPenalty'].forEach(trigger => {
+            const labelsInput = document.getElementById(`setting-${trigger}-labels`);
+            if (labelsInput) {
+                newCountingSettings.triggers[trigger].labels = labelsInput.value.split(',').map(l => l.trim()).filter(l => l.length > 0);
+            }
+        });
+
+        await Promise.all([
+            DB.put('bonusTiers', { id: 'customTiers', tiers: newTiers }),
+            DB.put('calculationSettings', { id: 'customSettings', settings: newCalcSettings }),
+            DB.put('countingSettings', { id: 'customSettings', settings: newCountingSettings })
+        ]);
+
+        // Re-load to update AppState
+        const [newTiers, newCalcSettings, newCountingSettings] = await Promise.all([
+            this.loadBonusTiers(),
+            this.loadCalculationSettings(),
+            this.loadCountingSettings()
+        ]);
         [AppState.bonusTiers, AppState.calculationSettings, AppState.countingSettings] = [newTiers, newCalcSettings, newCountingSettings];
-        UI.showNotification("Advance settings saved."); UI.closeModal('advance-settings-modal');
+        UI.showNotification("Advance settings saved.");
+        UI.closeModal('advance-settings-modal');
     },
     populateAdvanceSettingsEditor() {
         const container = document.getElementById('advance-settings-body');
-        container.innerHTML = `<div class="flex items-center gap-2 border-b border-brand-700 mb-4"><button class="tab-button active" data-tab="bonus-tiers">Bonus Tiers</button><button class="tab-button" data-tab="points">Points</button><button class="tab-button" data-tab="counting">Counting Logic</button></div><div id="tab-bonus-tiers" class="tab-content active"><div id="bonus-tier-editor-container" class="space-y-2"></div><button id="add-tier-btn" class="btn-secondary mt-4">Add Tier</button></div><div id="tab-points" class="tab-content"><div class="space-y-4"><div><label for="setting-ir-modifier">IR Modifier</label><input type="number" step="0.1" id="setting-ir-modifier" class="input-field w-full mt-1"></div><div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div><label for="setting-qc-points">QC</label><input type="number" step="0.01" id="setting-qc-points" class="input-field w-full mt-1"></div><div><label for="setting-i3qa-points">i3QA</label><input type="number" step="0.01" id="setting-i3qa-points" class="input-field w-full mt-1"></div><div><label for="setting-rv1-points">RV1</label><input type="number" step="0.01" id="setting-rv1-points" class="input-field w-full mt-1"></div><div><label for="setting-rv1-combo-points">RV1 Combo</label><input type="number" step="0.01" id="setting-rv1-combo-points" class="input-field w-full mt-1"></div><div><label for="setting-rv2-points">RV2</label><input type="number" step="0.01" id="setting-rv2-points" class="input-field w-full mt-1"></div></div><div class="table-container text-sm border border-brand-700 rounded-md"><table class="min-w-full"><thead class="bg-brand-800"><tr><th>Category</th><th>3in</th><th>4in</th><th>6in</th><th>9in</th></tr></thead><tbody id="category-points-tbody"></tbody></table></div></div></div><div id="tab-counting" class="tab-content"><div class="space-y-4"><div><h4 class="font-semibold">Task Columns</h4><div class="grid grid-cols-2 gap-4"><div><label>QC</label><input type="text" id="setting-qc-cols" class="input-field w-full mt-1"></div><div><label>i3QA</label><input type="text" id="setting-i3qa-cols" class="input-field w-full mt-1"></div><div><label>RV1</label><input type="text" id="setting-rv1-cols" class="input-field w-full mt-1"></div><div><label>RV2</label><input type="text" id="setting-rv2-cols" class="input-field w-full mt-1"></div></div></div><div><h4 class="font-semibold">Trigger Conditions</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label>Refix Labels</label><input type="text" id="setting-refix-labels" class="input-field w-full mt-1"></div><div><label>Refix Columns</label><input type="text" id="setting-refix-cols" class="input-field w-full mt-1"></div><div><label>Miss Labels</label><input type="text" id="setting-miss-labels" class="input-field w-full mt-1"></div><div><label>Miss Columns</label><input type="text" id="setting-miss-cols" class="input-field w-full mt-1"></div><div><label>Warning Labels</label><input type="text" id="setting-warning-labels" class="input-field w-full mt-1"></div><div><label>Warning Columns</label><input type="text" id="setting-warning-cols" class="input-field w-full mt-1"></div><div><label>QC Penalty Labels</label><input type="text" id="setting-qc-penalty-labels" class="input-field w-full mt-1"></div><div><label>QC Penalty Columns</label><input type="text" id="setting-qc-penalty-cols" class="input-field w-full mt-1"></div></div></div></div></div>`;
-        const tierContainer = document.getElementById('bonus-tier-editor-container');
-        tierContainer.innerHTML = `<div class="grid grid-cols-3 gap-4 font-semibold text-gray-400 pb-2 border-b border-gray-600"><span>Min. Quality %</span><span>Bonus Earned %</span><span>Action</span></div>`;
-        AppState.bonusTiers.forEach(t => this.addBonusTierRow(t.quality, t.bonus * 100));
-        document.getElementById('add-tier-btn').addEventListener('click', () => this.addBonusTierRow());
+        container.innerHTML = `<div class="flex items-center gap-2 border-b border-brand-700 mb-4"><button class="tab-button active" data-tab="bonus-tiers">Bonus Tiers</button><button class="tab-button" data-tab="points">Points</button><button class="tab-button" data-tab="counting">Counting Logic</button></div><div id="tab-bonus-tiers" class="tab-content active"><div id="bonus-tier-editor-container" class="space-y-2"></div><button id="add-tier-btn" class="btn-secondary mt-4">Add Tier</button></div><div id="tab-points" class="tab-content"><div class="space-y-4"><div><label for="setting-ir-modifier">IR Modifier</label><input type="number" step="0.1" id="setting-ir-modifier" class="input-field w-full mt-1"></div><div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div><label for="setting-qc-points">QC</label><input type="number" step="0.01" id="setting-qc-points" class="input-field w-full mt-1"></div><div><label for="setting-i3qa-points">i3QA</label><input type="number" step="0.01" id="setting-i3qa-points" class="input-field w-full mt-1"></div><div><label for="setting-rv1-points">RV1</label><input type="number" step="0.01" id="setting-rv1-points" class="input-field w-full mt-1"></div><div><label for="setting-rv1-combo-points">RV1 Combo</label><input type="number" step="0.01" id="setting-rv1-combo-points" class="input-field w-full mt-1"></div><div><label for="setting-rv2-points">RV2</label><input type="number" step="0.01" id="setting-rv2-points" class="input-field w-full mt-1"></div></div><h4 class="font-semibold mt-4">Category Values (Points per Fix)</h4><div class="grid grid-cols-4 gap-2 text-xs text-brand-400 border-b border-brand-700 py-2"><span class="font-bold">Cat</span><span class="font-bold">3in/4in/6in</span><span class="font-bold">9in</span></div><div id="category-value-editor" class="space-y-1"></div></div></div><div id="tab-counting" class="tab-content"><div class="space-y-4"><div><label for="setting-refix-labels">Refix Labels (Comma separated, e.g., i)</label><input type="text" id="setting-refix-labels" class="input-field w-full mt-1"></div><div><label for="setting-miss-labels">Miss/Correct Labels (Comma separated, e.g., m, c)</label><input type="text" id="setting-miss-labels" class="input-field w-full mt-1"></div><div><label for="setting-warning-labels">Warning Labels (Comma separated, e.g., b, c, d)</label><input type="text" id="setting-warning-labels" class="input-field w-full mt-1"></div><div><label for="setting-qcPenalty-labels">QC Penalty Labels (Comma separated, e.g., m, e)</label><input type="text" id="setting-qcPenalty-labels" class="input-field w-full mt-1"></div></div></div>`;
+
+        // Populate Bonus Tiers
+        const tiersContainer = document.getElementById('bonus-tier-editor-container');
+        AppState.bonusTiers.forEach(tier => this.addTierRow(tiersContainer, tier.quality, tier.bonus));
+        document.getElementById('add-tier-btn').addEventListener('click', () => this.addTierRow(tiersContainer, 90.0, 1.00));
+
+        // Populate Points Settings
         document.getElementById('setting-ir-modifier').value = AppState.calculationSettings.irModifierValue;
-        Object.keys(AppState.calculationSettings.points).forEach(k => {
-            const pointInput = document.getElementById(`setting-${k.replace('_','-')}-points`);
-            if (pointInput) {
-                pointInput.value = AppState.calculationSettings.points[k];
-            }
+        document.getElementById('setting-qc-points').value = AppState.calculationSettings.points.qc;
+        document.getElementById('setting-i3qa-points').value = AppState.calculationSettings.points.i3qa;
+        document.getElementById('setting-rv1-points').value = AppState.calculationSettings.points.rv1;
+        document.getElementById('setting-rv1-combo-points').value = AppState.calculationSettings.points.rv1_combo;
+        document.getElementById('setting-rv2-points').value = AppState.calculationSettings.points.rv2;
+        
+        // Populate Category Values
+        const catValueContainer = document.getElementById('category-value-editor');
+        for (let cat = 1; cat <= 9; cat++) {
+            const row = document.createElement('div');
+            row.className = 'grid grid-cols-4 gap-2 items-center';
+            const catSettings = AppState.calculationSettings.categoryValues[cat] || {};
+            const standardValue = catSettings['3in'] ?? CONSTANTS.DEFAULT_CALCULATION_SETTINGS.categoryValues[cat]['3in'];
+            const nineInValue = catSettings['9in'] ?? CONSTANTS.DEFAULT_CALCULATION_SETTINGS.categoryValues[cat]['9in'];
+            
+            row.innerHTML = `
+                <span class="font-semibold">Category ${cat}</span>
+                <input type="number" step="0.01" id="cat-${cat}-3in" class="cat-value-input input-field text-sm p-1" value="${standardValue}">
+                <input type="number" step="0.01" id="cat-${cat}-9in" class="cat-value-input input-field text-sm p-1" value="${nineInValue}">
+            `;
+            catValueContainer.appendChild(row);
+        }
+
+        // Populate Counting Logic
+        document.getElementById('setting-refix-labels').value = AppState.countingSettings.triggers.refix.labels.join(', ');
+        document.getElementById('setting-miss-labels').value = AppState.countingSettings.triggers.miss.labels.join(', ');
+        document.getElementById('setting-warning-labels').value = AppState.countingSettings.triggers.warning.labels.join(', ');
+        document.getElementById('setting-qcPenalty-labels').value = AppState.countingSettings.triggers.qcPenalty.labels.join(', ');
+
+        // Tab functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                document.getElementById(`tab-${e.target.dataset.tab}`).classList.add('active');
+            });
         });
-        document.getElementById('category-points-tbody').innerHTML = Object.entries(AppState.calculationSettings.categoryValues).map(([cat, gsd]) => `<tr data-category="${cat}"><td>Cat ${cat}</td>${Object.entries(gsd).map(([size, val]) => `<td><input type="number" step="0.01" class="input-field w-full p-1" data-gsd="${size}" value="${val}"></td>`).join('')}</tr>`).join('');
-        Object.keys(AppState.countingSettings.taskColumns).forEach(k => {
-            const taskColInput = document.getElementById(`setting-${k}-cols`);
-            if (taskColInput) {
-                taskColInput.value = AppState.countingSettings.taskColumns[k].join(', ');
-            }
-        });
-        Object.keys(AppState.countingSettings.triggers).forEach(k => {
-            const kebabCaseKey = k.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
-            const labelsInput = document.getElementById(`setting-${kebabCaseKey}-labels`);
-            if (labelsInput) {
-                labelsInput.value = AppState.countingSettings.triggers[k].labels.join(', ');
-            }
-            const colsInput = document.getElementById(`setting-${kebabCaseKey}-cols`);
-            if (colsInput) {
-                colsInput.value = AppState.countingSettings.triggers[k].columns.join(', ');
-            }
-        });
-        container.querySelectorAll('.tab-button').forEach(tab => tab.addEventListener('click', () => { container.querySelectorAll('.tab-button, .tab-content').forEach(el => el.classList.remove('active')); tab.classList.add('active'); document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active'); }));
     },
-    addBonusTierRow(quality = '', bonus = '') {
+    addTierRow(container, quality, bonus) {
         const row = document.createElement('div');
-        row.className = 'tier-row grid grid-cols-3 gap-4 items-center';
-        row.innerHTML = `<input type="number" step="0.5" class="tier-quality-input w-full p-2 input-field" value="${quality}"><input type="number" step="1" class="tier-bonus-input w-full p-2 input-field" value="${bonus}"><button class="delete-tier-btn bg-red-600/80 text-white rounded-lg hover:bg-red-700 text-sm p-2">Delete</button>`;
-        document.getElementById('bonus-tier-editor-container').appendChild(row);
+        row.className = 'tier-row flex gap-2 items-center';
+        row.innerHTML = `
+            <div class="flex items-center w-full gap-2">
+                <label class="w-24 text-sm font-medium">Quality % >=</label>
+                <input type="number" step="0.1" class="tier-quality input-field w-20 text-sm p-1" value="${quality}">
+            </div>
+            <div class="flex items-center w-full gap-2">
+                <label class="w-24 text-sm font-medium">Bonus Multiplier</label>
+                <input type="number" step="0.01" class="tier-bonus input-field w-20 text-sm p-1" value="${bonus}">
+            </div>
+            <button class="delete-tier-btn control-btn-icon-danger flex-shrink-0" title="Remove Tier"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
+        `;
+        container.appendChild(row);
         row.querySelector('.delete-tier-btn').addEventListener('click', () => row.remove());
     },
     async loadTeamSettings() {
@@ -938,11 +1263,28 @@ const Handlers = {
             const teamName = div.querySelector('.team-name-input').value.trim();
             if (teamName) newSettings[teamName] = Array.from(div.querySelectorAll('.tech-tag')).map(tag => tag.dataset.techId);
         });
+
+        // Simple validation: ensure no two teams have the same tech ID
+        const allTechIds = new Set();
+        let hasDuplicateTech = false;
+        for (const team in newSettings) {
+            for (const techId of newSettings[team]) {
+                if (allTechIds.has(techId)) {
+                    hasDuplicateTech = true;
+                    UI.showNotification(`Error: Tech ID ${techId} is already in another team.`, true);
+                    return; // Stop saving and exit
+                }
+                allTechIds.add(techId);
+            }
+        }
+
+
         await DB.put('teams', { id: 'teams', settings: newSettings });
         UI.showNotification("Team settings saved.");
         AppState.teamSettings = newSettings;
         UI.populateTeamFilters();
         UI.closeModal('manage-teams-modal');
+        UI.applyFilters(); // Re-apply filters with new team structure
     },
     async saveProjectToIndexedDB(projectData) {
         try {
@@ -954,76 +1296,414 @@ const Handlers = {
     },
     async fetchProjectListSummary() {
         const projects = await DB.getAll('projects');
-        UI.populateProjectSelect(projects.map(p => ({ id: p.id, name: p.name })).sort((a, b) => (b.projectOrder || 0) - (a.projectOrder || 0)));
-    },
-    async fetchFullProjectData(projectId) {
-        const data = await DB.get('projects', projectId);
-        if (data && data.rawData) {
-            const binary_string = atob(data.rawData);
-            const len = binary_string.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binary_string.charCodeAt(i);
-            }
-            data.rawData = pako.inflate(bytes, { to: 'string' });
-            return data;
-        }
-        return null;
-    },
-    async deleteProjectFromIndexedDB(projectId) {
-        if (confirm("Delete this project? This cannot be undone.")) {
-            await DB.delete('projects', projectId);
-            await this.fetchProjectListSummary();
-            UI.showNotification("Project deleted.");
-            this.loadProjectIntoForm("");
-        }
+        const sortedProjects = projects.sort((a, b) => (b.projectOrder || 0) - (a.projectOrder || 0));
+        UI.populateProjectSelect(sortedProjects);
+        return sortedProjects;
     },
     async loadProjectIntoForm(projectId) {
-        const refreshBtn = document.getElementById('refresh-projects-btn');
-        if (refreshBtn) {
-            refreshBtn.classList.add('spinning');
-            refreshBtn.disabled = true;
-        }
-        try {
-            const projectData = projectId ? await this.fetchFullProjectData(projectId) : null;
-            document.getElementById('techData').value = projectData?.rawData || '';
-            document.getElementById('techData').readOnly = !!projectData;
-            document.getElementById('project-name').value = projectData?.name || '';
-            document.getElementById('project-name').readOnly = !!projectData;
-            document.getElementById('is-ir-project-checkbox').checked = projectData?.isIRProject || false;
-            document.getElementById('is-ir-project-checkbox').disabled = !!projectData;
-            document.getElementById('gsd-value-select').value = projectData?.gsdValue || '3in';
-            document.getElementById('gsd-value-select').disabled = !!projectData;
-            document.getElementById('edit-data-btn').classList.toggle('hidden', !projectData);
-            document.getElementById('save-project-btn').disabled = !!projectData;
-            document.getElementById('cancel-edit-btn').classList.add('hidden');
-            const irBadge = document.getElementById('project-ir-badge');
-            irBadge.classList.toggle('hidden', !projectData);
-            if(projectData) {
-                irBadge.textContent = projectData.isIRProject ? 'IR' : 'Non-IR';
-                irBadge.className = `project-info-badge ${projectData.isIRProject ? 'is-ir' : 'is-not-ir'}`;
+        const projectSelect = document.getElementById('project-select');
+        const projectNameInput = document.getElementById('project-name');
+        const projectDataTextarea = document.getElementById('project-data');
+        const isIrCheckbox = document.getElementById('is-ir-project-checkbox');
+        const gsdSelect = document.getElementById('gsd-value-select');
+        const runBtn = document.getElementById('run-calculation-btn');
+        const irProjectField = document.getElementById('ir-project-field');
+
+        if (projectId) {
+            const project = await DB.get('projects', projectId);
+            if (project) {
+                projectNameInput.value = project.name;
+                projectDataTextarea.value = atob(project.rawData);
+                isIrCheckbox.checked = project.isIRProject;
+                gsdSelect.value = project.gsdValue || AppState.lastUsedGsdValue;
+
+                // Disable the checkbox if a project is loaded
+                isIrCheckbox.disabled = true; 
+                irProjectField.title = project.isIRProject ? 'IR status is fixed for saved projects.' : '';
+
+                runBtn.disabled = false;
+                document.getElementById('save-project-btn').textContent = 'Update Project';
             }
+        } else {
+            // Reset to blank form
+            projectNameInput.value = '';
+            projectDataTextarea.value = '';
+            isIrCheckbox.checked = false;
+            isIrCheckbox.disabled = false;
+            irProjectField.title = '';
+            gsdSelect.value = AppState.lastUsedGsdValue; // Use last used GSD value
+            runBtn.disabled = true;
+            document.getElementById('save-project-btn').textContent = 'Save Project';
+        }
+    },
+    async deleteProjectFromIndexedDB(projectId) {
+        if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+            await DB.delete('projects', projectId);
+            UI.showNotification("Project deleted.");
+            this.fetchProjectListSummary(); // Refresh the select list
+            this.loadProjectIntoForm(""); // Reset form
+        }
+    },
+    async handleRunCalculation(button) {
+        UI.showLoading(button);
+        UI.resetUIForNewCalculation();
+
+        const projectDataTextarea = document.getElementById('project-data');
+        const isCombinedCheckbox = document.getElementById('combined-projects-checkbox');
+        const selectedProjectIds = Array.from(document.getElementById('combined-project-list').querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+
+        const isCombined = isCombinedCheckbox.checked && selectedProjectIds.length > 0;
+
+        try {
+            if (isCombined) {
+                await this.runCalculation(true, selectedProjectIds);
+            } else {
+                const projectName = document.getElementById('project-name').value.trim() || 'Custom Data';
+                const projectData = projectDataTextarea.value.trim();
+                const isIRProject = document.getElementById('is-ir-project-checkbox').checked;
+                const gsdValue = document.getElementById('gsd-value-select').value;
+                AppState.lastUsedGsdValue = gsdValue;
+
+                if (!projectData) {
+                    UI.showNotification("Please provide data to calculate.", true);
+                    return;
+                }
+
+                const rawData = btoa(projectData);
+                const project = { rawData, isIRProject, name: projectName, gsdValue };
+                
+                // Also save GSD value for easy access on next run
+                await DB.put('settings', { id: 'lastUsedGsdValue', value: gsdValue });
+
+                await this.runCalculation(false, [project]);
+            }
+            
+        } catch (error) {
+            console.error("Calculation Error:", error);
+            UI.showNotification("An error occurred during calculation. Check console for details.", true);
         } finally {
-            if (refreshBtn) {
-                refreshBtn.classList.remove('spinning');
-                refreshBtn.disabled = false;
+            UI.hideLoading(button);
+        }
+    },
+    async runCalculation(isCombined, projects) {
+        let techStats = {};
+        let title = 'Bonus Payouts';
+
+        if (isCombined) {
+            title = 'Combined Payouts';
+            techStats = await this.calculateCombinedStats(projects);
+        } else {
+            const project = projects[0];
+            title = `Bonus Payouts for: ${project.name}`;
+            const result = Calculator.parseRawData(project.rawData, project.isIRProject, project.name, project.gsdValue);
+            techStats = result.techStats;
+        }
+
+        AppState.currentTechStats = techStats;
+        document.getElementById('results-title').textContent = title;
+        UI.applyFilters();
+        UI.setPanelHeights();
+        
+        // Save the results to IndexedDB for persistence
+        await DB.put('settings', {
+            id: 'lastCalculation',
+            techStats: techStats,
+            title: title,
+            bonusMultiplier: parseFloat(document.getElementById('bonusMultiplierDirect').value) || 1
+        });
+    },
+    async calculateCombinedStats(projectIds) {
+        let combinedStats = {};
+
+        for (const id of projectIds) {
+            const project = await this.fetchFullProjectData(id);
+            if (!project) continue;
+
+            const parsed = Calculator.parseRawData(project.rawData, project.isIRProject, project.name, project.gsdValue);
+            if (!parsed || Object.keys(parsed.techStats).length === 0) continue;
+
+            for (const [techId, stat] of Object.entries(parsed.techStats)) {
+                if (!combinedStats[techId]) {
+                    combinedStats[techId] = Calculator.createNewTechStat(true);
+                    combinedStats[techId].id = techId;
+                }
+                
+                // Aggregate Points Breakdown
+                Object.keys(stat.pointsBreakdown).forEach(k => combinedStats[techId].pointsBreakdown[k] += stat.pointsBreakdown[k]);
+
+                // Aggregate Simple Stats
+                ['points', 'fixTasks', 'afpTasks', 'i3qaTasks', 'qcTasks', 'rvTasks', 'refixTasks', 'qcPenalty'].forEach(k => combinedStats[techId][k] += stat[k]);
+
+                // Aggregate Arrays (Warnings, Fix4)
+                ['warnings', 'fix4'].forEach(k => combinedStats[techId][k].push(...stat[k]));
+
+                // Aggregate Category Counts
+                for (const cat in stat.categoryCounts) {
+                    for (const type in stat.categoryCounts[cat]) {
+                        if (stat.categoryCounts[cat][type] > 0) {
+                            if (!combinedStats[techId].categoryCounts[cat][type]) {
+                                combinedStats[techId].categoryCounts[cat][type] = 0;
+                            }
+                            combinedStats[techId].categoryCounts[cat][type] += stat.categoryCounts[cat][type];
+                        }
+                    }
+                }
+
+                // Aggregate by Project for Detailed Breakdown in Modal
+                if (!combinedStats[techId].pointsBreakdownByProject[project.name]) {
+                    combinedStats[techId].pointsBreakdownByProject[project.name] = { points: 0, fixTasks: 0, refixTasks: 0, warnings: 0 };
+                }
+                combinedStats[techId].pointsBreakdownByProject[project.name].points += stat.points;
+                combinedStats[techId].pointsBreakdownByProject[project.name].fixTasks += stat.fixTasks;
+                combinedStats[techId].pointsBreakdownByProject[project.name].refixTasks += stat.refixTasks;
+                combinedStats[techId].pointsBreakdownByProject[project.name].warnings += stat.warnings.length;
+            }
+        }
+        
+        return combinedStats;
+    },
+    async fetchFullProjectData(projectId) {
+        const project = await DB.get('projects', projectId);
+        if (project && !project.rawData) {
+            // Attempt to fetch from Firebase if available and rawData is missing (legacy projects)
+            if (AppState.firebase.tools) {
+                try {
+                    const { db, doc, getDoc } = AppState.firebase.tools;
+                    const docRef = doc(db, "projects", projectId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists() && docSnap.data().rawData) {
+                        project.rawData = docSnap.data().rawData;
+                        // Update IndexedDB with the fetched rawData
+                        await DB.put('projects', project);
+                    }
+                } catch (e) {
+                    console.warn(`Could not fetch full project data for ${projectId} from cloud.`, e);
+                }
+            }
+        }
+        return project;
+    },
+    async handleAdminLogin() {
+        if (!AppState.firebase.auth) {
+            UI.showNotification("Firebase not initialized. Cannot log in.", true);
+            return;
+        }
+        
+        try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            await AppState.firebase.auth.signInWithPopup(provider);
+            UI.showNotification("Signed in successfully.");
+            UI.closeModal('admin-portal-modal');
+
+        } catch (error) {
+            console.error("Admin login failed:", error);
+            UI.showNotification(`Admin login failed: ${error.message}`, true);
+        }
+    },
+    async handleAdminLogout() {
+        if (AppState.firebase.auth) {
+            await AppState.firebase.auth.signOut();
+            UI.showNotification("Signed out.");
+        }
+    },
+    async loadAdminProjectList() {
+        const projectListBody = document.getElementById('admin-project-list-body');
+        if (!projectListBody) return;
+        projectListBody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading...</td></tr>';
+        
+        if (!AppState.firebase.isAdmin) {
+             projectListBody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-400">Admin privileges required to view.</td></tr>';
+             return;
+        }
+
+        try {
+            const { db, collection, getDocs, query, orderBy } = AppState.firebase.tools;
+            const q = query(collection(db, "projects"), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+            projectListBody.innerHTML = '';
+
+            querySnapshot.docs.forEach((doc) => {
+                const project = doc.data();
+                project.id = doc.id;
+                const date = project.timestamp ? dayjs(project.timestamp.toDate()).format('YYYY-MM-DD') : 'N/A';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="p-2">${project.name}</td>
+                    <td class="p-2">${date}</td>
+                    <td class="p-2 text-center">${project.isIRProject ? 'Yes' : 'No'}</td>
+                    <td class="p-2 text-center">${project.isReleased ? 'Yes' : 'No'}</td>
+                    <td class="p-2 text-center flex gap-2 justify-center">
+                        <button class="control-btn-icon edit-cloud-project-btn" data-project-id="${project.id}" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.637a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
+                        <button class="control-btn-icon-danger delete-cloud-project-btn" data-project-id="${project.id}" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
+                    </td>
+                `;
+                projectListBody.appendChild(row);
+            });
+            
+            if (querySnapshot.empty) {
+                projectListBody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-brand-400">No projects found in cloud.</td></tr>';
+            }
+            
+            projectListBody.querySelectorAll('.edit-cloud-project-btn').forEach(btn => btn.addEventListener('click', (e) => this.loadAdminProjectToForm(e.currentTarget.dataset.projectId)));
+            projectListBody.querySelectorAll('.delete-cloud-project-btn').forEach(btn => btn.addEventListener('click', (e) => this.deleteAdminProject(e.currentTarget.dataset.projectId)));
+            
+        } catch (error) {
+            console.error("Error loading admin project list:", error);
+            projectListBody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-400">Error loading projects.</td></tr>';
+        }
+    },
+    async loadAdminProjectToForm(projectId) {
+        if (!AppState.firebase.isAdmin) return;
+        this.resetAdminProjectForm();
+        UI.showLoading(document.getElementById('admin-portal-modal').querySelector('.modal-content'));
+
+        try {
+            const { db, doc, getDoc } = AppState.firebase.tools;
+            const docRef = doc(db, "projects", projectId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const project = docSnap.data();
+                document.getElementById('admin-form-title').textContent = `Editing: ${project.name}`;
+                document.getElementById('admin-project-id').value = projectId;
+                document.getElementById('admin-project-name').value = project.name;
+                document.getElementById('admin-gsd-select').value = project.gsdValue;
+                document.getElementById('admin-is-ir-checkbox').checked = project.isIRProject;
+                document.getElementById('admin-is-released-checkbox').checked = project.isReleased || false;
+                
+                // Decompress and populate raw data
+                const binary_string = atob(project.rawData);
+                const len = binary_string.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binary_string.charCodeAt(i);
+                }
+                const decompressed = pako.inflate(bytes, { to: 'string' });
+                
+                document.getElementById('admin-project-data').value = decompressed;
+
+                document.getElementById('admin-project-tabs').classList.remove('hidden');
+                document.getElementById('admin-data-tab-btn').classList.add('active');
+                document.getElementById('tab-admin-data').classList.add('active');
+                
+                document.getElementById('admin-save-btn').textContent = 'Update Cloud Project';
+                document.getElementById('admin-delete-btn').classList.remove('hidden');
+
+            } else {
+                UI.showNotification("Project not found in cloud.", true);
+            }
+        } catch (error) {
+            console.error("Error loading project for admin edit:", error);
+            UI.showNotification(`Error loading project: ${error.message}`, true);
+        } finally {
+             UI.hideLoading(document.getElementById('admin-portal-modal').querySelector('.modal-content'));
+        }
+    },
+    async saveAdminProject(button) {
+        if (!AppState.firebase.isAdmin) return;
+        UI.showLoading(button);
+
+        const projectId = document.getElementById('admin-project-id').value.trim();
+        const name = document.getElementById('admin-project-name').value.trim();
+        const rawDataText = document.getElementById('admin-project-data').value.trim();
+        const isIRProject = document.getElementById('admin-is-ir-checkbox').checked;
+        const gsdValue = document.getElementById('admin-gsd-select').value;
+        const isReleased = document.getElementById('admin-is-released-checkbox').checked;
+
+        if (!name || !rawDataText) {
+            UI.showNotification("Project name and data are required.", true);
+            UI.hideLoading(button);
+            return;
+        }
+
+        try {
+            // Compress and Base64 encode the data
+            const compressed = pako.deflate(rawDataText, { to: 'string' });
+            const base64Data = btoa(compressed);
+            
+            const projectFields = {
+                name: name,
+                rawData: base64Data,
+                isIRProject: isIRProject,
+                gsdValue: gsdValue,
+                isReleased: isReleased,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const { db, collection, doc, updateDoc, addDoc } = AppState.firebase.tools;
+
+            if (projectId) {
+                await updateDoc(doc(db, "projects", projectId), projectFields);
+                UI.showNotification("Project updated successfully.");
+            } else {
+                // Add new project, default 'isReleased' to false
+                await addDoc(collection(db, "projects"), { ...projectFields, isReleased: false });
+                UI.showNotification("Project saved to the cloud.");
+            }
+            
+            this.resetAdminProjectForm();
+            this.loadAdminProjectList();
+        } catch (error) {
+             console.error("Error saving project to cloud:", error);
+             UI.showNotification("Error saving project.", true);
+        } finally {
+            UI.hideLoading(button);
+        }
+    },
+    async deleteAdminProject(projectId) {
+        if (!AppState.firebase.isAdmin) return;
+        if (confirm(`Are you sure you want to delete project ${projectId} from the cloud? This action cannot be undone.`)) {
+            try {
+                const { db, doc, deleteDoc } = AppState.firebase.tools;
+                await deleteDoc(doc(db, "projects", projectId));
+                UI.showNotification("Project deleted from cloud.");
+                this.loadAdminProjectList();
+                this.resetAdminProjectForm();
+            } catch (error) {
+                console.error("Error deleting project:", error);
+                UI.showNotification("Error deleting project.", true);
             }
         }
     },
-    async handleDroppedFiles(files) {
-        document.getElementById('project-select').value = '';
-        UI.resetUIForNewCalculation();
-        const fileGroups = {};
-        for (const file of files) {
-            const baseName = file.name.split('.')[0];
-            fileGroups[baseName] = fileGroups[baseName] || {};
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (['shp', 'dbf'].includes(ext)) fileGroups[baseName][ext] = file;
+    resetAdminProjectForm() {
+        document.getElementById('admin-form-title').textContent = 'Add New Project';
+        document.getElementById('admin-project-id').value = '';
+        document.getElementById('admin-project-name').value = '';
+        document.getElementById('admin-project-data').value = '';
+        document.getElementById('admin-is-ir-checkbox').checked = false;
+        document.getElementById('admin-is-released-checkbox').checked = false;
+        document.getElementById('admin-gsd-select').value = '3in';
+        document.getElementById('admin-save-btn').textContent = 'Save to Cloud';
+        document.getElementById('admin-delete-btn').classList.add('hidden');
+        document.getElementById('admin-project-tabs').classList.add('hidden');
+        // Reset tab view
+        document.querySelectorAll('#admin-project-tabs .tab-button, #admin-panel-view .admin-tab-content').forEach(el => el.classList.remove('active'));
+    },
+    async handleAdminDroppedFiles(files) {
+        if (!AppState.firebase.isAdmin) {
+             UI.showNotification("Admin privileges required for this action.", true);
+             return;
         }
+        
+        const fileGroups = {}; // key: filename without extension, value: { shp: file, dbf: file }
+
+        for (const file of files) {
+            const parts = file.name.split('.');
+            if (parts.length > 1) {
+                const ext = parts.pop().toLowerCase();
+                const name = parts.join('.');
+                if (ext === 'shp' || ext === 'dbf') {
+                    if (!fileGroups[name]) fileGroups[name] = {};
+                    fileGroups[name][ext] = file;
+                }
+            }
+        }
+        
         let allFeatures = [];
         let count = 0;
-        
-        // --- START BUG FIX: ADD TRY/CATCH & FEATURE CHECK ---
+
+        // --- BUG FIX: Iterate over values of fileGroups to ensure proper reading ---
         for (const group of Object.values(fileGroups)) {
             if (group.shp && group.dbf) {
                 try {
@@ -1037,6 +1717,7 @@ const Handlers = {
                         // Log a warning if a file was read but was empty
                         console.warn(`Shapefile pair for ${group.shp.name.split('.')[0]} was successfully parsed but contained no features.`);
                     }
+
                 } catch (e) {
                     // If parsing fails for one pair, show a notification but continue the loop
                     console.error("Error parsing shapefile pair:", e);
@@ -1045,68 +1726,18 @@ const Handlers = {
             }
         }
         // --- END BUG FIX ---
-        
+
         if (allFeatures.length > 0) {
             const allKeys = new Set();
             allFeatures.forEach(feature => {
                 if (feature.properties) {
                     Object.keys(feature.properties).forEach(key => allKeys.add(key));
                 }
-            });
-            const headers = Array.from(allKeys);
-            let tsv = headers.join('\t') + '\n';
-            allFeatures.forEach(feature => {
-                const row = headers.map(header => {
-                    return feature.properties ? (feature.properties[header] ?? '') : '';
-                });
-                tsv += row.join('\t') + '\n';
             });
 
-            document.getElementById('techData').value = tsv;
-            // FIX: Explicitly ensure the IR checkbox is unchecked after processing files
-            document.getElementById('is-ir-project-checkbox').checked = false; 
-            UI.showNotification(`${count} shapefile set(s) processed.`);
-        } else {
-           alert("No valid .shp/.dbf pairs found, or all valid files contained no data.");
-        }
-    },
-    async handleAdminDroppedFiles(files) {
-        const fileGroups = {};
-        for (const file of files) {
-            const baseName = file.name.split('.')[0];
-            fileGroups[baseName] = fileGroups[baseName] || {};
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (['shp', 'dbf'].includes(ext)) fileGroups[baseName][ext] = file;
-        }
-        let allFeatures = [];
-        let count = 0;
-        for (const group of Object.values(fileGroups)) {
-            if (group.shp && group.dbf) {
-                // --- START BUG FIX: ADD TRY/CATCH & FEATURE CHECK ---
-                try {
-                    const geojson = await shapefile.read(await group.shp.arrayBuffer(), await group.dbf.arrayBuffer());
-                    if (geojson && geojson.features && geojson.features.length > 0) { 
-                        allFeatures.push(...geojson.features); 
-                        count++; 
-                    } else if (geojson && geojson.features && geojson.features.length === 0) {
-                        console.warn(`Admin: Shapefile pair for ${group.shp.name.split('.')[0]} was successfully parsed but contained no features.`);
-                    }
-                } catch (e) {
-                    console.error("Admin: Error parsing shapefile pair:", e);
-                    UI.showNotification(`Admin: Error processing file pair ${group.shp.name.split('.')[0]}.`, true);
-                }
-                // --- END BUG FIX ---
-            }
-        }
-        if (allFeatures.length > 0) {
-            const allKeys = new Set();
-            allFeatures.forEach(feature => {
-                if (feature.properties) {
-                    Object.keys(feature.properties).forEach(key => allKeys.add(key));
-                }
-            });
             const headers = Array.from(allKeys);
             let tsv = headers.join('\t') + '\n';
+
             allFeatures.forEach(feature => {
                 const row = headers.map(header => {
                     return feature.properties ? (feature.properties[header] ?? '') : '';
@@ -1117,7 +1748,7 @@ const Handlers = {
             document.getElementById('admin-project-data').value = tsv;
             UI.showNotification(`${count} shapefile set(s) processed for admin upload.`);
         } else {
-           alert("No valid .shp/.dbf pairs found.");
+            alert("No valid .shp/.dbf pairs found.");
         }
     },
     async clearAllData() {
@@ -1144,93 +1775,120 @@ const Handlers = {
             await Promise.all([
                 DB.delete('bonusTiers', 'customTiers'),
                 DB.delete('calculationSettings', 'customSettings'),
-                DB.delete('countingSettings', 'customCounting')
+                DB.delete('countingSettings', 'customSettings')
             ]);
-
-            this.populateAdvanceSettingsEditor();
-            UI.showNotification("Settings have been reset to defaults locally.");
+            
+            UI.showNotification("Advanced settings reset to defaults.");
+            this.populateAdvanceSettingsEditor(); // Refresh the editor view
         }
     },
     startGuidedSetup() {
+        UI.closeModal('guided-setup-modal');
         AppState.guidedSetup.currentStep = 1;
-        this.updateGuidedSetupView();
-        
-        const teamContainer = document.getElementById('setup-team-list');
-        teamContainer.innerHTML = '';
-        Object.entries(AppState.teamSettings).forEach(([teamName, techIds]) => UI.addTeamCard(teamName, techIds, 'setup-team-list'));
-
-        UI.openModal('guided-setup-modal');
-    },
-    updateGuidedSetupView() {
-        const { currentStep, totalSteps } = AppState.guidedSetup;
-        const indicatorContainer = document.getElementById('setup-step-indicator');
-        indicatorContainer.innerHTML = '';
-        for (let i = 1; i <= totalSteps; i++) {
-            const item = document.createElement('div');
-            item.className = 'step-indicator-item';
-            if (i < currentStep) item.classList.add('completed');
-            if (i === currentStep) item.classList.add('active');
-            item.textContent = i;
-            indicatorContainer.appendChild(item);
-        }
-        
-        document.querySelectorAll('.setup-step').forEach(step => step.classList.remove('active'));
-        document.querySelector(`.setup-step[data-step="${currentStep}"]`).classList.add('active');
-
-        document.getElementById('setup-prev-btn').classList.toggle('hidden', currentStep === 1);
-        document.getElementById('setup-next-btn').classList.toggle('hidden', currentStep === totalSteps);
-        document.getElementById('setup-finish-btn').classList.toggle('hidden', currentStep !== totalSteps);
-
-        if (currentStep === 3) {
-            UI.closeModal('guided-setup-modal');
-            this.startInteractiveTour();
-        }
-    },
-    startInteractiveTour() {
-        AppState.guidedSetup.tourElements = [
-            { id: 'drop-zone', text: 'First, paste your raw data here, or drag and drop your shapefiles onto this area.' },
-            { id: 'bonusMultiplierDirect', text: 'Next, enter the bonus multiplier for this calculation.' },
-            { id: 'calculate-btn', text: 'Finally, click here to calculate the bonus payouts. The results will appear at the bottom of the page.' }
-        ];
         AppState.guidedSetup.tourStep = 0;
+        
+        // Define tour elements dynamically
+        AppState.guidedSetup.tourElements = [
+            { id: 'data-projects-panel', text: 'This is where you load, save, and manage project data. You can paste TSV data or select a saved project.' },
+            { id: 'project-select-group', text: 'Select an existing project from this dropdown or manage them in the Admin Portal.' },
+            { id: 'project-data', text: 'Paste your TSV data here or use the "Load from File" button to upload a file.' },
+            { id: 'run-calculation-btn', text: 'Click this button to process the data and display the results.' },
+            { id: 'team-filter-container', text: 'Filter the results by your defined teams. You can manage teams via the main menu.' },
+            { id: 'tech-search-input', text: 'Search and filter results by Tech ID.' },
+            { id: 'leaderboard-panel', text: 'The leaderboard shows a summary of top performers based on your selected metric.' },
+            { id: 'tl-summary-card', text: 'The TL Summary card displays a quick view of team quality and Fix4 breakdown (if applicable).' },
+            { id: 'quick-summary-section', text: 'The Quick Summary shows the overall results, including total payout, quality, and category counts.' },
+            { id: 'main-menu-btn', text: 'Use the main menu to manage teams, adjust advanced settings, or reset all data.' }
+        ];
+
         this.runTourStep();
     },
     runTourStep() {
         const { tourStep, tourElements } = AppState.guidedSetup;
         this.clearSpotlight();
+
         if (tourStep >= tourElements.length) {
             AppState.guidedSetup.currentStep = 4;
             this.updateGuidedSetupView();
             UI.openModal('guided-setup-modal');
             return;
         }
+
         const { id, text } = tourElements[tourStep];
         const element = document.getElementById(id);
-        this.spotlightElement(element, text);
+        
+        if (element) {
+            this.spotlightElement(element, text);
+        } else {
+            // Skip step if element is not found
+            AppState.guidedSetup.tourStep++;
+            this.runTourStep();
+        }
     },
     spotlightElement(element, text) {
         const overlay = document.getElementById('spotlight-overlay');
         overlay.classList.remove('hidden');
-        element.classList.add('spotlight');
+        
+        // Remove spotlight from previous element
+        document.querySelector('.spotlight')?.classList.remove('spotlight');
 
-        const tooltip = document.createElement('div');
-        tooltip.id = 'spotlight-tooltip';
-        tooltip.className = 'spotlight-tooltip bottom';
+        // Add spotlight to current element
+        element.classList.add('spotlight');
+        
+        // Create and position tooltip
+        let tooltip = document.getElementById('spotlight-tooltip');
+        if (!tooltip) {
+            tooltip = document.createElement('div');
+            tooltip.id = 'spotlight-tooltip';
+            document.body.appendChild(tooltip);
+        }
+
+        tooltip.className = 'spotlight-tooltip';
         tooltip.innerHTML = `${text}<div class="flex justify-end mt-4 gap-2"><button id="tour-next-btn" class="btn-primary">Next</button></div>`;
-        
-        document.body.appendChild(tooltip);
-        
+
         const rect = element.getBoundingClientRect();
-        tooltip.style.left = `${rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2)}px`;
-        tooltip.style.top = `${rect.bottom + 10}px`;
         
+        // Determine placement (default to bottom, check if enough space at the top)
+        const tooltipHeightEstimate = 150; // Estimate height based on typical content
+        let placement = 'bottom';
+        if (rect.top > tooltipHeightEstimate + 20) { // Check if there's enough room above
+            placement = 'top';
+        }
+
+        tooltip.classList.add(placement);
+        
+        // Reposition tooltip in a microtask to allow it to calculate its correct dimensions
+        requestAnimationFrame(() => {
+            const tooltipRect = tooltip.getBoundingClientRect();
+            let top, left;
+            
+            if (placement === 'bottom') {
+                top = rect.bottom + 10;
+                left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+            } else { // top
+                top = rect.top - tooltipRect.height - 10;
+                left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+            }
+
+            // Keep tooltip within bounds (simple x-axis correction)
+            if (left < 10) {
+                left = 10;
+            } else if (left + tooltipRect.width > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipRect.width - 10;
+            }
+
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+        });
+        
+
         document.getElementById('tour-next-btn').onclick = () => {
             AppState.guidedSetup.tourStep++;
             this.runTourStep();
         };
     },
     clearSpotlight() {
-        document.getElementById('spotlight-overlay').classList.add('hidden');
+        document.getElementById('spotlight-overlay')?.classList.add('hidden');
         document.querySelector('.spotlight')?.classList.remove('spotlight');
         document.getElementById('spotlight-tooltip')?.remove();
     },
@@ -1238,69 +1896,92 @@ const Handlers = {
         await this.saveTeamSettings('setup-team-list');
         await DB.put('settings', { id: 'hasBeenSetup', value: true });
         UI.closeModal('guided-setup-modal');
-        UI.showNotification("Setup complete. Welcome!");
+        UI.showNotification("Setup complete. Welcome to the Advanced Bonus Calculator!");
     },
-    async loadAdminProjectList() {
-        const { db, collection, getDocs, query, orderBy } = AppState.firebase.tools;
-        const tbody = document.getElementById('admin-project-list-tbody');
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading projects...</td></tr>';
+    bindEventListeners() {
+        const listen = (id, event, handler) => {
+            document.getElementById(id)?.addEventListener(event, handler);
+        };
         
-        try {
-            const q = query(collection(db, "projects"), orderBy("projectOrder", "desc"));
-            const querySnapshot = await getDocs(q);
+        window.addEventListener('resize', UI.setPanelHeights);
+        
+        // Main Listeners
+        listen('project-select', 'change', e => {
+            const projectId = e.target.value;
+            this.loadProjectIntoForm(projectId);
+            UI.resetUIForNewCalculation();
+        });
+        listen('run-calculation-btn', 'click', e => this.handleRunCalculation(e.target));
+        listen('save-project-btn', 'click', async e => {
+            UI.showLoading(e.target);
+            const name = document.getElementById('project-name').value.trim();
+            const rawDataText = document.getElementById('project-data').value.trim();
+            const projectId = document.getElementById('project-select').value.trim() || `local-${Date.now()}`;
+            const gsdValue = document.getElementById('gsd-value-select').value;
             
-            if (querySnapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">No cloud projects found.</td></tr>';
+            if (!name || !rawDataText) {
+                UI.showNotification("Project name and data are required to save.", true);
+                UI.hideLoading(e.target);
                 return;
             }
 
-            let projectsHTML = '';
-            querySnapshot.forEach(doc => {
-                const project = { id: doc.id, ...doc.data() };
+            // Compress and Base64 encode the data
+            const compressed = pako.deflate(rawDataText, { to: 'string' });
+            const base64Data = btoa(compressed);
 
-                // --- NEW RELEASE STATUS LOGIC ---
-                const isReleased = project.isReleased || false;
-                const releaseText = isReleased ? 'Released' : 'Draft'; 
-                const releaseClass = isReleased ? 'bg-status-green hover:bg-status-green/80' : 'bg-status-orange hover:bg-status-orange/80';
-                // --------------------------------
+            const projectData = {
+                id: projectId,
+                name: name,
+                rawData: base64Data,
+                isIRProject: document.getElementById('is-ir-project-checkbox').checked,
+                gsdValue: gsdValue
+            };
 
-                projectsHTML += `
-                    <tr data-project-id="${project.id}">
-                        <td class="p-2">${project.name}</td>
-                        <td class="p-2">${project.gsdValue}</td>
-                        <td class="p-2 text-center">${project.isIRProject ? 'Yes' : 'No'}</td>
-                        <td class="p-2 text-center">
-                            <button class="admin-release-project-btn btn-primary text-xs py-1 px-2 ${releaseClass}" data-project-id="${project.id}" data-is-released="${isReleased}">${releaseText}</button>
-                        </td>
-                        <td class="p-2 text-center">
-                            <button class="admin-edit-project-btn btn-secondary text-xs py-1 px-2" data-project-id="${project.id}">Edit</button>
-                            <button class="admin-delete-project-btn btn-primary bg-red-600 hover:bg-red-700 text-xs py-1 px-2" data-project-id="${project.id}">Delete</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = projectsHTML;
+            await this.saveProjectToIndexedDB(projectData);
+            await this.fetchProjectListSummary(); // Refresh the dropdown
+            document.getElementById('project-select').value = projectData.id;
+            await this.loadProjectIntoForm(projectData.id); // Reload the form to update state (e.g., button text)
+            UI.hideLoading(e.target);
+        });
+        listen('delete-project-btn', 'click', () => {
+            const projectId = document.getElementById('project-select').value;
+            if (projectId) this.deleteProjectFromIndexedDB(projectId);
+        });
+        listen('load-file-btn', 'change', e => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = event => {
+                    const content = event.target.result;
+                    document.getElementById('project-data').value = content;
+                    document.getElementById('project-name').value = file.name.replace(/\.[^/.]+$/, ""); // Name without extension
+                    document.getElementById('run-calculation-btn').disabled = false;
+                    
+                    // Forcefully remove the selected project context if it exists
+                    const projectSelect = document.getElementById('project-select');
+                    if (projectSelect.value !== '') {
+                        projectSelect.value = '';
+                        projectSelect.selectedIndex = 0; // Explicitly reset selected index
+                        this.loadProjectIntoForm(""); // Resets to a blank form, enabling text areas
+                    }
+                    
+                    // Explicitly set IR checkbox to unchecked and enabled for pasted data
+                    document.getElementById('is-ir-project-checkbox').checked = false;
+                    document.getElementById('is-ir-project-checkbox').disabled = false;
+                    document.getElementById('project-name').value = file.name.replace(/\.[^/.]+$/, ""); // Clear project name on paste
 
-        } catch (error) {
-            console.error("Error loading admin project list:", error);
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Error loading projects.</td></tr>';
-        }
-    },
-    resetAdminProjectForm() {
-        document.getElementById('admin-form-title').textContent = 'Add New Project';
-        document.getElementById('admin-project-id').value = '';
-        document.getElementById('admin-project-name').value = '';
-        document.getElementById('admin-project-data').value = '';
-        document.getElementById('admin-gsd-select').value = '3in';
-        document.getElementById('admin-is-ir-checkbox').checked = false;
-        document.getElementById('admin-save-project-btn').textContent = 'Save Project';
-        document.getElementById('admin-cancel-edit-btn').classList.add('hidden');
-    },
-    setupEventListeners() {
-        const listen = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
-        
-        // --- FIX FOR IR PROJECT CHECKBOX BUG: Clear Project Context and IR Checkbox on manual input ---
-        listen('techData', 'input', () => {
+                    e.target.value = ''; // Clear file input
+                };
+                reader.readAsText(file);
+            }
+        });
+        listen('project-data', 'input', () => {
+             const data = document.getElementById('project-data').value.trim();
+             document.getElementById('run-calculation-btn').disabled = !data;
+        });
+
+        // --- FIX: Add listener to reset form state when pasting data into the textarea ---
+        listen('project-data', 'paste', () => {
             const projectSelect = document.getElementById('project-select');
             // Forcefully remove the selected project context if it exists
             if (projectSelect.value !== '') {
@@ -1309,370 +1990,313 @@ const Handlers = {
                 this.loadProjectIntoForm(""); // Resets to a blank form, enabling text areas
             }
             // Explicitly set IR checkbox to unchecked and enabled for pasted data
-            document.getElementById('is-ir-project-checkbox').checked = false; 
+            document.getElementById('is-ir-project-checkbox').checked = false;
             document.getElementById('is-ir-project-checkbox').disabled = false;
             document.getElementById('project-name').value = ''; // Clear project name on paste
         });
         // --- END FIX ---
-        
+
         listen('admin-portal-btn', 'click', () => UI.openModal('admin-portal-modal'));
         listen('guided-setup-btn', 'click', this.startGuidedSetup.bind(this));
-        listen('manage-teams-btn', 'click', () => { UI.populateAdminTeamManagement(); UI.openModal('manage-teams-modal'); });
-        listen('advance-settings-btn', 'click', () => { this.populateAdvanceSettingsEditor(); UI.openModal('advance-settings-modal'); });
-        listen('toggle-theme-btn', 'click', () => { document.body.classList.toggle('light-theme'); localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark'); });
+        listen('manage-teams-btn', 'click', () => {
+            UI.populateAdminTeamManagement();
+            UI.openModal('manage-teams-modal');
+        });
+        listen('advance-settings-btn', 'click', () => {
+            this.populateAdvanceSettingsEditor();
+            UI.openModal('advance-settings-modal');
+        });
+        listen('toggle-theme-btn', 'click', () => {
+            document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        });
         listen('save-advance-settings-btn', 'click', this.saveAdvanceSettings);
         listen('important-info-btn', 'click', () => UI.openModal('important-info-modal'));
         
         // --- REPORT A BUG FIX: Using window.open for Gmail URL ---
-        const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=ev.lorens.ebrado@gmail.com&su=PCS%20Bonus%20Calculator%20Bug%20Report';
-        listen('bug-report-btn', 'click', () => window.open(gmailUrl, '_blank'));
-        // --------------------------------------------------------
+        const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=ev.lorens.ebrado@gmail.com&su=BUG%20REPORT%20-%20PCS%20Bonus%20Calculator&body=Please%20describe%20the%20bug%20you%20encountered%20in%20detail:%0A%0A%5BDescription%5D%0A%0A%5BSteps%20to%20Reproduce%5D%0A1.%0A2.%0A3.%0A%0A%5BScreenshot%20or%20Error%20Message%5D%0A';
+        listen('report-bug-btn', 'click', () => window.open(gmailUrl, '_blank'));
+        // --- END REPORT A BUG FIX ---
         
         listen('clear-data-btn', 'click', this.clearAllData);
+        listen('reset-advance-settings-btn', 'click', this.resetAdvanceSettingsToDefaults.bind(this));
 
-        listen('setup-next-btn', 'click', () => { AppState.guidedSetup.currentStep++; this.updateGuidedSetupView(); });
-        listen('setup-prev-btn', 'click', () => { AppState.guidedSetup.currentStep--; this.updateGuidedSetupView(); });
-        listen('setup-finish-btn', 'click', this.finishGuidedSetup.bind(this));
-        listen('setup-add-team-btn', 'click', () => UI.addTeamCard('', [], 'setup-team-list'));
-        
-        document.body.addEventListener('click', e => {
-            const techIcon = e.target.closest('.tech-summary-icon');
-            if (techIcon) UI.openTechSummaryModal(techIcon.dataset.techId);
-            const teamLabel = e.target.closest('.team-summary-trigger');
-            if (teamLabel) UI.openTeamSummaryModal(teamLabel.dataset.teamName);
-            const sortHeader = e.target.closest('.sortable-header');
-            if (sortHeader) {
-                const column = sortHeader.dataset.sort;
-                AppState.currentSort.direction = AppState.currentSort.column === column && AppState.currentSort.direction === 'desc' ? 'asc' : 'desc';
-                AppState.currentSort.column = column;
-                UI.applyFilters();
-            }
-        });
-        
-        document.body.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'reset-defaults-btn') {
-                this.resetAdvanceSettingsToDefaults();
-            }
-        });
-
-        listen('refresh-projects-btn', 'click', this.fetchProjectListSummary);
-        listen('project-select', 'change', e => this.loadProjectIntoForm(e.target.value));
-        listen('delete-project-btn', 'click', () => { const id = document.getElementById('project-select').value; if(id) this.deleteProjectFromIndexedDB(id); });
-        listen('edit-data-btn', 'click', () => {
-            ['techData', 'project-name', 'is-ir-project-checkbox', 'gsd-value-select'].forEach(id => document.getElementById(id).disabled = false);
-            document.getElementById('techData').readOnly = false; document.getElementById('project-name').readOnly = false;
-            document.getElementById('edit-data-btn').classList.add('hidden');
-            document.getElementById('save-project-btn').disabled = false;
-            document.getElementById('cancel-edit-btn').classList.remove('hidden');
-        });
-        listen('cancel-edit-btn', 'click', () => this.loadProjectIntoForm(document.getElementById('project-select').value));
-        listen('save-project-btn', 'click', async e => {
-            const button = e.target;
-            UI.showLoading(button);
-            const name = document.getElementById('project-name').value.trim();
-            const data = document.getElementById('techData').value.trim();
-            if (!name || !data) {
-                alert("Project Name and Data are required.");
-                UI.hideLoading(button);
-                return;
-            }
-            const existingId = document.getElementById('project-select').value;
-            const projectId = existingId ? existingId : `${name.replace(/\W/g, '_').toLowerCase()}_${Date.now()}`;
+        // Combined Project Listeners
+        listen('combined-projects-checkbox', 'change', e => {
+            document.getElementById('combined-projects-list-container').classList.toggle('hidden', !e.target.checked);
+            document.getElementById('single-project-inputs').classList.toggle('hidden', e.target.checked);
             
-            const compressed = pako.deflate(new TextEncoder().encode(data));
-            let binary = '';
-            const len = compressed.byteLength;
-            for (let i = 0; i < len; i++) {
-                binary += String.fromCharCode(compressed[i]);
+            // Re-populate the list whenever the checkbox is toggled
+            if (e.target.checked) {
+                this.populateCombinedProjectList();
             }
-            const base64Data = btoa(binary);
+        });
 
-            const projectData = { id: projectId, name: name, rawData: base64Data, isIRProject: document.getElementById('is-ir-project-checkbox').checked, gsdValue: document.getElementById('gsd-value-select').value };
-            await this.saveProjectToIndexedDB(projectData);
-            await this.fetchProjectListSummary();
-            document.getElementById('project-select').value = projectData.id;
-            await this.loadProjectIntoForm(projectData.id);
-            UI.hideLoading(button);
-        });
-        const runCalculation = async (isCombined, projectIds) => {
-            let combinedStats = {};
-            if (isCombined) {
-                for (const id of projectIds) {
-                    const project = await this.fetchFullProjectData(id);
-                    if (!project) continue;
-                    const parsed = Calculator.parseRawData(project.rawData, project.isIRProject, project.name, project.gsdValue);
-                    if (!parsed) continue;
-                    for (const [techId, stat] of Object.entries(parsed.techStats)) {
-                        if (!combinedStats[techId]) combinedStats[techId] = Calculator.createNewTechStat(true);
-                        combinedStats[techId].id = techId;
-                        Object.keys(stat.pointsBreakdown).forEach(k => combinedStats[techId].pointsBreakdown[k] += stat.pointsBreakdown[k]);
-                        ['points', 'fixTasks', 'afpTasks', 'refixTasks'].forEach(k => combinedStats[techId][k] += stat[k]);
-                        ['warnings', 'fix4'].forEach(k => combinedStats[techId][k].push(...stat[k]));
-                        if (!combinedStats[techId].pointsBreakdownByProject[project.name]) combinedStats[techId].pointsBreakdownByProject[project.name] = { points: 0, fixTasks: 0, refixTasks: 0, warnings: 0 };
-                        const projBreakdown = combinedStats[techId].pointsBreakdownByProject[project.name];
-                        projBreakdown.points += stat.points; projBreakdown.fixTasks += stat.fixTasks; projBreakdown.refixTasks += stat.refixTasks; projBreakdown.warnings += stat.warnings.length;
-                    }
-                }
-            } else {
-                const project = projectIds.length > 0 ? await this.fetchFullProjectData(projectIds[0]) : null;
-                const data = project ? project.rawData : document.getElementById('techData').value.trim();
-                const name = project ? project.name : 'Pasted Data';
-                const isIR = project ? project.isIRProject : document.getElementById('is-ir-project-checkbox').checked;
-                const gsd = project ? project.gsdValue : document.getElementById('gsd-value-select').value;
-                if (!data) return alert("No data to calculate.");
-                AppState.lastUsedGsdValue = gsd;
-                const parsed = Calculator.parseRawData(data, isIR, name, gsd);
-                if (parsed) combinedStats = parsed.techStats;
+        // Event delegation for dynamically created elements
+        document.addEventListener('click', e => {
+            if (e.target.closest('.tech-summary-icon')) {
+                UI.openTechSummaryModal(e.target.closest('.tech-summary-icon').dataset.techId);
+            } else if (e.target.closest('.team-summary-trigger')) {
+                UI.openTeamSummaryModal(e.target.closest('.team-summary-trigger').dataset.teamName);
             }
-            AppState.currentTechStats = combinedStats;
-            UI.applyFilters();
-            let title = 'Bonus Payouts for: ';
-            if (isCombined) title += projectIds.length > 1 ? 'All Projects / Specific' : (await this.fetchFullProjectData(projectIds[0]))?.name || '...';
-            else title += projectIds.length > 0 ? (await this.fetchFullProjectData(projectIds[0]))?.name : 'Pasted Data';
-            document.getElementById('results-title').textContent = title;
-        };
-        listen('calculate-btn', 'click', async e => {
-            const button = e.target; UI.showLoading(button);
-            const projectId = document.getElementById('project-select').value;
-            await runCalculation(false, projectId ? [projectId] : []);
-            UI.hideLoading(button);
         });
-        listen('calculate-all-btn', 'click', async e => {
-            const button = e.target; UI.showLoading(button);
-            const selectEl = document.getElementById('project-select');
-            const isCustom = document.getElementById('customize-calc-all-cb').checked;
-            const allProjectIds = (await DB.getAll('projects')).map(p => p.id);
-            const selectedIds = Array.from(selectEl.selectedOptions).map(opt => opt.value);
-            const idsToRun = isCustom ? selectedIds : allProjectIds;
-            if (isCustom && idsToRun.length === 0) alert("Select projects from the list to calculate.");
-            else if (idsToRun.length > 0) await runCalculation(true, idsToRun);
-            UI.hideLoading(button);
+        
+        // Guided Setup Listeners
+        listen('guided-setup-next-btn-1', 'click', () => { AppState.guidedSetup.currentStep = 2; UI.updateGuidedSetupView(); });
+        listen('guided-setup-next-btn-2', 'click', () => { AppState.guidedSetup.currentStep = 3; UI.updateGuidedSetupView(); });
+        listen('guided-setup-start-tour-btn', 'click', this.startGuidedSetup.bind(this));
+        listen('guided-setup-finish-btn', 'click', this.finishGuidedSetup.bind(this));
+        listen('guided-setup-finish-tour-btn', 'click', () => { AppState.guidedSetup.currentStep = 4; UI.updateGuidedSetupView(); });
+        
+        // Chatbot Listeners
+        listen('chatbot-bubble', 'click', () => {
+             const windowEl = document.getElementById('chatbot-window');
+             windowEl.classList.toggle('visible');
+             localStorage.setItem('chatbotVisible', windowEl.classList.contains('visible'));
         });
-        listen('customize-calc-all-cb', 'change', e => {
-            const selectEl = document.getElementById('project-select');
-            const isChecked = e.target.checked;
-            selectEl.multiple = isChecked; selectEl.size = isChecked ? 6 : 1;
-            document.getElementById('calculate-btn').disabled = isChecked;
+        listen('chatbot-close-btn', 'click', () => {
+             document.getElementById('chatbot-window').classList.remove('visible');
+             localStorage.setItem('chatbotVisible', 'false');
         });
-        listen('search-tech-id', 'input', UI.applyFilters.bind(UI));
+        listen('chatbot-send-btn', 'click', this.handleChatbotSend.bind(this));
+        listen('chatbot-input', 'keydown', e => {
+            if (e.key === 'Enter') this.handleChatbotSend();
+        });
+        document.addEventListener('click', e => {
+             if (e.target.closest('.suggestion-btn')) {
+                 this.handleChatbotSend(e.target.closest('.suggestion-btn').textContent.trim());
+             }
+        });
+        listen('accept-update-btn', 'click', async () => {
+             await this.resetAdvanceSettingsToDefaults(); // Reset to defaults as per instructions
+             const { db, collection, query, orderBy, limit, getDocs } = AppState.firebase.tools;
+             const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"), limit(1));
+             const snapshot = await getDocs(q);
+             if (!snapshot.empty) {
+                 localStorage.setItem('acceptedUpdateId', snapshot.docs[0].id);
+                 document.getElementById('user-update-banner').classList.add('hidden');
+                 window.location.reload(); // Force refresh to apply new defaults
+             }
+        });
+
+        // Filters and Sorting
+        listen('tech-search-input', 'input', UI.applyFilters.bind(UI));
         listen('team-filter-container', 'change', UI.applyFilters.bind(UI));
         listen('refresh-teams-btn', 'click', this.loadTeamSettings);
         listen('leaderboard-sort-select', 'change', () => UI.applyFilters());
+        
+        // Team Management Listeners
         listen('add-team-btn', 'click', () => UI.addTeamCard());
         listen('save-teams-btn', 'click', () => this.saveTeamSettings());
-        
+
         // Admin Portal Listeners
         listen('admin-google-signin-btn', 'click', this.handleAdminLogin.bind(this));
+        listen('admin-logout-btn', 'click', this.handleAdminLogout.bind(this));
+        listen('admin-save-btn', 'click', e => this.saveAdminProject(e.target));
+        listen('admin-new-project-btn', 'click', this.resetAdminProjectForm);
+        listen('admin-delete-btn', 'click', e => this.deleteAdminProject(document.getElementById('admin-project-id').value));
+        listen('admin-upload-config-btn', 'click', () => UI.openModal('admin-config-upload-modal'));
+        listen('admin-save-config-btn', 'click', this.saveAdminConfig.bind(this));
+        
         document.querySelectorAll('#admin-panel-view .tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 document.querySelectorAll('#admin-panel-view .tab-button, .admin-tab-content').forEach(el => el.classList.remove('active'));
                 button.classList.add('active');
                 document.getElementById(`tab-${button.dataset.tab}`).classList.add('active');
+                
                 if(button.dataset.tab === 'admin-visitors') this.loadVisitorLog();
                 if(button.dataset.tab === 'admin-projects') this.loadAdminProjectList();
             });
         });
 
-        listen('accept-update-btn', 'click', async () => {
-            await this.resetAdvanceSettingsToDefaults();
-            const { db, collection, query, orderBy, limit, getDocs } = AppState.firebase.tools;
-            const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"), limit(1));
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                const latestUpdateId = snapshot.docs[0].id;
-                localStorage.setItem('acceptedUpdateId', latestUpdateId);
-            }
-            document.getElementById('user-update-banner').classList.add('hidden');
-            window.location.reload();
-        });
-        
-        listen('admin-send-update-btn', 'click', async () => {
-            const message = document.getElementById('admin-update-text').value.trim();
-            if (message && AppState.firebase.isAdmin) {
-                try {
-                    const { db, collection, addDoc } = AppState.firebase.tools;
-                    await addDoc(collection(db, "notifications"), { message, timestamp: new Date() });
-                    UI.showNotification("Update notification sent to all users.");
-                    document.getElementById('admin-update-text').value = '';
-                } catch (error) {
-                    console.error("Error sending notification:", error);
-                    UI.showNotification("Error sending notification.", true);
-                }
-            }
-        });
-
-        listen('update-online-btn', 'click', async (e) => {
-            const button = e.currentTarget;
-            const icon = document.getElementById('update-online-icon');
-            icon.classList.add('spinning');
-            button.disabled = true;
-
-            try {
-                // Ensure 'where' is available from firebaseTools
-                const { db, collection, getDocs, query, where } = AppState.firebase.tools;
-
-                const lastSync = localStorage.getItem('lastProjectSync');
-                const lastSyncTime = lastSync ? parseInt(lastSync, 10) : 0;
-        
-                // Fetch projects that are RELEASED AND have been modified since last sync
-                const q = query(
-                    collection(db, "projects"), 
-                    where("isReleased", "==", true), // <-- Only sync released projects
-                    where("lastModified", ">", lastSyncTime)
-                );
-                
-                const querySnapshot = await getDocs(q);
-
-                if (querySnapshot.empty) {
-                    // FIX: Change message to be more accurate when no new released projects are found.
-                    UI.showNotification("No new project updates found.");
-                    // Still update the timestamp to now even if no new projects
-                    localStorage.setItem('lastProjectSync', Date.now().toString());
-                    return;
-                }
-
-                let successCount = 0;
-                for (const doc of querySnapshot.docs) {
-                    await this.saveProjectToIndexedDB({ id: doc.id, ...doc.data() });
-                    successCount++;
-                }
-
-                if (successCount > 0) {
-                    await this.fetchProjectListSummary();
-                    UI.showNotification(`${successCount} project(s) synced from the cloud.`);
-                }
-                
-                localStorage.setItem('lastProjectSync', Date.now().toString());
-
-            } catch (error) {
-                console.error("Error updating online projects:", error);
-                UI.showNotification("Failed to sync online projects.", true);
-            } finally {
-                icon.classList.remove('spinning');
-                button.disabled = false;
-            }
-        });
-
-        listen('admin-cancel-edit-btn', 'click', this.resetAdminProjectForm);
-        
-        document.getElementById('admin-project-list-tbody').addEventListener('click', async (e) => {
-            const editTarget = e.target.closest('.admin-edit-project-btn');
-            if (editTarget) {
-                const projectId = editTarget.dataset.projectId;
-                const { db, doc, getDoc } = AppState.firebase.tools;
-                const docRef = doc(db, "projects", projectId);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const project = docSnap.data();
-                    document.getElementById('admin-form-title').textContent = `Editing: ${project.name}`;
-                    document.getElementById('admin-project-id').value = projectId;
-                    document.getElementById('admin-project-name').value = project.name;
-                    document.getElementById('admin-gsd-select').value = project.gsdValue;
-                    document.getElementById('admin-is-ir-checkbox').checked = project.isIRProject;
-                    
-                    const binary_string = atob(project.rawData);
-                    const len = binary_string.length;
-                    const bytes = new Uint8Array(len);
-                    for (let i = 0; i < len; i++) {
-                        bytes[i] = binary_string.charCodeAt(i);
-                    }
-                    const decompressedData = pako.inflate(bytes, { to: 'string' });
-                    document.getElementById('admin-project-data').value = decompressedData;
-
-                    document.getElementById('admin-save-project-btn').textContent = 'Update Project';
-                    document.getElementById('admin-cancel-edit-btn').classList.remove('hidden');
-                }
-            }
-
-            const deleteTarget = e.target.closest('.admin-delete-project-btn');
-            if (deleteTarget) {
-                const projectId = deleteTarget.dataset.projectId;
-                if (confirm("Are you sure you want to delete this project from the cloud? This cannot be undone.")) {
-                    const { db, doc, deleteDoc } = AppState.firebase.tools;
-                    await deleteDoc(doc(db, "projects", projectId));
-                    UI.showNotification("Project deleted from cloud.");
-                    this.loadAdminProjectList();
-                }
-            }
-            
-            // --- NEW: Release Button Handler ---
-            const releaseTarget = e.target.closest('.admin-release-project-btn');
-            if (releaseTarget) {
-                const projectId = releaseTarget.dataset.projectId;
-                const currentStatus = releaseTarget.dataset.isReleased === 'true';
-                const newStatus = !currentStatus;
-                
-                if (confirm(`Are you sure you want to change the release status of project ${projectId} to ${newStatus ? 'RELEASED' : 'DRAFT'}? This will affect its availability for client sync.`)) {
-                    const { db, doc, setDoc } = AppState.firebase.tools;
-                    await setDoc(doc(db, "projects", projectId), { isReleased: newStatus, lastModified: Date.now() }, { merge: true });
-                    UI.showNotification(`Project status updated to ${newStatus ? 'RELEASED' : 'DRAFT'}.`);
-                    this.loadAdminProjectList(); // Refresh the list to update button state
-                }
-            }
-        });
-
-        listen('admin-save-project-btn', 'click', async (e) => {
-            const button = e.target;
-            UI.showLoading(button);
-            const name = document.getElementById('admin-project-name').value.trim();
-            const data = document.getElementById('admin-project-data').value.trim();
-            const existingId = document.getElementById('admin-project-id').value;
-
-            if (!name || !data) {
-                alert("Project Name and Data are required.");
-                UI.hideLoading(button);
-                return;
-            }
-
-            const compressed = pako.deflate(new TextEncoder().encode(data));
-            let binary = '';
-            const len = compressed.byteLength;
-            for (let i = 0; i < len; i++) {
-                binary += String.fromCharCode(compressed[i]);
-            }
-            const base64Data = btoa(binary);
-
-            // Base fields for both new and existing projects
-            const projectFields = { 
-                name, rawData: base64Data,
-                isIRProject: document.getElementById('admin-is-ir-checkbox').checked,
-                gsdValue: document.getElementById('admin-gsd-select').value,
-                projectOrder: Date.now(),
-                lastModified: Date.now()
-            };
-
-            try {
-                const { db, collection, addDoc, doc, setDoc } = AppState.firebase.tools;
-                if (existingId) {
-                    // Update existing project, preserving 'isReleased' status via merge
-                    await setDoc(doc(db, "projects", existingId), projectFields, { merge: true });
-                    UI.showNotification("Project updated successfully.");
-                } else {
-                    // Add new project, default 'isReleased' to false
-                    await addDoc(collection(db, "projects"), { ...projectFields, isReleased: false });
-                    UI.showNotification("Project saved to the cloud.");
-                }
-                this.resetAdminProjectForm();
-                this.loadAdminProjectList();
-            } catch (error) {
-                 console.error("Error saving project to cloud:", error);
-                 UI.showNotification("Error saving project.", true);
-            } finally {
-                UI.hideLoading(button);
-            }
-        });
-        
-        // Main Drop Zone
-        listen('drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.add('bg-brand-700'); });
-        listen('drop-zone', 'dragleave', e => e.target.closest('#drop-zone').classList.remove('bg-brand-700'));
-        listen('drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#drop-zone').classList.remove('bg-brand-700'); this.handleDroppedFiles(e.dataTransfer.files); });
-
         // Admin Portal Drop Zone
         listen('admin-drop-zone', 'dragover', e => { e.preventDefault(); e.target.closest('#admin-drop-zone').classList.add('bg-brand-700'); });
         listen('admin-drop-zone', 'dragleave', e => e.target.closest('#admin-drop-zone').classList.remove('bg-brand-700'));
         listen('admin-drop-zone', 'drop', e => { e.preventDefault(); e.target.closest('#admin-drop-zone').classList.remove('bg-brand-700'); this.handleAdminDroppedFiles(e.dataTransfer.files); });
+    },
+    async populateCombinedProjectList() {
+        const container = document.getElementById('combined-project-list');
+        const projects = await this.fetchProjectListSummary(); // Use existing function to get list
+        container.innerHTML = '';
+
+        if (projects.length === 0) {
+            container.innerHTML = '<p class="text-brand-400 text-sm p-2">No saved projects found to combine.</p>';
+            document.getElementById('combined-projects-checkbox').checked = false;
+            document.getElementById('combined-projects-list-container').classList.add('hidden');
+            document.getElementById('single-project-inputs').classList.remove('hidden');
+            return;
+        }
+
+        projects.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center p-1 hover:bg-brand-900/50 rounded-md';
+            div.innerHTML = `
+                <input id="combine-project-${p.id}" type="checkbox" value="${p.id}" class="h-4 w-4 text-accent focus:ring-accent bg-brand-700 border-brand-600 rounded combine-project-checkbox">
+                <label for="combine-project-${p.id}" class="ml-2 block text-sm cursor-pointer">${p.name}</label>
+            `;
+            container.appendChild(div);
+        });
+
+        // Add listener to re-enable/disable run button
+        container.addEventListener('change', () => {
+            const checkedCount = container.querySelectorAll('input[type="checkbox"]:checked').length;
+            document.getElementById('run-calculation-btn').disabled = checkedCount === 0;
+        });
+
+        // Initially check the run button state
+        document.getElementById('run-calculation-btn').disabled = true;
+    },
+    async saveAdminConfig(button) {
+        if (!AppState.firebase.isAdmin) return;
+        UI.showLoading(button);
+
+        try {
+            const configText = document.getElementById('admin-config-textarea').value.trim();
+            if (!configText) {
+                UI.showNotification("Config data is empty.", true);
+                UI.hideLoading(button);
+                return;
+            }
+
+            const config = JSON.parse(configText);
+            const { db, doc, setDoc } = AppState.firebase.tools;
+
+            // Save to Firebase (use a static ID for config)
+            await setDoc(doc(db, "config", "advancedSettings"), {
+                bonusTiers: config.bonusTiers || CONSTANTS.DEFAULT_BONUS_TIERS,
+                calculationSettings: config.calculationSettings || CONSTANTS.DEFAULT_CALCULATION_SETTINGS,
+                countingSettings: config.countingSettings || CONSTANTS.DEFAULT_COUNTING_SETTINGS,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            UI.showNotification("Cloud config settings updated. Users will see changes on next refresh.");
+            UI.closeModal('admin-config-upload-modal');
+        } catch (error) {
+            console.error("Error saving cloud config:", error);
+            UI.showNotification(`Error saving config: ${error.message}. Check JSON format.`, true);
+        } finally {
+            UI.hideLoading(button);
+        }
+    },
+    async handleChatbotSend(input) {
+        const chatInput = document.getElementById('chatbot-input');
+        const message = input || chatInput.value.trim();
+        if (!message) return;
+
+        const chatBody = document.getElementById('chatbot-messages');
+        const typingIndicator = document.getElementById('chatbot-typing-indicator');
+
+        // 1. Clear input & add user message
+        chatInput.value = '';
+        this.addChatMessage(chatBody, 'user', message);
+
+        // 2. Show typing indicator
+        typingIndicator.classList.remove('hidden');
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        try {
+            // 3. Simple static responses (to avoid a complex API call for a simple app)
+            let botResponse = '';
+            let suggestions = [];
+            const lowerCaseMsg = message.toLowerCase();
+
+            if (lowerCaseMsg.includes('hello') || lowerCaseMsg.includes('hi')) {
+                botResponse = "Hello! I am the PCS Bonus Calculator Chatbot. How can I assist you with the app today?";
+                suggestions = ["What are the default bonus tiers?", "How to use the calculator?", "How do I add a team?"];
+            } else if (lowerCaseMsg.includes('bonus tiers') || lowerCaseMsg.includes('quality bonus')) {
+                botResponse = "The default bonus tiers range from 77.5% quality (0.05x bonus) up to 100% quality (1.20x bonus). You can view and edit these tiers in the 'Advanced Settings' menu.";
+                suggestions = ["Where is Advanced Settings?", "What is the formula for payout?", "Tell me about Fix4."];
+            } else if (lowerCaseMsg.includes('formula') || lowerCaseMsg.includes('payout')) {
+                botResponse = "The final payout is calculated as: **Total Points * Direct Multiplier * Quality Modifier**. The Quality Modifier is based on the Fix Quality (Fixes / (Fixes + Refixes + Warnings)).";
+                suggestions = ["What is a Refix?", "How are points calculated?", "Show my current results."];
+            } else if (lowerCaseMsg.includes('team') || lowerCaseMsg.includes('add a team')) {
+                botResponse = "You can manage teams by going to the main menu (three dots) and selecting 'Manage Teams'. Here you can add, remove, and update the Tech IDs for each team.";
+                suggestions = ["Where is the main menu?", "How to run a combined calculation?", "What is the Tech ID format?"];
+            } else if (lowerCaseMsg.includes('fix4')) {
+                 botResponse = "Fix4 items are tracked and broken down in the 'TL Summary' card. They are typically RV tasks where the reviewer marked a Fix2/Fix3/Fix4 category as a Miss or Correct, indicating a Fix-level quality issue.";
+                 suggestions = ["What is the TL Summary?", "What is a Warning?", "Tell me about QC Points."];
+            } else if (lowerCaseMsg.includes('advanced settings') || lowerCaseMsg.includes('settings')) {
+                 botResponse = "The Advanced Settings are accessible via the main menu (three dots). You can customize bonus tiers, point values, and counting logic there.";
+                 suggestions = ["How to access the main menu?", "How to reset settings?", "What does IR Modifier do?"];
+            } else if (lowerCaseMsg.includes('run a combined calculation') || lowerCaseMsg.includes('combine projects')) {
+                 botResponse = "To run a combined calculation, check the 'Combine Projects' checkbox in the data panel, then select the saved projects you wish to combine from the list that appears.";
+                 suggestions = ["How to save a project?", "What does 'combined' mean?", "How to interpret the results?"];
+            } else if (lowerCaseMsg.includes('current results') || lowerCaseMsg.includes('show results')) {
+                 const resultsTitle = document.getElementById('results-title')?.textContent;
+                 if (AppState.currentTechStats && Object.keys(AppState.currentTechStats).length > 0) {
+                     const totalPoints = Object.values(AppState.currentTechStats).reduce((sum, tech) => sum + tech.points, 0);
+                     const totalPayout = document.querySelector('.summary-cat-total .summary-item-value')?.textContent || 'N/A';
+                     const overallQuality = document.querySelectorAll('.summary-item-value')[3]?.textContent || 'N/A';
+
+                     botResponse = `The current calculation for "${resultsTitle}" shows: Total Points: ${totalPoints.toFixed(3)}, Overall Quality: ${overallQuality}, Estimated Total Payout: ₱${totalPayout}.`;
+                 } else {
+                     botResponse = "I don't see any calculated results right now. Please load a project and click 'Run Calculation' first.";
+                 }
+                 suggestions = ["Run a calculation now.", "Why are my results empty?", "What are points?"];
+            } else {
+                botResponse = "I'm sorry, I couldn't understand that. Could you try asking about a specific feature, like 'bonus tiers', 'teams', or 'calculation formula'?";
+                suggestions = ["What are the default bonus tiers?", "How to use the calculator?", "Tell me about Fix4."];
+            }
+
+            // 4. Hide typing indicator & add bot message
+            setTimeout(() => {
+                typingIndicator.classList.add('hidden');
+                this.addChatMessage(chatBody, 'bot', botResponse, suggestions);
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }, 500);
+
+        } catch (error) {
+            console.error("Chatbot error:", error);
+            typingIndicator.classList.add('hidden');
+            this.addChatMessage(chatBody, 'bot', "An internal error occurred. Please try again later.");
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    },
+    addChatMessage(chatBody, sender, message, suggestions = []) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chatbot-message ${sender} flex mb-2 ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+        
+        messageDiv.innerHTML = `
+            <div class="message-bubble">
+                <p class="text-xs mb-1 text-brand-400">${sender === 'user' ? 'You' : 'Chatbot'}</p>
+                <div class="text-sm">${message}</div>
+                ${suggestions.length > 0 ? `<div class="suggestions-container flex flex-wrap gap-2">${suggestions.map(s => `<button class="suggestion-btn">${s}</button>`).join('')}</div>` : ''}
+            </div>
+        `;
+        chatBody.appendChild(messageDiv);
     }
 };
 
-document.addEventListener('DOMContentLoaded', Handlers.initializeApp.bind(Handlers));
+document.addEventListener('DOMContentLoaded', () => {
+    App.initialize();
+    
+    // Initial UI setup
+    UI.setPanelHeights();
+    
+    // Global event listeners for dropdowns/modals
+    document.querySelectorAll('[data-dropdown-toggle]').forEach(trigger => {
+        trigger.addEventListener('click', () => {
+            const targetId = trigger.dataset.dropdownToggle;
+            document.getElementById(targetId)?.classList.toggle('hidden');
+        });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', e => {
+        const dropdown = document.getElementById('main-menu-dropdown');
+        const trigger = document.getElementById('main-menu-btn');
+        if (dropdown && trigger && !dropdown.classList.contains('hidden')) {
+            if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        }
+    });
+    
+    document.querySelectorAll('.modal-close-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const modal = button.closest('.fixed');
+            if (modal) modal.classList.add('hidden');
+        });
+    });
+    
+});
