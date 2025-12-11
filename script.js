@@ -1285,6 +1285,7 @@ const Core = {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Extend dayjs for relative time functionality
-    dayjs.extend(dayjs.plugin.relativeTime);
+    // NOTE: This uses the global variable 'dayjs_plugin_relativeTime' provided by the CDN script.
+    dayjs.extend(dayjs_plugin_relativeTime); 
     Core.initialize();
 });
