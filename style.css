@@ -331,3 +331,20 @@ body.light-theme #update-online-btn {
 body.light-theme #update-online-btn:hover {
     background-color: #059669; /* Darker shade for light theme */
 }
+/* Add to style.css */
+
+.tech-detail-trigger {
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.1s ease;
+}
+
+.tech-detail-trigger:hover {
+    background-color: var(--brand-700); /* Slightly darker background on hover for visual feedback */
+    text-decoration: underline;
+}
+
+/* Important: This ensures that clicking on the text inside the TD (like a <span>) still triggers the parent TD element for delegation */
+.tech-detail-trigger * {
+    pointer-events: none;
+}
