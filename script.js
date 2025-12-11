@@ -21,7 +21,7 @@ const AppState = {
 // --- CONSTANTS ---
 const CONSTANTS = {
     TECH_ID_REGEX: /^\d{4}[a-zA-Z]{2}$/,
-    ADMIN_EMAIL: 'ev.lorens.ebrado@gmail.com','ev.anderson4470@gmail.com',
+    ADMIN_EMAIL: 'ev.lorens.ebrado@gmail.com',
     DEFAULT_TEAMS: {
         "Team 123": ["7244AA", "7240HH", "7247JA", "4232JD", "4475JT", "4472JS", "4426KV", "7236LE", "7039NO", "7231NR", "7249SS", "7314VP"],
         "Team 63": ["7089RR", "7102JD", "7161KA", "7159MC", "7168JS", "7158JD", "7167AD", "7040JP", "7178MD", "7092RN", "7170WS"],
