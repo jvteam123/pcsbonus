@@ -926,12 +926,14 @@ const Handlers = {
             const { initializeApp } = window.firebase;
             const firebaseConfig = {
                 // Insert Firebase config here
-                apiKey: "",
-                authDomain: "",
-                projectId: "",
-                storageBucket: "",
-                messagingSenderId: "",
-                appId: ""
+                apiKey: "AIzaSyDkeA5QzcTkpgNiSDJ2S4rwHD8g8eHbj5M",
+                authDomain: "pcsbonus-54607.firebaseapp.com",
+                projectId: "pcsbonus-54607",
+                storageBucket: "pcsbonus-54607.appspot.com",
+                messagingSenderId: "406315081815",
+                appId: "1:406315081815:web:0cfa3915ec314f1f2f8312",
+                measurementId: "G-C2J9ESZFTH"
+
             };
             AppState.firebase.app = initializeApp(firebaseConfig);
             
