@@ -737,13 +737,14 @@ const Handlers = {
         const { auth, provider, signInWithPopup } = AppState.firebase.tools;
         try {
             const result = await signInWithPopup(auth, provider);
-            if (result.user.email === CONSTANTS.ADMIN_EMAIL) {
-                AppState.firebase.isAdmin = true;
-                this.updateAdminUI(true);
-            } else {
-                alert("Access Denied: This account is not authorized for admin access.");
-                auth.signOut();
-            }
+           // FIX: Check if the user's email is IN the ADMIN_EMAIL array.
+        if (CONSTANTS.ADMIN_EMAIL.includes(result.user.email)) { 
+            AppState.firebase.isAdmin = true; 
+            this.updateAdminUI(true); 
+        } else { 
+            alert("Access Denied: This account is not authorized for admin access."); 
+            auth.signOut(); 
+        }
         } catch (error) {
             console.error("Admin login error:", error);
             alert("An error occurred during sign-in.");
@@ -755,9 +756,10 @@ const Handlers = {
     checkAdminAuthState() {
         const { auth, onAuthStateChanged } = AppState.firebase.tools;
         onAuthStateChanged(auth, (user) => {
-            const isAdmin = user && user.email === CONSTANTS.ADMIN_EMAIL;
-            AppState.firebase.isAdmin = isAdmin;
-            this.updateAdminUI(isAdmin);
+            // FIX: Check if the user's email is IN the ADMIN_EMAIL array.
+        const isAdmin = user && CONSTANTS.ADMIN_EMAIL.includes(user.email);
+        AppState.firebase.isAdmin = isAdmin; 
+        this.updateAdminUI(isAdmin);
         });
     },
     updateAdminUI(isAdmin) {
